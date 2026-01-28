@@ -16,7 +16,12 @@ class Settings(BaseSettings):
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
     HEADLESS: bool = False
+    USE_UC: bool = True
     
+    # Candidate
+    CANDIDATE_PATH: str = "candidate/mahi_detail.json"
+    RESUME_PATH: str = "candidate/resume.pdf"
+
     # Proxy
     PROXY_URL: str | None = None
 
@@ -33,7 +38,9 @@ class Settings(BaseSettings):
 
     @property
     def mysql_url(self) -> str:
-        return f"mysql+mysqlconnector://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        from urllib.parse import quote_plus
+        password = quote_plus(self.DB_PASSWORD)
+        return f"mysql+mysqlconnector://{self.DB_USER}:{password}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
     def chrome_profile_path(self) -> str:

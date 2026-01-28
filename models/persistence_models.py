@@ -17,7 +17,7 @@ class Application(Base):
 class Metric(Base):
     __tablename__ = 'metrics'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=False)
     run_id = Column(String(64), index=True)
     step_name = Column(String(100))
     retry_count = Column(Integer, default=0)

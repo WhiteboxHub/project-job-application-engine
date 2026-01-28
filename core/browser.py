@@ -1,6 +1,6 @@
 import os
 import time
-import fcntl
+import portalocker
 import undetected_chromedriver as uc
 from config.settings import settings
 from core.logger import logger
@@ -19,41 +19,63 @@ class BrowserService:
         
         self.lock_file = open(lock_path, 'w')
         try:
-            fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            portalocker.lock(self.lock_file, portalocker.LOCK_EX | portalocker.LOCK_NB)
             logger.info(f"Acquired lock on profile: {profile_path}")
-        except IOError:
+        except portalocker.LockException:
             logger.critical(f"Could not acquire lock on {lock_path}. Is another instance running?")
             raise RuntimeError("Browser profile is locked by another process.")
 
     def _release_lock(self):
         if self.lock_file:
-            fcntl.flock(self.lock_file, fcntl.LOCK_UN)
+            portalocker.unlock(self.lock_file)
             self.lock_file.close()
             logger.info("Released profile lock.")
 
     def start_browser(self):
         self._acquire_lock()
         
-        options = uc.ChromeOptions()
-        options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
+        # Determine standard options first
+        from selenium.webdriver.chrome.options import Options as SeleniumOptions
+        sel_options = SeleniumOptions()
+        sel_options.add_argument(f"--user-data-dir={os.path.abspath(settings.chrome_profile_path)}")
         
         proxy_arg = proxy_manager.get_proxy_option()
         if proxy_arg:
-            options.add_argument(proxy_arg)
+            sel_options.add_argument(proxy_arg)
             
         if settings.HEADLESS:
-            options.add_argument("--headless=new")
+            sel_options.add_argument("--headless=new")
             
-        # Defense evasion
-        options.add_argument("--no-first-run")
-        options.add_argument("--no-service-autorun")
-        options.add_argument("--password-store=basic")
-        
+        sel_options.add_argument("--no-first-run")
+        sel_options.add_argument("--no-service-autorun")
+        sel_options.add_argument("--password-store=basic")
+        sel_options.add_argument("--no-sandbox")
+        sel_options.add_argument("--disable-dev-shm-usage")
+
+        if settings.USE_UC:
+            try:
+                logger.info("Attempting to start undetected-chromedriver...")
+                options = uc.ChromeOptions()
+                for arg in sel_options.arguments:
+                    options.add_argument(arg)
+                
+                self.driver = uc.Chrome(options=options)
+                logger.info("Browser started successfully (undetected-chromedriver).")
+                return self.driver
+            except Exception as e:
+                logger.warning(f"Failed to start undetected-chromedriver: {e}. Falling back to standard Selenium.")
+
         try:
-            self.driver = uc.Chrome(options=options, use_subprocess=True)
-            logger.info("Browser started successfully.")
+            from selenium import webdriver
+            from webdriver_manager.chrome import ChromeDriverManager
+            from selenium.webdriver.chrome.service import Service
+            
+            logger.info("Initializing standard Selenium with ChromeDriverManager...")
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=sel_options)
+            logger.info("Browser started successfully (Standard Selenium).")
         except Exception as e:
-            logger.error(f"Failed to start browser: {e}")
+            logger.error(f"Failed to start standard Selenium: {e}")
             self._release_lock()
             raise
 

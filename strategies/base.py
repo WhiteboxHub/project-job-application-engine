@@ -4,10 +4,11 @@ from core.logger import logger
 from models.config_models import JobListing
 
 class BaseStrategy(ABC):
-    def __init__(self, driver, job_site, selectors):
+    def __init__(self, driver, job_site, selectors, candidate_profile=None):
         self.driver = driver
         self.job_site = job_site
         self.selectors = selectors # JSON config from DB
+        self.candidate_profile = candidate_profile
         self.actions = SafeActions(driver)
         
     @abstractmethod

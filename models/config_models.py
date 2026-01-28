@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, Enum, ForeignKey, JSON, MetaData
+from sqlalchemy import Column, Integer, String, Boolean, Text, Enum, ForeignKey, JSON, MetaData, text, func
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
 from sqlalchemy.dialects.mysql import TIMESTAMP as MySQLTimestamp
@@ -8,8 +8,8 @@ metadata = MetaData()
 
 class TimeStampedModel(Base):
     __abstract__ = True
-    created_at = Column(MySQLTimestamp, server_default="CURRENT_TIMESTAMP")
-    updated_at = Column(MySQLTimestamp, server_default="CURRENT_TIMESTAMP", onupdate="CURRENT_TIMESTAMP")
+    created_at = Column(MySQLTimestamp, server_default=func.now())
+    updated_at = Column(MySQLTimestamp, server_default=func.now(), onupdate=func.now())
 
 class AtsPlatform(TimeStampedModel):
     __tablename__ = 'ats_platforms'
@@ -53,7 +53,7 @@ class SiteSelector(Base):
     
     type = Column(Enum('listing', 'application'), nullable=False)
     config_json = Column(JSON, nullable=False)
-    updated_at = Column(MySQLTimestamp, server_default="CURRENT_TIMESTAMP", onupdate="CURRENT_TIMESTAMP")
+    updated_at = Column(MySQLTimestamp, server_default=func.now(), onupdate=func.now())
     
     # Relationships
     platform = relationship("AtsPlatform", back_populates="selectors")
