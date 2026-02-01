@@ -50,7 +50,7 @@ class BrowserService:
         options.add_argument("--password-store=basic")
         
         try:
-            self.driver = uc.Chrome(options=options, use_subprocess=True)
+            self.driver = uc.Chrome(options=options, use_subprocess=True, version_main=144)
             logger.info("Browser started successfully.")
         except Exception as e:
             logger.error(f"Failed to start browser: {e}")

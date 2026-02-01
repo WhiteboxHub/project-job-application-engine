@@ -5,8 +5,7 @@ class StrategyFactory:
     @staticmethod
     def get_strategy(class_path: str, driver, job_site, selectors):
         """
-        Dynamically imports and instantiates a strategy class.
-        e.g. strategies.custom.InsightGlobalStrategy
+        e.g. strategies.custom.TekSystemsStrategy
         """
         try:
             module_name, class_name = class_path.rsplit('.', 1)

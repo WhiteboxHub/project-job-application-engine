@@ -11,7 +11,8 @@ class EngineRunner:
     def __init__(self):
         self.browser = None
 
-    def run(self):
+    def run(self, company_name: str = None):
+
         """
         Main execution workflow.
         1. Initialize Browser
@@ -31,10 +32,19 @@ class EngineRunner:
             # 2. Get Sites
             session = db_mysql.SessionLocal()
             try:
-                active_sites = session.query(JobSite).filter(JobSite.is_active == True).all()
+                query = session.query(JobSite).filter(JobSite.is_active == True)
+                if company_name:
+                    logger.info(f"Filtering for company: {company_name}")
+                    query = query.filter(JobSite.company_name == company_name)
+                
+                active_sites = query.all()
                 if not active_sites:
-                    logger.warning("No active job sites found in database.")
+                    if company_name:
+                        logger.warning(f"No active job site found with company name: {company_name}")
+                    else:
+                        logger.warning("No active job sites found in database.")
                     return
+
                 
                 for site in active_sites:
                     if not guards.can_apply():
@@ -56,10 +66,18 @@ class EngineRunner:
         logger.info(f"Processing Site: {site.company_name} ({site.domain})")
         
         # Load Strategy
-        # Note: In a real app we'd need to resolve selectors properly, potentially merging platform + site
-        # For this MVP, we grab the first listing-type selector for the site or platform
-        selectors = {} # Placeholder for complex selector resolution logic
-        
+        # Fetch selectors for this site and its platform
+        selectors_raw = session.query(SiteSelector).filter(
+            (SiteSelector.job_site_id == site.id) | 
+            (SiteSelector.ats_platform_id == site.ats_platform_id)
+        ).all()
+
+        # Merge selectors: site selectors override platform selectors
+        selectors = {}
+        for s in selectors_raw:
+            # s.config_json is already a dict (SQLAlchemy JSON type)
+            selectors.update(s.config_json)
+
         strategy_path = site.platform.class_handler
         try:
             strategy = strategy_factory.get_strategy(strategy_path, self.browser, site, selectors)
@@ -73,13 +91,20 @@ class EngineRunner:
             return
 
         # Discovery
-        # jobs = strategy.find_jobs() 
-        # For MVP we might skip straight to applying if jobs are pre-seeded or just log discovery
-        logger.info(f"Running strategy for {site.company_name}")
+        jobs = strategy.find_jobs() 
+        logger.info(f"Found {len(jobs)} jobs for {site.company_name}")
         
-        # Placeholder for job loop
-        # for job in jobs:
-        #   if not guards.can_apply(): break
-        #   success = strategy.apply(job)
-        #   if success: guards.increment_counter()
+        # Application loop
+        for job in jobs:
+            if not guards.can_apply():
+                logger.info("Application limit reached for this run.")
+                break
+            
+            success = strategy.apply(job)
+            if success:
+                guards.increment_counter()
+                logger.info(f"Successfully applied to {job.get('job_title', 'Unknown Job')}")
+            else:
+                logger.error(f"Failed to apply to {job.get('job_title', 'Unknown Job')}")
+
         

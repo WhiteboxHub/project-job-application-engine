@@ -25,7 +25,7 @@ The project follows a modular, layered architecture designed for stability and e
 
 ### Strategies (`strategies/`)
 -   **Base Strategy**: Abstract Base Class defining the interface (`login`, `find_jobs`, `apply`).
--   **Custom Strategies**: Implementations for specific sites (e.g., `strategies.custom.insight_global.InsightGlobalStrategy`).
+-   **Custom Strategies**: Implementations for specific sites (e.g., `strategies.custom.tek_systems.TekSystemsStrategy`).
 
 ---
 

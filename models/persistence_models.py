@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Sequence
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
@@ -16,8 +16,7 @@ class Application(Base):
 
 class Metric(Base):
     __tablename__ = 'metrics'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, Sequence('metric_id_seq'), primary_key=True)
     run_id = Column(String(64), index=True)
     step_name = Column(String(100))
     retry_count = Column(Integer, default=0)

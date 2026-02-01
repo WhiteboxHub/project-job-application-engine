@@ -14,6 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description="Job Application Engine CLI")
     parser.add_argument("--dry-run", action="store_true", help="Run without submitting applications")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
+    parser.add_argument("--company", type=str, help="Run only for a specific company name (e.g., 'TekSystems')")
+
     
     args = parser.parse_args()
     
@@ -30,7 +32,8 @@ def main():
         validate_secrets()
         
         runner = EngineRunner()
-        runner.run()
+        runner.run(company_name=args.company)
+
         
     except Exception as e:
         logger.critical(f"Fatal error: {e}")

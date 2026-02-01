@@ -1,5 +1,6 @@
 import time
 import random
+import os
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementClickInterceptedException
@@ -77,3 +78,30 @@ class SafeActions:
             return True
         except NoSuchElementException:
             return False
+
+    def safe_upload(self, selector, file_path, by=By.CSS_SELECTOR, retries=3):
+        """
+        Safely uploads a file to an input element.
+        """
+        if not file_path or not os.path.exists(file_path):
+            logger.error(f"Upload failed: File not found at {file_path}")
+            return False
+
+        attempt = 0
+        while attempt < retries:
+            try:
+                element = self.driver.find_element(by, selector)
+                # Ensure it's an input type file
+                if element.get_attribute("type") != "file":
+                    logger.warning(f"Element {selector} might not be a file input. Continuing anyway...")
+                
+                element.send_keys(file_path)
+                logger.info(f"Successfully uploaded {file_path} to {selector}")
+                return True
+            except StaleElementReferenceException:
+                time.sleep(1)
+                attempt += 1
+            except Exception as e:
+                logger.error(f"Error uploading file to {selector}: {e}")
+                return False
+        return False
