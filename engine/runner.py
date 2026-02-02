@@ -1,7 +1,4 @@
 import time
-from sqlalchemy.orm import Session
-from data.db_mysql import db_mysql
-from models.config_models import JobSite, SiteSelector
 from engine.factory import strategy_factory
 from core.browser import browser_service
 from core.logger import logger
@@ -15,12 +12,8 @@ class EngineRunner:
         """
         Main execution workflow.
         1. Initialize Browser
-        2. Fetch Active Sites from DB
-        3. For each site:
-           a. Instantiate Strategy
-           b. Run Discovery (Find Jobs)
-           c. Filter/Validate Jobs
-           d. Run Application Loop
+        2. Run Insight Global strategy directly (no database)
+        3. Strategy handles discovery and application
         """
         logger.info("Starting Job Engine Runner...")
         
@@ -28,58 +21,21 @@ class EngineRunner:
             # 1. Start Browser
             self.browser = browser_service.start_browser()
             
-            # 2. Get Sites
-            session = db_mysql.SessionLocal()
-            try:
-                active_sites = session.query(JobSite).filter(JobSite.is_active == True).all()
-                if not active_sites:
-                    logger.warning("No active job sites found in database.")
-                    return
-                
-                for site in active_sites:
-                    if not guards.can_apply():
-                        break
-                        
-                    self._process_site(session, site)
+            # 2. Run Insight Global strategy directly
+            # Import the strategy class directly
+            from strategies.custom.insight_global import InsightGlobalStrategy
+            
+            # Create strategy instance
+            strategy = InsightGlobalStrategy(self.browser, None, {})
+            
+            # Run the strategy
+            applied_count = strategy.run_search_and_apply()
+            logger.info(f"Strategy completed. Applied to {applied_count} jobs.")
                     
-            finally:
-                session.close()
-
         except Exception as e:
             logger.critical(f"Engine crashed: {e}")
         finally:
             if self.browser:
                 logger.info("Stopping browser...")
                 browser_service.stop_browser()
-
-    def _process_site(self, session: Session, site: JobSite):
-        logger.info(f"Processing Site: {site.company_name} ({site.domain})")
-        
-        # Load Strategy
-        # Note: In a real app we'd need to resolve selectors properly, potentially merging platform + site
-        # For this MVP, we grab the first listing-type selector for the site or platform
-        selectors = {} # Placeholder for complex selector resolution logic
-        
-        strategy_path = site.platform.class_handler
-        try:
-            strategy = strategy_factory.get_strategy(strategy_path, self.browser, site, selectors)
-        except Exception as e:
-            logger.error(f"Skipping site {site.company_name}: {e}")
-            return
-            
-        # Login (if needed)
-        if not strategy.login():
-            logger.error(f"Login failed for {site.company_name}")
-            return
-
-        # Discovery
-        # jobs = strategy.find_jobs() 
-        # For MVP we might skip straight to applying if jobs are pre-seeded or just log discovery
-        logger.info(f"Running strategy for {site.company_name}")
-        
-        # Placeholder for job loop
-        # for job in jobs:
-        #   if not guards.can_apply(): break
-        #   success = strategy.apply(job)
-        #   if success: guards.increment_counter()
         

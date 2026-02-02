@@ -30,6 +30,7 @@ class SafeActions:
     def safe_click(self, selector, by=By.CSS_SELECTOR, timeout=10, retries=3):
         """
         Attempts to find and click an element with retries on Stale/Intercepted exceptions.
+        Tries JS click as a fallback when normal click is intercepted.
         """
         attempt = 0
         while attempt < retries:
@@ -37,18 +38,56 @@ class SafeActions:
                 element = self.driver.find_element(by, selector)
                 self._micro_move(element)
                 self._random_sleep(0.5, 1.5)
-                element.click()
-                logger.debug(f"Clicked element: {selector}")
-                return True
-            except (StaleElementReferenceException, ElementClickInterceptedException) as e:
-                logger.warning(f"Click failed ({type(e).__name__}) on {selector}, retrying ({attempt+1}/{retries})")
-                time.sleep(2)
+                try:
+                    element.click()
+                    logger.debug(f"Clicked element: {selector}")
+                    return True
+                except ElementClickInterceptedException as e:
+                    # Try JS click as fallback
+                    try:
+                        self.driver.execute_script("arguments[0].click();", element)
+                        logger.debug(f"Clicked element via JS fallback: {selector}")
+                        return True
+                    except Exception:
+                        logger.warning(f"JS click fallback failed for {selector}, will retry ({attempt+1}/{retries})")
+                        time.sleep(1)
+                        attempt += 1
+                        continue
+            except StaleElementReferenceException as e:
+                logger.warning(f"Click failed (StaleElementReferenceException) on {selector}, retrying ({attempt+1}/{retries})")
+                time.sleep(1)
                 attempt += 1
             except NoSuchElementException:
                 logger.error(f"Element not found: {selector}")
                 return False
             except Exception as e:
                 logger.error(f"Unexpected error clicking {selector}: {e}")
+                return False
+        return False
+
+    def safe_click_element(self, element, retries: int = 3):
+        """Attempts to click a WebElement directly with retries and JS fallback."""
+        attempt = 0
+        while attempt < retries:
+            try:
+                self._micro_move(element)
+                self._random_sleep(0.3, 0.9)
+                try:
+                    element.click()
+                    return True
+                except ElementClickInterceptedException:
+                    try:
+                        self.driver.execute_script("arguments[0].click();", element)
+                        return True
+                    except Exception:
+                        attempt += 1
+                        time.sleep(0.8)
+                        continue
+            except StaleElementReferenceException:
+                time.sleep(0.8)
+                attempt += 1
+            except Exception as e:
+                logger.debug(f"safe_click_element unexpected error: {e}")
                 return False
         return False
 
