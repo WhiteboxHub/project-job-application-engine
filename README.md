@@ -19,9 +19,8 @@ The project follows a modular, layered architecture designed for stability and e
 -   **Orchestraion** (`runner.py`): Manages the high-level loop: Discovery -> Validation -> Application.
 -   **Safety Guards** (`guards.py`): Enforces limits like `MAX_APPLICATIONS_PER_RUN` and handles `DRY_RUN` logic.
 
-### Data Layer (`data/`, `models/`)
--   **Configuration DB (MySQL)**: Stores `JobSite`, `AtsPlatform`, and `SiteSelector` configurations. Allows changing selectors without deploying code.
--   **Persistence DB (DuckDB)**: Local file-based database for tracking application history (`applications` table) and execution metrics (`metrics` table).
+### Data Layer (`data/`)
+-   **CSV Storage**: Uses CSV files for tracking application history and job discovery. Each site has its own CSV file (e.g., `insight_global_jobs.csv`) that tracks job status, attempts, and timestamps.
 
 ### Strategies (`strategies/`)
 -   **Base Strategy**: Abstract Base Class defining the interface (`login`, `find_jobs`, `apply`).
@@ -33,7 +32,6 @@ The project follows a modular, layered architecture designed for stability and e
 
 ### Prerequisites
 -   Python 3.10+
--   MySQL / MariaDB Server
 -   Google Chrome
 
 ### 1. Install Dependencies
@@ -47,14 +45,8 @@ Copy the example environment file:
 cp .env.example .env
 ```
 Edit `.env` with your credentials:
--   `DB_PASSWORD`: Your MySQL root password.
 -   `CHROME_USER_DATA_DIR`: Path to your Chrome profile (optional).
-
-### 3. Initialize Databases
-Run the migration script to create tables in MySQL and DuckDB:
-```bash
-python3 scripts/init_db.py
-```
+-   `RESUME_FILE_PATH`: Path to your resume file for upload (optional).
 
 ---
 
@@ -91,4 +83,4 @@ SUBMISSION_COOLDOWN_SECONDS=30
 -   **Anti-Detection**: Uses `undetected-chromedriver` v2.
 -   **Profile Locking**: Prevents concurrent access to the Chrome profile.
 -   **Retry Framework**: Automatically retries clicks/typing on transient errors.
--   **Database Driven**: Selectors and strategies are configured in SQL, allowing dynamic updates.
+-   **CSV Tracking**: Job discovery and application status tracked in CSV files for easy monitoring.

@@ -1,7 +1,17 @@
 import os
 import time
-import fcntl
-import undetected_chromedriver as uc
+try:
+    import fcntl
+    _HAS_FCNTL = True
+except Exception:
+    _HAS_FCNTL = False
+try:
+    import undetected_chromedriver as uc
+except ModuleNotFoundError as e:
+    if 'distutils' in str(e):
+        raise ModuleNotFoundError(
+            "Missing dependency 'distutils'. On newer Python versions install the backport: `python -m pip install --upgrade pip setuptools` and then `python -m pip install distutils` if needed. After installing, re-run your script.") from e
+    raise
 from config.settings import settings
 from core.logger import logger
 from core.proxy_manager import proxy_manager
@@ -12,11 +22,16 @@ class BrowserService:
         self.lock_file = None
         
     def _acquire_lock(self):
-        """Ensures only one instance touches the profile."""
+        """Ensures only one instance touches the profile. On Windows (no fcntl) locking is skipped."""
         profile_path = settings.chrome_profile_path
         os.makedirs(profile_path, exist_ok=True)
         lock_path = os.path.join(profile_path, "profile.lock")
-        
+
+        self.lock_file = None
+        if not _HAS_FCNTL:
+            logger.info("fcntl not available on this platform; skipping profile locking.")
+            return
+
         self.lock_file = open(lock_path, 'w')
         try:
             fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -26,8 +41,13 @@ class BrowserService:
             raise RuntimeError("Browser profile is locked by another process.")
 
     def _release_lock(self):
+        if not _HAS_FCNTL:
+            return
         if self.lock_file:
-            fcntl.flock(self.lock_file, fcntl.LOCK_UN)
+            try:
+                fcntl.flock(self.lock_file, fcntl.LOCK_UN)
+            except Exception:
+                pass
             self.lock_file.close()
             logger.info("Released profile lock.")
 
@@ -50,12 +70,36 @@ class BrowserService:
         options.add_argument("--password-store=basic")
         
         try:
-            self.driver = uc.Chrome(options=options, use_subprocess=True)
-            logger.info("Browser started successfully.")
+            # Force ChromeDriver to match your Chrome version (144)
+            self.driver = uc.Chrome(
+                options=options, 
+                use_subprocess=True,
+                version_main=144  # Match your Chrome version
+            )
+            logger.info("Browser started successfully (undetected-chromedriver).")
         except Exception as e:
-            logger.error(f"Failed to start browser: {e}")
-            self._release_lock()
-            raise
+            logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
+            # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
+            try:
+                from selenium import webdriver
+                from selenium.webdriver.chrome.service import Service as ChromeService
+                from webdriver_manager.chrome import ChromeDriverManager
+
+                service = ChromeService(ChromeDriverManager().install())
+                selenium_options = webdriver.ChromeOptions()
+                # copy arguments from uc options if available
+                try:
+                    for arg in getattr(options, 'arguments', []):
+                        selenium_options.add_argument(arg)
+                except Exception:
+                    pass
+
+                self.driver = webdriver.Chrome(service=service, options=selenium_options)
+                logger.info("Browser started successfully (webdriver-manager fallback).")
+            except Exception as e2:
+                logger.error(f"Failed to start browser with fallback: {e2}")
+                self._release_lock()
+                raise
 
         return self.driver
 
