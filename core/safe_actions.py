@@ -4,13 +4,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementClickInterceptedException
 from core.logger import logger
+from core.human_behavior import HumanBehavior
 
 class SafeActions:
     def __init__(self, driver):
         self.driver = driver
+        self.human = HumanBehavior(driver)
         
     def _random_sleep(self, min_s=2.1, max_s=4.5):
-        time.sleep(random.uniform(min_s, max_s))
+        """Use HumanBehavior for consistent random delays"""
+        HumanBehavior.random_delay(min_s, max_s)
 
     def _micro_move(self, element):
         """Moves mouse slightly offset from center before clicking."""
@@ -92,15 +95,15 @@ class SafeActions:
         return False
 
     def safe_type(self, selector, text, by=By.CSS_SELECTOR, retries=3):
+        """Type text with human-like delays between keystrokes"""
         attempt = 0
         while attempt < retries:
             try:
                 element = self.driver.find_element(by, selector)
                 element.clear()
                 self._random_sleep(0.3, 0.7)
-                for char in text:
-                    element.send_keys(char)
-                    time.sleep(random.uniform(0.05, 0.2)) # Typing speed variation
+                # Use HumanBehavior for more realistic typing
+                self.human.human_type(element, text)
                 return True
             except StaleElementReferenceException:
                 time.sleep(1)

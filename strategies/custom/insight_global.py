@@ -1,8 +1,11 @@
 from strategies.base import BaseStrategy
 from core.logger import logger
+from core.human_behavior import HumanBehavior
+from core.captcha_handler import CaptchaHandler
 import time
 import os
 import json
+import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -20,6 +23,9 @@ class InsightGlobalStrategy(BaseStrategy):
     def __init__(self, driver, db_session, config):
         super().__init__(driver, db_session, config)
         self.config_data = self._load_config()
+        # Initialize human behavior and CAPTCHA handler
+        self.human = HumanBehavior(driver)
+        self.captcha_handler = CaptchaHandler(driver, timeout=30)  # 30-second wait for CAPTCHA
     
     def _load_config(self):
         """Load configuration from JSON file"""
@@ -307,48 +313,211 @@ class InsightGlobalStrategy(BaseStrategy):
             logger.error(f"Failed to click search button: {e}")
             return []
         
-        # Wait for results
+        # Wait for results to appear
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.result"))
             )
-            time.sleep(2)  # Additional wait for JS to render results
+            time.sleep(1)  # short wait for JS to render results
         except Exception:
             logger.warning("No results found or timeout waiting for results")
             return []
-        
-        # Extract job URLs
+
+        # Extract job URLs across pages (handle pagination / load-more)
         job_urls = []
-        try:
-            result_rows = self.driver.find_elements(By.CSS_SELECTOR, "div.result")
-            logger.info(f"Found {len(result_rows)} job results")
-            
-            for row in result_rows:
-                try:
-                    # Find job title link
-                    link = row.find_element(By.CSS_SELECTOR, "div.job-title a")
-                    href = link.get_attribute('href')
-                    title = link.text.strip()
-                    
-                    if href and href not in job_urls:
-                        job_urls.append(href)
-                        logger.info(f"Found job: {title}")
-                        
-                        # Track in CSV
-                        csv_tracker.add_discovered_jobs('insight_global', [{
-                            'external_id': href.split('/')[-2] if '/' in href else href,
-                            'job_title': title,
-                            'job_url': href
-                        }])
-                        
-                except Exception as e:
-                    logger.debug(f"Error extracting job from result row: {e}")
-                    continue
-                    
-        except Exception as e:
-            logger.error(f"Error parsing results: {e}")
+        seen = set()
+
+        # Enhanced pagination selectors with more options
+        pagination_selectors = [
+            # Standard pagination links
+            "a[rel='next']",
+            "a.next",
+            "li.next a",
+            "a.pagination-next",
+            "a[aria-label='Next']",
+            "a[title='Next']",
+            # Load more buttons
+            "button.load-more",
+            "a.load-more",
+            "button.show-more",
+            "a.show-more",
+            "button[data-action='load-more']",
+            # Bootstrap pagination
+            "li.next:not(.disabled) a",
+            "li:has(> a[rel='next']) a",
+            # Generic next buttons
+            "button:contains('Next')",
+            "a:contains('Next')",
+            "button:contains('More')",
+            "a:contains('More')",
+        ]
+
+        max_pages = 50  # Increased from 20 to allow more pages
+        page = 0
+        last_count = 0
+        no_new_results_count = 0
         
-        logger.info(f"Extracted {len(job_urls)} unique job URLs")
+        while page < max_pages:
+            page += 1
+
+            try:
+                result_rows = self.driver.find_elements(By.CSS_SELECTOR, "div.result")
+                current_count = len(result_rows)
+                logger.info(f"📄 Page {page}: Found {current_count} job results")
+
+                for row in result_rows:
+                    try:
+                        link = row.find_element(By.CSS_SELECTOR, "div.job-title a")
+                        href = link.get_attribute('href')
+                        title = link.text.strip()
+
+                        if href and href not in seen:
+                            seen.add(href)
+                            job_urls.append(href)
+                            logger.info(f"  ✓ Found job: {title}")
+
+                            # Track in CSV
+                            csv_tracker.add_discovered_jobs('insight_global', [{
+                                'external_id': href.split('/')[-2] if '/' in href else href,
+                                'job_title': title,
+                                'job_url': href
+                            }])
+
+                    except Exception as e:
+                        logger.debug(f"Error extracting job from result row: {e}")
+                        continue
+
+                # Check if we got new results on this page
+                if current_count == last_count:
+                    no_new_results_count += 1
+                else:
+                    no_new_results_count = 0
+                last_count = current_count
+
+            except Exception as e:
+                logger.error(f"Error parsing results on page {page}: {e}")
+
+            # Try to find and click pagination/next button
+            clicked = False
+            logger.info(f"  🔍 Looking for pagination button...")
+            
+            # STRATEGY 1: Scroll to bottom and look for pagination elements
+            try:
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(1)
+            except Exception:
+                pass
+            
+            # CHECK IF WE'RE ON THE LAST PAGE
+            # The forward button will be disabled or have a class like "disabled" on the last page
+            try:
+                # Check if Page Forward button exists and is clickable
+                forward_btn = self.driver.find_element(By.XPATH, "//a[@title='Page Forward']")
+                
+                # Check if it's disabled (parent li has 'disabled' class or button has disabled attribute)
+                is_disabled = False
+                try:
+                    parent_li = forward_btn.find_element(By.XPATH, "..")
+                    parent_class = parent_li.get_attribute('class')
+                    if parent_class and 'disabled' in parent_class:
+                        is_disabled = True
+                        logger.info(f"  ✓ Reached LAST PAGE - Forward button is disabled")
+                except:
+                    pass
+                
+                # Also check button's own disabled attribute
+                if forward_btn.get_attribute('disabled'):
+                    is_disabled = True
+                
+                if is_disabled:
+                    logger.info(f"  ⏹️ PAGINATION COMPLETE - No more pages available")
+                    clicked = False  # Stop pagination loop
+                    
+            except Exception as e:
+                logger.debug(f"Could not check for Page Forward button: {e}")
+            
+            # STRATEGY 2: Use the exact Insight Global pagination structure
+            # Only try to click if not already detected as last page
+            if not is_disabled:
+                next_button_xpaths = [
+                    # Insight Global specific: Page Forward arrow button
+                    "//a[@title='Page Forward']",
+                    
+                    # Get the next page link after current active page
+                    "//ul[@class='pagination']//li[@class='active page-item']/following-sibling::li//a[@class='page-link'][1]",
+                    "//ul[contains(@class, 'pagination')]//li[contains(@class, 'active')]/following-sibling::li//a[1]",
+                    
+                    # Generic pagination patterns
+                    "//ul[contains(@class, 'pagination')]//a[@title='Page Forward']",
+                    "//div[@class='r']//a[@title='Page Forward']",
+                ]
+                
+                for xpath in next_button_xpaths:
+                    if clicked:
+                        break
+                    try:
+                        elements = self.driver.find_elements(By.XPATH, xpath)
+                        for elem in elements:
+                            try:
+                                # More thorough check for disabled state
+                                parent_class = elem.find_element(By.XPATH, "..").get_attribute('class')
+                                if parent_class and 'disabled' in parent_class:
+                                    logger.debug(f"  Button is disabled (parent has disabled class)")
+                                    continue
+                                
+                                if not elem.is_displayed():
+                                    continue
+                                
+                                if not elem.is_enabled():
+                                    continue
+                                
+                                button_text = elem.text.strip()
+                                button_href = elem.get_attribute('href')
+                                button_title = elem.get_attribute('title')
+                                
+                                logger.info(f"  ✓ Found next button")
+                                logger.info(f"    Title: '{button_title}' | URL: {button_href}")
+                                
+                                # Scroll to button and click
+                                self.driver.execute_script("arguments[0].scrollIntoView(true);", elem)
+                                time.sleep(0.5)
+                                
+                                try:
+                                    elem.click()
+                                except Exception:
+                                    logger.info(f"    Regular click failed, trying JavaScript click...")
+                                    self.driver.execute_script("arguments[0].click();", elem)
+                                
+                                logger.info(f"  ✓ Successfully clicked pagination button!")
+                                clicked = True
+                                time.sleep(3)  # Wait for page to load
+                                
+                                # Wait for new results to appear
+                                try:
+                                    WebDriverWait(self.driver, 10).until(
+                                        EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.result"))
+                                    )
+                                    logger.info(f"  ✓ New page loaded successfully")
+                                except Exception as e:
+                                    logger.warning(f"  ⚠️ Timeout waiting for new results: {e}")
+                                break
+                            except Exception as e:
+                                logger.debug(f"    Error with button: {type(e).__name__}")
+                                continue
+                    except Exception as e:
+                        logger.debug(f"  XPath not found: {xpath[:60]}...")
+                        continue
+            
+            # STRATEGY 3: If no button found, we've reached the end
+            if not clicked:
+                logger.info(f"  ⏹️ No pagination button found - pagination complete")
+                break
+
+        logger.info(f"\n{'='*60}")
+        logger.info(f"✓ SEARCH & PAGINATION COMPLETE")
+        logger.info(f"  Total pages processed: {page}")
+        logger.info(f"  Unique jobs extracted: {len(job_urls)}")
+        logger.info(f"{'='*60}\n")
         return job_urls
     
     def _apply_to_job(self, job_url):
@@ -492,44 +661,48 @@ class InsightGlobalStrategy(BaseStrategy):
             applicant = self.config_data.get('applicant', {})
             
             try:
-                # First Name
+                logger.info("\n📝 Filling form fields with human-like behavior...")
+                
+                # First Name - with human-like typing
                 first_name_input = self.driver.find_element(By.CSS_SELECTOR, "#txtFirstName")
-                first_name_input.clear()
-                first_name_input.send_keys(applicant.get('first_name', ''))
+                self.human.fill_text_field(first_name_input, applicant.get('first_name', ''))
                 logger.info(f"Filled first name: {applicant.get('first_name')}")
+                
+                # Human delay between fields (1-2 seconds)
+                HumanBehavior.random_delay(1, 2)
                 
                 # Last Name
                 last_name_input = self.driver.find_element(By.CSS_SELECTOR, "#txtLastName")
-                last_name_input.clear()
-                last_name_input.send_keys(applicant.get('last_name', ''))
+                self.human.fill_text_field(last_name_input, applicant.get('last_name', ''))
                 logger.info(f"Filled last name: {applicant.get('last_name')}")
+                
+                # Human delay between fields
+                HumanBehavior.random_delay(1, 2)
                 
                 # Email
                 email_input = self.driver.find_element(By.CSS_SELECTOR, "#txtEmail")
-                email_input.clear()
-                email_input.send_keys(applicant.get('email', ''))
+                self.human.fill_text_field(email_input, applicant.get('email', ''))
                 logger.info(f"Filled email: {applicant.get('email')}")
+                
+                # Human delay between fields
+                HumanBehavior.random_delay(1, 2)
                 
                 # Phone
                 phone_input = self.driver.find_element(By.CSS_SELECTOR, "#txtPhone")
-                phone_input.clear()
-                phone_input.send_keys(applicant.get('phone', ''))
+                self.human.fill_text_field(phone_input, applicant.get('phone', ''))
                 logger.info(f"Filled phone: {applicant.get('phone')}")
+                
+                # Human delay before selecting radio button
+                HumanBehavior.random_delay(1, 2)
                 
                 # Click "Yes" on minimum requirements radio button
                 try:
-                    time.sleep(0.5)
                     min_req_yes = self.driver.find_element(By.CSS_SELECTOR, "#ContentPlaceHolder1_chkMinReq_0")
-                    # Scroll into view
-                    self.driver.execute_script("arguments[0].scrollIntoView(true);", min_req_yes)
-                    time.sleep(0.3)
+                    # Scroll into view smoothly
+                    self.human.scroll_to_element(min_req_yes, smooth=True)
                     
-                    # Click the radio button
-                    try:
-                        min_req_yes.click()
-                    except Exception:
-                        # Use JavaScript click if regular click fails
-                        self.driver.execute_script("arguments[0].click();", min_req_yes)
+                    # Human-like click
+                    self.human.human_click(min_req_yes)
                     
                     logger.info("✅ Selected 'Yes' for minimum requirements")
                 except Exception as e:
@@ -894,7 +1067,7 @@ class InsightGlobalStrategy(BaseStrategy):
             
             # Handle reCAPTCHA if present
             try:
-                logger.info("Checking for reCAPTCHA...")
+                logger.info("\n🔍 Checking for reCAPTCHA...")
                 recaptcha_frame = self.driver.find_elements(By.CSS_SELECTOR, "iframe[src*='recaptcha']")
                 
                 if recaptcha_frame:
@@ -916,16 +1089,16 @@ class InsightGlobalStrategy(BaseStrategy):
                         logger.warning("❌ AUTOMATIC reCAPTCHA SOLVING FAILED")
                         logger.warning("=" * 60 + "\n")
                         
-                        # In dry-run mode, just notify the user
-                        if _settings.DRY_RUN:
-                            logger.warning("🔵 DRY RUN: Auto-click failed")
-                            logger.info("   In live mode, would attempt 2Captcha API as fallback")
-                        else:
-                            # ATTEMPT 2: Fall back to 2Captcha API if configured
-                            captcha_api_key = os.getenv('TWOCAPTCHA_API_KEY', '')  
+                        # ATTEMPT 2: Wait for user to solve manually (30 seconds)
+                        logger.info("Switching to manual CAPTCHA solving...")
+                        self.captcha_handler.wait_for_captcha_solution(custom_timeout=30)
+                        
+                        # ATTEMPT 3: Fall back to 2Captcha API if configured (optional)
+                        if not _settings.DRY_RUN:
+                            captcha_api_key = os.getenv('TWOCAPTCHA_API_KEY', '')
                             
                             if captcha_api_key:
-                                logger.info("Attempting 2Captcha API as fallback...")
+                                logger.info("2Captcha API key detected - attempting API solve...")
                                 try:
                                     # Get the sitekey
                                     site_key = "6Lc73fMaAAAAAP06JY9D89xVxygVw9a_gOlvSUZA"
@@ -946,19 +1119,11 @@ class InsightGlobalStrategy(BaseStrategy):
                                         logger.info("✅ reCAPTCHA solved using 2Captcha API")
                                         time.sleep(1)
                                     except ImportError:
-                                        logger.error("2captcha-python library not installed. Run: pip install 2captcha-python")
-                                        logger.warning("⚠️ Continuing without solving reCAPTCHA - submission may fail")
+                                        logger.info("2captcha-python not installed (optional). Run: pip install 2captcha-python")
                                     except Exception as e:
-                                        logger.error(f"Failed to solve reCAPTCHA with 2Captcha: {e}")
-                                        logger.warning("⚠️ Continuing without solving reCAPTCHA - submission may fail")
+                                        logger.warning(f"2Captcha API failed: {e}")
                                 except Exception as e:
-                                    logger.error(f"reCAPTCHA 2Captcha fallback error: {e}")
-                            else:
-                                logger.warning("⚠️ Auto-click failed and no TWOCAPTCHA_API_KEY configured")
-                                logger.info("Options:")
-                                logger.info("1. Manually solve the reCAPTCHA in the browser")
-                                logger.info("2. Configure 2Captcha API: https://2captcha.com")
-                                logger.warning("⚠️ Continuing without solving - submission will likely fail")
+                                    logger.debug(f"reCAPTCHA 2Captcha error: {e}")
                 else:
                     logger.info("✅ No reCAPTCHA detected - proceeding to submit")
             except Exception as e:
@@ -1006,10 +1171,12 @@ class InsightGlobalStrategy(BaseStrategy):
                                                     attempts_inc=1, last_error='Submit button not found')
                         return False
                     
-                    # Scroll button into view
+                    # Scroll button into view with human-like behavior
                     logger.info("🔄 Scrolling submit button into view...")
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", submit_btn)
-                    time.sleep(1)
+                    self.human.scroll_to_element(submit_btn, smooth=True)
+                    
+                    # Human-like delay before clicking submit (2-4 seconds - seems more natural)
+                    HumanBehavior.random_delay(2, 4)
                     
                     # Wait for button to be clickable (in case it's disabled)
                     logger.info("⏳ Waiting for button to be enabled...")
@@ -1085,20 +1252,67 @@ class InsightGlobalStrategy(BaseStrategy):
             return False
     
     def find_jobs(self):
-        """Search for jobs using JSON configuration"""
+        """Search for jobs using JSON configuration - supports multiple searches"""
         if not self.config_data:
             logger.error("No configuration data available")
             return []
         
-        search = self.config_data.get('search', {})
-        keyword = search.get('keyword', 'aiml')
-        location = search.get('location', 'chicago')
-        distance = search.get('distance', 50)
+        all_job_urls = []
         
-        logger.info(f"Starting job search with: keyword='{keyword}', location='{location}', distance={distance}")
+        # Check if multiple search configurations exist
+        search_configs = self.config_data.get('search_configurations', [])
         
-        job_urls = self._search_jobs(keyword, location, distance)
-        return [{'job_url': url} for url in job_urls]
+        if search_configs:
+            # Multiple search configurations
+            logger.info(f"Found {len(search_configs)} search configurations to process")
+            
+            for i, config in enumerate(search_configs, 1):
+                keyword = config.get('keyword', 'AI')
+                location = config.get('location', '')
+                distance = config.get('distance', '')
+                
+                logger.info(f"\n{'='*60}")
+                logger.info(f"Search {i}/{len(search_configs)}")
+                logger.info(f"Keyword: '{keyword}', Location: '{location}', Distance: {distance} miles")
+                logger.info(f"{'='*60}")
+                
+                job_urls = self._search_jobs(keyword, location, distance)
+                all_job_urls.extend(job_urls)
+                
+                # Small delay between searches to avoid rate limiting
+                if i < len(search_configs):
+                    delay = random.uniform(2, 4)
+                    logger.info(f"Waiting {delay:.1f} seconds before next search...")
+                    time.sleep(delay)
+            
+            # Remove duplicates while preserving order
+            unique_urls = []
+            seen = set()
+            for url in all_job_urls:
+                if url not in seen:
+                    seen.add(url)
+                    unique_urls.append(url)
+            
+            logger.info(f"\n{'='*60}")
+            logger.info(f"SEARCH SUMMARY")
+            logger.info(f"Total searches performed: {len(search_configs)}")
+            logger.info(f"Total jobs found: {len(all_job_urls)}")
+            logger.info(f"Unique jobs: {len(unique_urls)}")
+            logger.info(f"Duplicates removed: {len(all_job_urls) - len(unique_urls)}")
+            logger.info(f"{'='*60}\n")
+            
+            return [{'job_url': url} for url in unique_urls]
+        else:
+            # Single search configuration (backward compatibility)
+            search = self.config_data.get('search', {})
+            keyword = search.get('keyword', 'AI')
+            location = search.get('location', '')
+            distance = search.get('distance', '')
+
+            logger.info(f"Starting job search with: keyword='{keyword}', location='{location}', distance={distance}")
+            
+            job_urls = self._search_jobs(keyword, location, distance)
+            return [{'job_url': url} for url in job_urls]
     
     def apply(self, listing):
         """Apply to a single job listing"""
@@ -1113,8 +1327,8 @@ class InsightGlobalStrategy(BaseStrategy):
     def run_search_and_apply(self):
         """
         Main entry point:
-        1. Search for jobs
-        2. Apply to each one
+        1. PHASE 1: Search for jobs across all pages (pagination)
+        2. PHASE 2: Apply to each collected job one by one
         """
         from config.settings import settings as _settings
         
@@ -1127,35 +1341,60 @@ class InsightGlobalStrategy(BaseStrategy):
         else:
             logger.info("🟢 MODE: LIVE (applications WILL be submitted)")
         
-        # Search for jobs
+        # ========================================================================
+        # PHASE 1: SEARCH FOR JOBS (with pagination through all pages)
+        # ========================================================================
+        logger.info("\n" + "=" * 80)
+        logger.info("PHASE 1: SEARCHING FOR JOBS")
+        logger.info("=" * 80)
+        
         jobs = self.find_jobs()
         
         if not jobs:
             logger.info("No jobs found")
             return 0
         
-        logger.info(f"\n{'=' * 80}")
-        logger.info(f"Found {len(jobs)} jobs - starting application process")
-        logger.info(f"{'=' * 80}\n")
+        logger.info(f"\n✓ Job search complete!")
+        logger.info(f"Found {len(jobs)} total jobs to process")
+        
+        # ========================================================================
+        # PHASE 2: APPLY TO JOBS ONE BY ONE
+        # ========================================================================
+        logger.info("\n" + "=" * 80)
+        logger.info("PHASE 2: APPLYING TO JOBS")
+        logger.info("=" * 80)
+        logger.info(f"Starting application process for {len(jobs)} jobs...\n")
         
         # Apply to each job
         applied_count = 0
+        failed_count = 0
+        skipped_count = 0
+        
         for i, job in enumerate(jobs, 1):
-            logger.info(f"\n--- Processing job {i}/{len(jobs)} ---")
+            logger.info(f"\n{'='*60}")
+            logger.info(f"Job {i}/{len(jobs)} - {job.get('job_url', 'Unknown URL')}")
+            logger.info(f"{'='*60}")
             
             success = self.apply(job)
             if success:
                 applied_count += 1
+                logger.info(f"✓ Successfully applied!")
+            else:
+                failed_count += 1
+                logger.info(f"✗ Failed to apply")
             
             # Cooldown between applications
             if i < len(jobs):
                 cooldown = _settings.SUBMISSION_COOLDOWN_SECONDS
-                logger.info(f"Waiting {cooldown} seconds before next job...")
+                logger.info(f"⏳ Waiting {cooldown} seconds before next job...")
                 time.sleep(cooldown)
         
         logger.info(f"\n{'=' * 80}")
         logger.info(f"APPLICATION RUN COMPLETE")
-        logger.info(f"Successfully processed: {applied_count}/{len(jobs)} jobs")
+        logger.info(f"{'=' * 80}")
+        logger.info(f"✓ Applied: {applied_count}")
+        logger.info(f"✗ Failed: {failed_count}")
+        logger.info(f"Total processed: {applied_count + failed_count}/{len(jobs)}")
         logger.info(f"{'=' * 80}\n")
         
         return applied_count

@@ -84,3 +84,16 @@ SUBMISSION_COOLDOWN_SECONDS=30
 -   **Profile Locking**: Prevents concurrent access to the Chrome profile.
 -   **Retry Framework**: Automatically retries clicks/typing on transient errors.
 -   **CSV Tracking**: Job discovery and application status tracked in CSV files for easy monitoring.
+-   **Human-Like Behavior**: 
+    -   Random delays between form fields (1-2 seconds)
+    -   Natural typing speed (50-150ms per character)
+    -   Smooth scrolling to elements
+    -   Mouse movements before clicks
+-   **Smart CAPTCHA Handling**:
+    -   Automatic CAPTCHA click attempts
+    -   30-second manual solve window (configurable)
+    -   Optional 2Captcha API integration
+    -   Multiple detection strategies
+
+See [`docs/HUMAN_BEHAVIOR_GUIDE.md`](docs/HUMAN_BEHAVIOR_GUIDE.md) for detailed usage.
+
