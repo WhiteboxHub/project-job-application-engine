@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     PROXY_URL: str | None = None
 
     # Safety
-    MAX_APPLICATIONS_PER_RUN: int = 10
+    MAX_APPLICATIONS_PER_RUN: int = 50
     SUBMISSION_COOLDOWN_SECONDS: int = 30
     DRY_RUN: bool = False
 
