@@ -1,0 +1,15 @@
+{
+    "search": {
+        "keyword": "AI Engineer",
+        "location": "Chicago, IL",
+        "distance": "50"
+    },
+    
+    "applicant": {
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "email": "candidate_email@gmail.com",
+        "phone": "+1 (669) 213-xxxx"
+    },
+    "resume_path": "resume/candidate_resume.pdf"
+}

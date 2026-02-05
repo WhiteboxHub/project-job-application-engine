@@ -6,10 +6,13 @@ import time
 import os
 import json
 import random
+from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from data.csv_tracker import tracker as csv_tracker
+from models.config_models import JobListing
+from models.history_models import Application
 
 
 class InsightGlobalStrategy(BaseStrategy):
@@ -20,12 +23,20 @@ class InsightGlobalStrategy(BaseStrategy):
     3. Applies as guest with minimal form fields
     """
     
-    def __init__(self, driver, db_session, config):
-        super().__init__(driver, db_session, config)
+    def __init__(self, driver, job_site, selectors, db_session=None):
+        super().__init__(driver, job_site, selectors)
+        self.db_session = db_session
+        self.job_site = job_site
         self.config_data = self._load_config()
         # Initialize human behavior and CAPTCHA handler
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=30)  # 30-second wait for CAPTCHA
+        
+        # Debug logging
+        if self.db_session:
+            logger.info("✅ Database session available - will save to DuckDB")
+        else:
+            logger.warning("⚠️ No database session - will only use CSV tracking")
     
     def _load_config(self):
         """Load configuration from JSON file"""
@@ -375,13 +386,42 @@ class InsightGlobalStrategy(BaseStrategy):
                             seen.add(href)
                             job_urls.append(href)
                             logger.info(f"  ✓ Found job: {title}")
+                            
+                            # Extract job ID from URL
+                            job_id = href.split('/')[-2] if '/' in href else href
 
                             # Track in CSV
                             csv_tracker.add_discovered_jobs('insight_global', [{
-                                'external_id': href.split('/')[-2] if '/' in href else href,
+                                'external_id': job_id,
                                 'job_title': title,
                                 'job_url': href
                             }])
+                            
+                            # Save to database if session available
+                            if self.db_session and self.job_site:
+                                try:
+                                    # Check if already exists
+                                    existing = self.db_session.query(JobListing).filter(
+                                        JobListing.job_site_id == self.job_site.id,
+                                        JobListing.job_url == href
+                                    ).first()
+                                    
+                                    if not existing:
+                                        job_listing = JobListing(
+                                            job_site_id=self.job_site.id,
+                                            external_job_id=job_id,
+                                            job_title=title,
+                                            job_url=href,
+                                            status='discovered'
+                                        )
+                                        self.db_session.add(job_listing)
+                                        self.db_session.commit()
+                                        logger.info(f"  💾 Saved to database: {title}")
+                                except Exception as e:
+                                    logger.warning(f"  ⚠️ Database save failed: {e}")
+                                    self.db_session.rollback()
+                            else:
+                                logger.warning(f"  ⚠️ No DB session - skipping database save for: {title}")
 
                     except Exception as e:
                         logger.debug(f"Error extracting job from result row: {e}")
@@ -410,12 +450,12 @@ class InsightGlobalStrategy(BaseStrategy):
             
             # CHECK IF WE'RE ON THE LAST PAGE
             # The forward button will be disabled or have a class like "disabled" on the last page
+            is_disabled = False  # Initialize before try block
             try:
                 # Check if Page Forward button exists and is clickable
                 forward_btn = self.driver.find_element(By.XPATH, "//a[@title='Page Forward']")
                 
                 # Check if it's disabled (parent li has 'disabled' class or button has disabled attribute)
-                is_disabled = False
                 try:
                     parent_li = forward_btn.find_element(By.XPATH, "..")
                     parent_class = parent_li.get_attribute('class')
@@ -1211,7 +1251,31 @@ class InsightGlobalStrategy(BaseStrategy):
                         except Exception as e:
                             logger.warning(f"⚠️ JavaScript click failed: {e}")
                     
-                    # Method 3: Submit the form directly
+                    # Method 3: Remove disabled attribute and click
+                    if not clicked:
+                        try:
+                            logger.info("🔄 Removing disabled attribute and clicking...")
+                            self.driver.execute_script("arguments[0].removeAttribute('disabled');", submit_btn)
+                            time.sleep(0.5)
+                            submit_btn.click()
+                            clicked = True
+                            logger.info("✅ Click after removing disabled successful")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Click after removing disabled failed: {e}")
+                    
+                    # Method 4: ActionChains click
+                    if not clicked:
+                        try:
+                            logger.info("🔄 Attempting ActionChains click...")
+                            from selenium.webdriver.common.action_chains import ActionChains
+                            actions = ActionChains(self.driver)
+                            actions.move_to_element(submit_btn).click().perform()
+                            clicked = True
+                            logger.info("✅ ActionChains click successful")
+                        except Exception as e:
+                            logger.warning(f"⚠️ ActionChains click failed: {e}")
+                    
+                    # Method 5: Submit the form directly
                     if not clicked:
                         try:
                             logger.info("🔄 Attempting to submit form directly...")
@@ -1220,6 +1284,28 @@ class InsightGlobalStrategy(BaseStrategy):
                             logger.info("✅ Form submitted directly")
                         except Exception as e:
                             logger.warning(f"⚠️ Direct form submit failed: {e}")
+                    
+                    # Method 6: Force click via JavaScript with all events
+                    if not clicked:
+                        try:
+                            logger.info("🔄 Force clicking with JavaScript events...")
+                            self.driver.execute_script("""
+                                var btn = arguments[0];
+                                btn.removeAttribute('disabled');
+                                var clickEvent = new MouseEvent('click', {
+                                    view: window,
+                                    bubbles: true,
+                                    cancelable: true
+                                });
+                                btn.dispatchEvent(clickEvent);
+                                // Also try direct click
+                                btn.click();
+                            """, submit_btn)
+                            clicked = True
+                            logger.info("✅ Force click with events successful")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Force click failed: {e}")
+                    
                     
                     if not clicked:
                         logger.error("❌ All click methods failed!")
@@ -1231,8 +1317,46 @@ class InsightGlobalStrategy(BaseStrategy):
                     logger.info("✅ SUBMITTED APPLICATION!")
                     logger.info("=" * 60 + "\n")
                     
+                    # Update CSV tracker
                     csv_tracker.update_job_status('insight_global', job_url, 'applied',
                                                 attempts_inc=1, last_error='')
+                    
+                    # Save to database if session available
+                    if self.db_session and self.job_site:
+                        try:
+                            # Get job title from page
+                            job_title = "Unknown Title"
+                            try:
+                                title_elem = self.driver.find_element(By.CSS_SELECTOR, "h1, .job-title, #job-title")
+                                job_title = title_elem.text.strip()
+                            except:
+                                pass
+                            
+                            # Update job_listing status
+                            job_listing = self.db_session.query(JobListing).filter(
+                                JobListing.job_url == job_url
+                            ).first()
+                            
+                            if job_listing:
+                                job_listing.status = 'applied'
+                                job_listing.updated_at = datetime.utcnow()
+                            
+                            # Create application record
+                            application = Application(
+                                job_site_id=self.job_site.id,
+                                job_listing_id=job_listing.id if job_listing else None,
+                                job_title=job_title,
+                                job_url=job_url,
+                                status='success',
+                                applied_at=datetime.utcnow()
+                            )
+                            self.db_session.add(application)
+                            self.db_session.commit()
+                            logger.info("💾 Application saved to database")
+                        except Exception as e:
+                            logger.warning(f"⚠️ Database save failed: {e}")
+                            self.db_session.rollback()
+                    
                     guards.increment_counter()
                     time.sleep(2)
                     return True
