@@ -3,6 +3,9 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    # Database
+    DUCKDB_PATH: str = "data/job_engine.duckdb"
+    
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
     HEADLESS: bool = False
@@ -11,8 +14,8 @@ class Settings(BaseSettings):
     PROXY_URL: str | None = None
 
     # Safety
-    MAX_APPLICATIONS_PER_RUN: int = 50
-    SUBMISSION_COOLDOWN_SECONDS: int = 30
+    MAX_APPLICATIONS_PER_RUN: int = 200  # Effectively unlimited
+    SUBMISSION_COOLDOWN_SECONDS: int = 60
     DRY_RUN: bool = False
 
     model_config = SettingsConfigDict(
