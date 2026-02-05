@@ -1,85 +1,191 @@
+"""
+Engine Runner - Main Orchestration Logic
+Coordinates the entire automation workflow
+"""
+
 import time
-from sqlalchemy.orm import Session
-from data.db_mysql import db_mysql
+from data.db_connection import db
 from models.config_models import JobSite, SiteSelector
 from engine.factory import strategy_factory
+from engine.guards import guards
 from core.browser import browser_service
 from core.logger import logger
-from engine.guards import guards
 
 class EngineRunner:
+    """Main orchestrator for the job application engine"""
+    
     def __init__(self):
         self.browser = None
-
+        
     def run(self):
         """
-        Main execution workflow.
+        Main execution workflow:
         1. Initialize Browser
-        2. Fetch Active Sites from DB
+        2. Fetch Active Sites from Database
         3. For each site:
-           a. Instantiate Strategy
-           b. Run Discovery (Find Jobs)
-           c. Filter/Validate Jobs
-           d. Run Application Loop
+           a. Load Strategy via Factory
+           b. Run find_jobs()
+           c. Apply to jobs (respecting guards)
+        4. Cleanup and report
         """
-        logger.info("Starting Job Engine Runner...")
+        logger.info("=" * 60)
+        logger.info("🚀 Starting Job Application Engine...")
+        logger.info("=" * 60)
         
         try:
             # 1. Start Browser
+            logger.info("Initializing browser...")
             self.browser = browser_service.start_browser()
+            logger.info("✅ Browser started successfully")
             
-            # 2. Get Sites
-            session = db_mysql.SessionLocal()
+            # 2. Get Active Sites from Database
+            session = db.get_session()
             try:
                 active_sites = session.query(JobSite).filter(JobSite.is_active == True).all()
+                
                 if not active_sites:
-                    logger.warning("No active job sites found in database.")
+                    logger.warning("⚠️ No active job sites found in database.")
+                    logger.info("Run: python scripts/init_db.py to seed Insight Global")
                     return
                 
+                logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")
+                for site in active_sites:
+                    logger.info(f"   - {site.company_name} ({site.domain})")
+                
+                # 3. Process Each Site
                 for site in active_sites:
                     if not guards.can_apply():
+                        logger.warning("⛔ Application limit reached. Stopping.")
                         break
-                        
-                    self._process_site(session, site)
                     
+                    self._process_site(session, site)
+                
+                # 4. Final Report
+                stats = guards.get_stats()
+                logger.info("\n" + "=" * 60)
+                logger.info("✅ ENGINE RUN COMPLETE")
+                logger.info("=" * 60)
+                logger.info(f"Applications submitted: {stats['applications_submitted']}/{stats['max_applications']}")
+                logger.info(f"Dry run mode: {stats['dry_run_mode']}")
+                logger.info("=" * 60)
+                
             finally:
-                session.close()
-
+                db.close_session(session)
+                
         except Exception as e:
-            logger.critical(f"Engine crashed: {e}")
+            logger.critical(f"❌ Engine crashed: {e}")
+            import traceback
+            traceback.print_exc()
+            
         finally:
             if self.browser:
-                logger.info("Stopping browser...")
+                logger.info("\nStopping browser...")
                 browser_service.stop_browser()
-
-    def _process_site(self, session: Session, site: JobSite):
-        logger.info(f"Processing Site: {site.company_name} ({site.domain})")
+                logger.info("✅ Browser closed")
+    
+    def _process_site(self, session, site: JobSite):
+        """
+        Process a single job site
         
-        # Load Strategy
-        # Note: In a real app we'd need to resolve selectors properly, potentially merging platform + site
-        # For this MVP, we grab the first listing-type selector for the site or platform
-        selectors = {} # Placeholder for complex selector resolution logic
+        Args:
+            session: Database session
+            site: JobSite model instance
+        """
+        logger.info("\n" + "-" * 60)
+        logger.info(f"🎯 Processing: {site.company_name}")
+        logger.info("-" * 60)
         
-        strategy_path = site.platform.class_handler
         try:
-            strategy = strategy_factory.get_strategy(strategy_path, self.browser, site, selectors)
-        except Exception as e:
-            logger.error(f"Skipping site {site.company_name}: {e}")
-            return
+            # Load selectors from database
+            selectors = self._load_selectors(session, site)
             
-        # Login (if needed)
-        if not strategy.login():
-            logger.error(f"Login failed for {site.company_name}")
-            return
-
-        # Discovery
-        # jobs = strategy.find_jobs() 
-        # For MVP we might skip straight to applying if jobs are pre-seeded or just log discovery
-        logger.info(f"Running strategy for {site.company_name}")
+            # Get strategy class path from platform
+            strategy_path = site.platform.class_handler
+            logger.info(f"Strategy: {strategy_path}")
+            
+            # Load strategy via factory
+            try:
+                # Debug: verify session is valid
+                logger.info(f"📊 Database session type: {type(session)}")
+                logger.info(f"📊 Passing session to strategy: {session is not None}")
+                
+                strategy = strategy_factory.get_strategy(
+                    strategy_path,
+                    self.browser,
+                    site,
+                    selectors,
+                    session  # Pass database session
+                )
+            except Exception as e:
+                logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
+                return
+            
+            # Login (if required)
+            logger.info("Attempting login...")
+            if not strategy.login():
+                logger.error(f"❌ Login failed for {site.company_name}")
+                return
+            logger.info("✅ Login successful (or not required)")
+            
+            # Find jobs
+            logger.info("🔍 Discovering jobs...")
+            jobs = strategy.find_jobs()
+            logger.info(f"✅ Found {len(jobs)} job(s)")
+            
+            # Apply to jobs
+            if jobs:
+                logger.info(f"\n📤 Starting application process...")
+                applied_count = 0
+                
+                for job in jobs:
+                    if not guards.can_apply():
+                        logger.warning("⛔ Application limit reached")
+                        break
+                    
+                    try:
+                        logger.info(f"\nApplying to: {job.get('job_title', 'Unknown Title')}")
+                        success = strategy.apply(job)
+                        
+                        if success:
+                            guards.increment_counter()
+                            applied_count += 1
+                            logger.info(f"✅ Application #{applied_count} successful")
+                        else:
+                            logger.warning("⚠️ Application failed")
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Error applying to job: {e}")
+                        continue
+                
+                logger.info(f"\n✅ Completed {site.company_name}: {applied_count} applications")
+            else:
+                logger.info("ℹ️ No jobs found to apply to")
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing {site.company_name}: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _load_selectors(self, session, site: JobSite) -> dict:
+        """
+        Load selectors for a job site from database
         
-        # Placeholder for job loop
-        # for job in jobs:
-        #   if not guards.can_apply(): break
-        #   success = strategy.apply(job)
-        #   if success: guards.increment_counter()
+        Args:
+            session: Database session
+            site: JobSite instance
+            
+        Returns:
+            Dictionary with 'listing' and 'application' selectors
+        """
+        selectors = {}
         
+        # Query selectors for this site
+        site_selectors = session.query(SiteSelector).filter(
+            SiteSelector.job_site_id == site.id
+        ).all()
+        
+        for selector in site_selectors:
+            selectors[selector.type] = selector.config_json
+        
+        logger.info(f"Loaded {len(selectors)} selector configuration(s)")
+        return selectors
