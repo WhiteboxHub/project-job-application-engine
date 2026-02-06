@@ -39,7 +39,7 @@ class BrowserService:
             from selenium_stealth import stealth
             
             options = webdriver.ChromeOptions()
-            # Standard selenium stability options
+            # Note: We skip user-data-dir in standard selenium for better stability unless needed
             # options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
             
             proxy_arg = proxy_manager.get_proxy_option()

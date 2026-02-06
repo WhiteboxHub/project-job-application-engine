@@ -6,6 +6,8 @@ from engine.factory import strategy_factory
 from core.browser import browser_service
 from core.logger import logger
 from engine.guards import guards
+from data.db_duckdb import db_duckdb
+from models.config_models import JobSite, SiteSelector, JobListing
 
 class EngineRunner:
     def __init__(self):
@@ -29,7 +31,14 @@ class EngineRunner:
             # 1. Start Browser
             self.browser = browser_service.start_browser()
             
-            # 2. Get Sites
+            # 2. Sync DuckDB from MySQL
+            mysql_session = db_mysql.SessionLocal()
+            try:
+                db_duckdb.sync_from_mysql(mysql_session)
+            finally:
+                mysql_session.close()
+
+            # 3. Get Sites
             session = db_mysql.SessionLocal()
             try:
                 query = session.query(JobSite).filter(JobSite.is_active == True)
@@ -65,18 +74,8 @@ class EngineRunner:
     def _process_site(self, session: Session, site: JobSite):
         logger.info(f"Processing Site: {site.company_name} ({site.domain})")
         
-        # Load Strategy
-        # Fetch selectors for this site and its platform
-        selectors_raw = session.query(SiteSelector).filter(
-            (SiteSelector.job_site_id == site.id) | 
-            (SiteSelector.ats_platform_id == site.ats_platform_id)
-        ).all()
-
-        # Merge selectors: site selectors override platform selectors
-        selectors = {}
-        for s in selectors_raw:
-            # s.config_json is already a dict (SQLAlchemy JSON type)
-            selectors.update(s.config_json)
+        # Load Strategy from DuckDB
+        selectors = db_duckdb.get_selectors(job_site_id=site.id, ats_platform_id=site.ats_platform_id)
 
         strategy_path = site.platform.class_handler
         try:
@@ -100,11 +99,35 @@ class EngineRunner:
                 logger.info("Application limit reached for this run.")
                 break
             
+            # Check if already applied in DB
+            job_url = job.get("job_url")
+            existing_listing = session.query(JobListing).filter(JobListing.job_url == job_url).first()
+            
+            if existing_listing and existing_listing.status == 'applied':
+                logger.info(f"Skipping already applied job: {job.get('job_title')}")
+                continue
+
             success = strategy.apply(job)
+            
+            # Update/Create listing in DB
+            if not existing_listing:
+                existing_listing = JobListing(
+                    job_site_id=site.id,
+                    external_job_id=job.get("external_id", str(hash(job_url))[:10]),
+                    job_title=job.get("job_title", "Unknown"),
+                    job_url=job_url
+                )
+                session.add(existing_listing)
+            
             if success:
                 guards.increment_counter()
+                existing_listing.status = 'applied'
                 logger.info(f"Successfully applied to {job.get('job_title', 'Unknown Job')}")
             else:
+                existing_listing.status = 'failed'
+                existing_listing.last_error = "Strategy returned False"
                 logger.error(f"Failed to apply to {job.get('job_title', 'Unknown Job')}")
+            
+            session.commit()
 
         

@@ -39,12 +39,12 @@ def test_selector_loading():
         
         print(f"Merged Selectors: {selectors}")
         
-        # Check for expected keys for TekSystems if it's the site
-        if site.company_name == "TekSystems":
+        # Check for expected keys for Infosys if it's the site
+        if site.company_name == "Infosys":
             container = selectors.get("container") or selectors.get("listing_card")
-            print(f"TekSystems container selector: {container}")
+            print(f"Infosys container selector: {container}")
             if not container:
-                print("FAILED: No container selector found for TekSystems.")
+                print("FAILED: No container selector found for Infosys.")
             else:
                 print("SUCCESS: Container selector found.")
 

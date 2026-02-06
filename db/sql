@@ -96,20 +96,19 @@ CREATE TABLE `job_listings` (
   CONSTRAINT `fk_listing_site` FOREIGN KEY (`job_site_id`) REFERENCES `job_sites`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
--- SEED DATA: TekSystems Automation Config
+-- SEED DATA: Infosys Automation Config
 -- =====================================================
 
--- 1. Insert the Strategy
+-- 1. Insert Strategy
 INSERT INTO `ats_platforms` 
-(`id`, `name`, `class_handler`, `is_headless_required`) 
+(`name`, `class_handler`, `is_headless_required`) 
 VALUES 
-(1, 'TekSystems Custom', 'strategies.custom.TekSystemsStrategy', 0)
+('Infosys Custom', 'strategies.custom.infosys.InfosysStrategy', 0)
 ON DUPLICATE KEY UPDATE `name`=`name`;
 
--- 2. Insert the Site
+-- 2. Insert Job Site
 INSERT INTO `job_sites` 
 (
     `company_name`, 
@@ -123,25 +122,77 @@ INSERT INTO `job_sites`
 ) 
 VALUES 
 (
-    'TekSystems', 
-    'careers.teksystems.com', 
-    1, -- Links to 'TekSystems Custom'
-    'Staffing vendor', 
-    'https://careers.teksystems.com/us/en/search-results?keywords={keyword}&location={location}', 
+    'Infosys', 
+    'digitalcareers.infosys.com', 
+    (SELECT id FROM ats_platforms WHERE name = 'Infosys Custom'), 
+    'System integrator', 
+    'https://digitalcareers.infosys.com/infosys/global-careers?location=USA', 
     NULL, 
     0, 
     'US'
-);
+)
+ON DUPLICATE KEY UPDATE `company_name`=`company_name`;
 
--- 3. Insert Selectors (Placeholder/Minimal as logic is in Python)
+-- 3. Insert Selectors
 INSERT INTO `site_selectors` (`job_site_id`, `type`, `config_json`)
 VALUES 
 (
-    (SELECT id FROM job_sites WHERE domain = 'careers.teksystems.com'),
+    (SELECT id FROM job_sites WHERE domain = 'digitalcareers.infosys.com'),
     'listing', 
     '{
         "container": ".job-listing-item", 
-        "pagination_type": "scroll",
-        "fields": {}
+        "fields": {},
+        "keyword": "AI Engineer",
+        "location": "USA",
+        "search": {
+            "reveal_buttons": [["css selector", ".search-jobs-button"]],
+            "input_box": [["css selector", ".js_search_cp_jobs.search"]],
+            "job_links": [["css selector", "a.job"]]
+        },
+        "apply": {
+            "apply_button": [["css selector", ".infosys-apply-link"]],
+            "first_time_button": [["css selector", ".apply-first-time-button"]],
+            "proceed_button": [["css selector", ".consent-button"]],
+            "form_signals": [["css selector", "#firstname"]]
+        },
+        "popups": {
+            "close_buttons": [
+                ["css selector", ".modal-close"],
+                ["css selector", ".p-dialog-header-close"],
+                ["css selector", "button.close"],
+                ["css selector", "#resume-review-close"],
+                ["css selector", ".p-sidebar-close"],
+                ["xpath", "//button[contains(.,'Close')]"],
+                ["xpath", "//button[contains(.,'OK')]"]
+            ]
+        },
+        "personal_form": {
+            "first_name": [[\"css selector\", "#firstname"], [\"css selector\", "input[name='firstName']"]],
+            "last_name": [[\"css selector\", "#lastname"], [\"css selector\", "input[name='lastName']"]],
+            "email": [[\"css selector\", "#email"], [\"css selector\", "input[name='email']"]],
+            "phone": [[\"css selector\", "#phone"], [\"css selector\", "input[name='phone']"]],
+            "address": [[\"css selector\", "#address"], [\"css selector\", "input[name='address']"]],
+            "city": [[\"css selector\", "#city"], [\"css selector\", "input[name='city']"]],
+            "state": [[\"css selector\", "#state"], [\"css selector\", "select[name='state']"]],
+            "zip_code": [[\"css selector\", "#zipcode"], [\"css selector\", "input[name='zipCode']"]]
+        },
+        "education_form": {
+            "school": [[\"css selector\", "#school"], [\"css selector\", "input[name='school']"]],
+            "degree": [[\"css selector\", "#degree"], [\"css selector\", "select[name='degree']"]],
+            "area_of_study": [[\"css selector\", "#major"], [\"css selector\", "input[name='major']"]],
+            "graduation_year": [[\"css selector\", "#gradYear"], [\"css selector\", "input[name='graduationYear']"]]
+        },
+        "work_form": {
+            "company": [[\"css selector\", "input[name*='company']"], [\"css selector\", "input[name*='employer']"]],
+            "title": [[\"css selector\", "input[name*='title']"], [\"css selector\", "input[name*='jobTitle']"]],
+            "start_year": [[\"css selector\", "input[name*='startYear']"], [\"css selector\", "input[name*='fromYear']"]],
+            "end_year": [[\"css selector\", "input[name*='endYear']"], [\"css selector\", "input[name*='toYear']"]],
+            "add_button": [[\"xpath\", "//button[contains(.,'Add')]"], [\"css selector\", ".add-work-button"]]
+        }
     }'
-);
+)
+ON DUPLICATE KEY UPDATE `config_json`=VALUES(`config_json`);
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- (End of schema)

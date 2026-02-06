@@ -14,7 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description="Job Application Engine CLI")
     parser.add_argument("--dry-run", action="store_true", help="Run without submitting applications")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
-    parser.add_argument("--company", type=str, help="Run only for a specific company name (e.g., 'TekSystems')")
+    parser.add_argument("--company", type=str, help="Run only for a specific company name (e.g., 'Infosys')")
+
 
     
     args = parser.parse_args()

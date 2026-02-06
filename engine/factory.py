@@ -5,7 +5,7 @@ class StrategyFactory:
     @staticmethod
     def get_strategy(class_path: str, driver, job_site, selectors):
         """
-        e.g. strategies.custom.TekSystemsStrategy
+        e.g. strategies.custom.infosys.InfosysStrategy
         """
         try:
             module_name, class_name = class_path.rsplit('.', 1)
