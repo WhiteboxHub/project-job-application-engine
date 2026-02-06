@@ -85,6 +85,7 @@ class JobListing(Base):
     external_job_id = Column(String(100), nullable=False)
     job_title = Column(String(255))
     job_url = Column(Text, nullable=False)
+    job_description = Column(Text)
     
     # Pipeline State
     status = Column(String(20), default='discovered')

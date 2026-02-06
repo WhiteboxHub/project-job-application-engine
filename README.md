@@ -1,6 +1,6 @@
-# 🤖 Job Application Engine
+# 🚀 Job Application Engine (Infosys Edition)
 
-Automated job application system that discovers jobs from multiple sources and submits applications with human-like behavior. Features DuckDB database persistence, intelligent form filling, resume upload automation, and reCAPTCHA handling.
+Automated job application system specifically tailored for the **Infosys** recruitment portal. Designed to handle the end-to-end application lifecycle with human-like behavior, safety guards, and persistence.
 
 ## ✨ Features
 
@@ -13,15 +13,12 @@ Automated job application system that discovers jobs from multiple sources and s
 - 🛡️ **Safety Guards** - Application limits, cooldowns, dry-run mode
 - 🎭 **Human Behavior** - Natural mouse movements and typing patterns
 
-## 📊 Current Status
+## 📊 [Current Status](CURRENT_STATUS.md)
 
 **Database:** ✅ Fully Operational
-- 5 jobs discovered
 - 1 application submitted successfully
-- 4 jobs pending application
 
-**Supported Platforms:**
-- ✅ Insight Global (Custom Strategy)
+Click for [Detailed Status Dashboard](CURRENT_STATUS.md)
 
 ---
 
@@ -121,7 +118,7 @@ project-job-application-engine/
 ├── strategies/
 │   ├── base.py                  # Abstract strategy
 │   └── custom/
-│       └── insight_global.py    # Insight Global implementation
+│       └── infosys.py           # Infosys implementation
 ├── scripts/
 │   ├── main.py                  # Entry point
 │   ├── init_db.py               # Database initialization
@@ -146,7 +143,7 @@ project-job-application-engine/
 
 **2. Strategy Pattern**
 - `base.py` - Abstract base class defining interface
-- `insight_global.py` - Site-specific implementation
+- `infosys.py` - Site-specific implementation
 - Easily extensible for new job sites
 
 **3. Database Layer**
@@ -254,7 +251,7 @@ For each discovered job:
 
 ### 3. Tracking
 - **DuckDB** - Primary storage
-- **CSV** - Backup (`data/insight_global_jobs.csv`)
+- **CSV** - Backup (`data/infosys_jobs.csv`)
 
 ---
 

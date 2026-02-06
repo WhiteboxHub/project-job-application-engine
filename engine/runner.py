@@ -45,7 +45,7 @@ class EngineRunner:
                 
                 if not active_sites:
                     logger.warning("⚠️ No active job sites found in database.")
-                    logger.info("Run: python scripts/init_db.py to seed Insight Global")
+                    logger.info("Run: python scripts/init_db.py to seed Infosys")
                     return
                 
                 logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")

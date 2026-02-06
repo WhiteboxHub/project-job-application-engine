@@ -55,7 +55,8 @@ class BrowserService:
         self._acquire_lock()
         
         options = uc.ChromeOptions()
-        options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
+        # Temporarily disabled persistent profile for stability
+        # options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
         
         proxy_arg = proxy_manager.get_proxy_option()
         if proxy_arg:
@@ -64,21 +65,25 @@ class BrowserService:
         if settings.HEADLESS:
             options.add_argument("--headless=new")
             
-        # Defense evasion
+        # Defense evasion & Stability
         options.add_argument("--no-first-run")
         options.add_argument("--no-service-autorun")
         options.add_argument("--password-store=basic")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920,1080")
         
         try:
-            # Force ChromeDriver to match your Chrome version (144)
-            self.driver = uc.Chrome(
-                options=options, 
-                use_subprocess=True,
-                version_main=144  # Match your Chrome version
-            )
-            logger.info("Browser started successfully (undetected-chromedriver).")
+            # Force fallback for stability
+            raise Exception("Forced fallback for stability")
+            # self.driver = uc.Chrome(
+            #     options=options, 
+            #     use_subprocess=True,
+            #     version_main=144  # Match your Chrome version
+            # )
+            # logger.info("Browser started successfully (undetected-chromedriver).")
         except Exception as e:
-            logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
+            logger.warning(f"Bypassing uc.Chrome for stability: {e}. Attempting fallback using webdriver-manager.")
             # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
             try:
                 from selenium import webdriver

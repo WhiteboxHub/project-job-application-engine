@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     HEADLESS: bool = False
 
     # Proxy
-    PROXY_URL: str | None = None
+    PROXY_URL: Optional[str] = None
 
     # Safety
     MAX_APPLICATIONS_PER_RUN: int = 200  # Effectively unlimited

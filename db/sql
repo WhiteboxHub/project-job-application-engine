@@ -98,15 +98,15 @@ CREATE TABLE `job_listings` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
--- SEED DATA: Insight Global Automation Config
+-- SEED DATA: Infosys Automation Config
 -- =====================================================
 
 -- 1. Insert the Strategy (The "Brain")
 INSERT INTO `ats_platforms` 
 (`id`, `name`, `class_handler`, `is_headless_required`) 
 VALUES 
-(1, 'Insight Global Custom', 'strategies.custom.InsightGlobalStrategy', 1)
-ON DUPLICATE KEY UPDATE `name`=`name`; -- Prevents errors if run twice
+(1, 'Infosys Custom', 'strategies.custom.infosys.InfosysStrategy', 0)
+ON DUPLICATE KEY UPDATE `name`=`name`;
 
 -- 2. Insert the Site (The "Target")
 INSERT INTO `job_sites` 
@@ -122,64 +122,65 @@ INSERT INTO `job_sites`
 ) 
 VALUES 
 (
-    'Insight Global', 
-    'insightglobal.com', 
-    1, -- Links to 'Insight Global Custom'
-    'Staffing vendor', 
-    'https://insightglobal.com/jobs/find_a_job/?srch={keyword}&zip={location}', 
-    'https://jobs.insightglobal.com/users/jobapplynoaccount.aspx?jobid={job_id}', 
+    'Infosys', 
+    'digitalcareers.infosys.com', 
+    1, 
+    'System integrator', 
+    'https://digitalcareers.infosys.com/infosys/global-careers?location={location}', 
+    'https://digitalcareers.infosys.com/global-careers/company-job/description/reqid/{job_id}', 
     0, 
     'US'
 );
 
 -- 3. Insert Selectors (The "Map")
 
--- A. LISTING (Get Jobs) - Updated with new HTML analysis
+-- A. LISTING (Get Jobs)
 INSERT INTO `site_selectors` (`job_site_id`, `type`, `config_json`)
 VALUES 
 (
-    (SELECT id FROM job_sites WHERE domain = 'insightglobal.com'),
+    (SELECT id FROM job_sites WHERE domain = 'digitalcareers.infosys.com'),
     'listing', 
     '{
-        "container": "div.result", 
+        "container": "a.job", 
         "pagination_type": "click_next",
-        "pagination_selector": "a[title=\\"Page Forward\\"]",
+        "pagination_selector": "a.next",
         "fields": {
             "job_id": {
-                "selector": "button[id=\\"btnSaveJob\\"]", 
-                "attr": "jobId"
+                "selector": "a.job", 
+                "attr": "href",
+                "regex": "reqid/(.*)"
             },
             "title": {
-                "selector": ".job-title a", 
+                "selector": "a.job", 
                 "type": "text"
             },
             "url": {
-                "selector": ".job-title a", 
+                "selector": "a.job", 
                 "attr": "href"
             }
         }
     }'
 );
 
--- B. APPLICATION (Apply) - Placeholder for standard form inputs
+-- B. APPLICATION (Apply)
 INSERT INTO `site_selectors` (`job_site_id`, `type`, `config_json`)
 VALUES 
 (
-    (SELECT id FROM job_sites WHERE domain = 'insightglobal.com'),
+    (SELECT id FROM job_sites WHERE domain = 'digitalcareers.infosys.com'),
     'application', 
     '{
-        "flow_type": "legacy_form",
+        "flow_type": "dynamic_form",
         "steps": [
             {
                 "order": 1,
-                "wait_for": "#application_form",
+                "wait_for": ".form-submit-button",
                 "inputs": {
-                    "first_name": "input[id*=\\"FirstName\\"]",
-                    "last_name": "input[id*=\\"LastName\\"]",
-                    "email": "input[id*=\\"Email\\"]",
-                    "phone": "input[id*=\\"Phone\\"]",
-                    "resume_upload": "input[type=\\"file\\"]",
-                    "submit_btn": "#btnSubmitApplication"
+                    "first_name": "#first_name",
+                    "last_name": "#last_name",
+                    "email": "#email",
+                    "phone": "#phone",
+                    "resume_upload": "#file_resume",
+                    "submit_btn": ".form-submit-button"
                 }
             }
         ]

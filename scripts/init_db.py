@@ -43,7 +43,7 @@ def init_database():
             logger.info("\nNext steps:")
             logger.info("1. Review database at: {db_path}")
             logger.info("2. Test with: python scripts/main.py --dry-run")
-            logger.info("3. Check seeded data for Insight Global")
+            logger.info("3. Check seeded data for Infosys")
             return True
         else:
             logger.error("Failed to initialize database")

@@ -4,7 +4,7 @@
 
 **Problem**: Missing `random` import causing error: `name 'random' is not defined`
 
-**Solution**: Added `import random` to `strategies/custom/insight_global.py`
+**Solution**: Added `import random` to `strategies/custom/infosys.py`
 
 ---
 
@@ -54,7 +54,7 @@ STOP browser
 # This happens in find_jobs() method
 
 for each search_configuration in search_configurations:
-    1. Navigate to https://insightglobal.com/jobs/
+    1. Navigate to https://digitalcareers.infosys.com/infosys/global-careers/
     2. Fill keyword (e.g., "Data Scientist")
     3. Fill location (e.g., "California, MO")
     4. Set distance (50 miles)
@@ -74,7 +74,7 @@ Found 20 search configurations to process
 Search 1/20
 Keyword: 'Data Engineer Data Scientist', Location: 'California, MO', Distance: 50 miles
 ============================================================
-Opening Insight Global: https://insightglobal.com/jobs/
+Opening Infosys: https://digitalcareers.infosys.com/infosys/global-careers/
 Search page loaded successfully
 Entered keyword: Data Engineer Data Scientist
 Entered location: California, MO
@@ -157,7 +157,7 @@ Found 38 jobs - starting application process
 ============================================================
 
 --- Processing job 1/38 ---
-Applying to job: https://insightglobal.com/jobs/12345/...
+Applying to job: https://digitalcareers.infosys.com/global-careers/company-job/description/reqid/...
 Navigating to guest application form...
 Guest application form loaded
 
@@ -306,7 +306,7 @@ python scripts/main.py
 
 **Error**: `name 'random' is not defined`
 
-**Fix**: Added `import random` to the imports in `strategies/custom/insight_global.py`
+**Fix**: Added `import random` to the imports in `strategies/custom/infosys.py`
 
 **Now the workflow is:**
 1. ✅ Search ALL 20 location/keyword combinations

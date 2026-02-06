@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 
 class CSVTracker:
@@ -90,7 +91,7 @@ class CSVTracker:
                     writer.writerow(r)
         return len(to_append)
 
-    def update_job_status(self, site_name: str, job_url: str, status: str, attempts_inc: int = 0, last_error: str | None = None) -> bool:
+    def update_job_status(self, site_name: str, job_url: str, status: str, attempts_inc: int = 0, last_error: Optional[str] = None) -> bool:
         """Updates the row for job_url. Returns True when an update happened."""
         self.ensure_file(site_name)
         rows = self._read(site_name)
@@ -113,7 +114,14 @@ class CSVTracker:
             self._write(site_name, rows)
         return changed
 
-    def get_jobs(self, site_name: str, status: str | None = None) -> list:
+    def get_job_status(self, site_name: str, job_url: str) -> Optional[dict]:
+        rows = self._read(site_name)
+        for r in rows:
+            if r.get('job_url') == job_url:
+                return r
+        return None
+
+    def get_jobs(self, site_name: str, status: Optional[str] = None) -> list:
         """Returns list of rows; optionally filter by status."""
         rows = self._read(site_name)
         if status:

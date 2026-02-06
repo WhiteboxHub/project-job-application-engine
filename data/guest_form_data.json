@@ -1,15 +1,31 @@
 {
     "search": {
         "keyword": "AI Engineer",
-        "location": "Chicago, IL",
+        "location": "USA",
         "distance": "50"
     },
-    
     "applicant": {
-        "first_name": "first_name",
-        "last_name": "last_name",
-        "email": "candidate_email@gmail.com",
-        "phone": "+1 (669) 213-xxxx"
+        "first_name": "Ghazal",
+        "last_name": "Sultan",
+        "email": "ghazal.sultan1616@gmail.com",
+        "phone": "+16692133034"
     },
-    "resume_path": "resume/candidate_resume.pdf"
+    "resume_path": "/Users/bavishsaireddy/untitled folder/project-job-application-engine/resume/candidate_resume.pdf",
+    "selectors": {
+        "first_time_user": [
+            "a.apply-first-time-button",
+            "//a[contains(@class, 'apply-first-time-button')]",
+            "//label[contains(text(), 'applying for the first time')]/preceding-sibling::input",
+            "//label[contains(text(), 'applying for the first time')]/child::input",
+            "input[value='1'][name='applicantType']",
+            "a.new-user-link",
+            "//a[contains(text(), 'New User')]"
+        ],
+        "consent_button": [
+            "a.consent-button",
+            "button.agree",
+            "button.proceed",
+            "//button[contains(text(), 'Proceed')]"
+        ]
+    }
 }

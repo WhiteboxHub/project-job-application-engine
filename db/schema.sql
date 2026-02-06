@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS job_listings (
     external_job_id VARCHAR(100) NOT NULL,
     job_title VARCHAR(255),
     job_url TEXT NOT NULL,
+    job_description TEXT,
     
     -- Pipeline State
     status VARCHAR(20) DEFAULT 'discovered' CHECK (status IN ('discovered', 'ready_to_apply', 'applied', 'failed', 'blacklisted')),
@@ -122,12 +123,12 @@ CREATE TABLE IF NOT EXISTS metrics (
 );
 
 -- =====================================================
--- SEED DATA: Insight Global Configuration
+-- SEED DATA: Infosys Configuration
 -- =====================================================
 
 -- Insert Strategy
 INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required)
-VALUES (1, 'Insight Global Custom', 'strategies.custom.InsightGlobalStrategy', false);
+VALUES (1, 'Infosys Custom', 'strategies.custom.infosys.InfosysStrategy', false);
 
 -- Insert Site
 INSERT OR IGNORE INTO job_sites (
@@ -143,12 +144,12 @@ INSERT OR IGNORE INTO job_sites (
 )
 VALUES (
     1,
-    'Insight Global',
-    'insightglobal.com',
+    'Infosys',
+    'digitalcareers.infosys.com',
     1,
-    'Staffing vendor',
-    'https://insightglobal.com/jobs/',
-    'https://jobs.insightglobal.com/users/jobapplynoaccount.aspx?jobid={job_id}',
+    'System integrator',
+    'https://digitalcareers.infosys.com/infosys/global-careers?location={location}',
+    'https://digitalcareers.infosys.com/global-careers/company-job/description/reqid/{job_id}',
     false,
     true
 );
@@ -160,20 +161,21 @@ VALUES (
     1,
     'listing',
     '{
-        "container": "div.result",
+        "container": "a.job",
         "pagination_type": "click_next",
-        "pagination_selector": "a[title=\"Page Forward\"]",
+        "pagination_selector": "a.next",
         "fields": {
             "job_id": {
-                "selector": "button[id=\"btnSaveJob\"]",
-                "attr": "jobId"
+                "selector": "a.job",
+                "attr": "href",
+                "regex": "reqid/(.*)"
             },
             "title": {
-                "selector": ".job-title a",
+                "selector": "a.job",
                 "type": "text"
             },
             "url": {
-                "selector": ".job-title a",
+                "selector": "a.job",
                 "attr": "href"
             }
         }
@@ -187,14 +189,14 @@ VALUES (
     1,
     'application',
     '{
-        "flow_type": "legacy_form",
+        "flow_type": "dynamic_form",
         "form_fields": {
-            "first_name": "input[name*=\"FirstName\"]",
-            "last_name": "input[name*=\"LastName\"]",
-            "email": "input[name*=\"Email\"]",
-            "phone": "input[name*=\"Phone\"]",
-            "resume_upload": "input[type=\"file\"]",
-            "submit_btn": "#ContentPlaceHolder1_cmdApply"
+            "first_name": "#first_name",
+            "last_name": "#last_name",
+            "email": "#email",
+            "phone": "#phone",
+            "resume_upload": "#file_resume",
+            "submit_btn": ".form-submit-button"
         }
     }'::JSON
 );
