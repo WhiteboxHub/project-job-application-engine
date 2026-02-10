@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description="Job Application Engine CLI")
     parser.add_argument("--dry-run", action="store_true", help="Run without submitting applications")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
+    parser.add_argument("--site", type=str, help="Run only a specific site (e.g., 'LanceSoft')")
     
     args = parser.parse_args()
     
@@ -33,7 +34,7 @@ def main():
         
         # Run the engine
         runner = EngineRunner()
-        runner.run()
+        runner.run(site_filter=args.site)
         
     except Exception as e:
         logger.critical(f"❌ Fatal error: {e}")

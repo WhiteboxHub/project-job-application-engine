@@ -199,6 +199,94 @@ VALUES (
     }'::JSON
 );
 
+-- =====================================================
+-- SEED DATA: LanceSoft Configuration
+-- =====================================================
+
+-- Insert JobDiva ATS Platform
+INSERT INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
+    2,
+    'JobDiva',
+    'strategies.custom.LanceSoftStrategy',
+    false  -- Keep browser visible for debugging
+);
+
+-- Insert LanceSoft Job Site
+INSERT INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+    2,
+    2,
+    'LanceSoft',
+    'lancesoft.com',
+    'Staffing vendor',
+    'https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=',
+    false  -- Set to false initially for safety, activate when ready to test
+);
+
+-- Insert LanceSoft Listing Selectors (for job discovery)
+INSERT INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+    3,
+    2,
+    'listing',
+    '{
+        "search_input": "#root > div > div > div:nth-child(2) > div:nth-child(1) > div > div.col > form > div > input",
+        "search_button": "button.btn.jd-btn",
+        "container": "div.list-group-item.list-group-item-action",
+        "pagination_type": "click_next",
+        "pagination_selector": "button.jd-btn-outline.jd-btn-small.jd-btn-square[aria-label=\"Next Page\"]",
+        "fields": {
+            "title": {
+                "selector": "span.text-capitalize.jd-nav-label.notranslate",
+                "type": "text"
+            },
+            "details_button": {
+                "selector": "button.btn.jd-btn",
+                "type": "button"
+            },
+            "job_id": {
+                "selector": "div.d-flex.text-muted small:nth-child(3)",
+                "type": "text"
+            },
+            "location": {
+                "selector": "div.d-flex.text-muted small:nth-child(4)",
+                "type": "text"
+            },
+            "salary": {
+                "selector": "div.d-flex.text-muted small:nth-child(1)",
+                "type": "text"
+            }
+        }
+    }'::JSON
+);
+
+-- Insert LanceSoft Application Selectors (for applying to jobs)
+INSERT INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+    4,
+    2,
+    'application',
+    '{
+        "flow_type": "jobdiva_portal",
+        "apply_button": "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
+        "quick_apply_option": "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
+        "form_fields": {
+            "first_name": "input[placeholder*=\"First Name\" i]",
+            "last_name": "input[placeholder*=\"Last Name\" i]",
+            "email": "input[type=\"email\"]",
+            "phone": "input[type=\"tel\"]",
+            "resume_upload": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div > div > div:nth-child(4) > div > div:nth-child(1) > div > div:nth-child(5) > label > svg",
+            "submit_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
+            "next_btn": "button.btn.jd-btn-outline"
+        },
+        "eeo_form": {
+            "gender_no_answer": "input[type=\"radio\"][value*=\"not wish\" i]",
+            "ethnicity_no_answer": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div:nth-child(3) > div:nth-child(4)",
+            "race_asian": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div:nth-child(4) > div:nth-child(5) > span.radio-buttons-label",
+            "veteran_no_answer": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div.radio-buttons-div > div:nth-child(7) > input[type=checkbox]",
+            "save_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button > span > span"
+        }
+    }'::JSON
+);
+
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
 CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);
