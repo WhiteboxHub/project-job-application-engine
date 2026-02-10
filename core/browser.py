@@ -5,13 +5,7 @@ try:
     _HAS_FCNTL = True
 except Exception:
     _HAS_FCNTL = False
-try:
-    import undetected_chromedriver as uc
-except ModuleNotFoundError as e:
-    if 'distutils' in str(e):
-        raise ModuleNotFoundError(
-            "Missing dependency 'distutils'. On newer Python versions install the backport: `python -m pip install --upgrade pip setuptools` and then `python -m pip install distutils` if needed. After installing, re-run your script.") from e
-    raise
+uc = None
 from config.settings import settings
 from core.logger import logger
 from core.proxy_manager import proxy_manager
@@ -53,8 +47,19 @@ class BrowserService:
 
     def start_browser(self):
         self._acquire_lock()
-        
-        options = uc.ChromeOptions()
+        # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
+        try:
+            import undetected_chromedriver as uc_local
+            global uc
+            uc = uc_local
+        except ModuleNotFoundError as e:
+            # If undetected_chromedriver can't be imported (e.g., distutils missing), log and continue to fallback
+            logger.warning(f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver.")
+            uc = None
+
+        options = None
+        if uc:
+            options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
         
         proxy_arg = proxy_manager.get_proxy_option()
@@ -69,17 +74,21 @@ class BrowserService:
         options.add_argument("--no-service-autorun")
         options.add_argument("--password-store=basic")
         
-        try:
-            # Force ChromeDriver to match your Chrome version (144)
-            self.driver = uc.Chrome(
-                options=options, 
-                use_subprocess=True,
-                version_main=144  # Match your Chrome version
-            )
-            logger.info("Browser started successfully (undetected-chromedriver).")
-        except Exception as e:
-            logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
-            # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
+        # If undetected_chromedriver is available, prefer it
+        if uc:
+            try:
+                # Force ChromeDriver to match your Chrome version (144)
+                self.driver = uc.Chrome(
+                    options=options, 
+                    use_subprocess=True,
+                    version_main=144  # Match your Chrome version
+                )
+                logger.info("Browser started successfully (undetected-chromedriver).")
+            except Exception as e:
+                logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
+
+        # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
+        if not self.driver:
             try:
                 from selenium import webdriver
                 from selenium.webdriver.chrome.service import Service as ChromeService

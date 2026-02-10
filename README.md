@@ -4,7 +4,7 @@ Automated job application system that discovers jobs from multiple sources and s
 
 ## ✨ Features
 
-- 🔍 **Automated Job Discovery** - Scrapes job listings with pagination support
+- 🔍 **Automated Job Discovery** - Scrapes job listings with pagination support across all pages
 - 📝 **Smart Form Filling** - Human-like typing with random delays
 - 📄 **Resume Upload** - Automatic resume attachment with multiple fallback methods
 - 🤖 **reCAPTCHA Detection** - 30-second manual solve window
@@ -12,16 +12,18 @@ Automated job application system that discovers jobs from multiple sources and s
 - 📊 **Dual Tracking** - Database + CSV backup
 - 🛡️ **Safety Guards** - Application limits, cooldowns, dry-run mode
 - 🎭 **Human Behavior** - Natural mouse movements and typing patterns
+- 🏗️ **Extensible Architecture** - Strategy pattern for easy addition of new job sites
 
 ## 📊 Current Status
 
 **Database:** ✅ Fully Operational
-- 5 jobs discovered
-- 1 application submitted successfully
-- 4 jobs pending application
+- **102 jobs** discovered (LanceSoft)
+- **5 jobs** discovered (Insight Global)
+- **1 application** submitted successfully
 
 **Supported Platforms:**
-- ✅ Insight Global (Custom Strategy)
+- ✅ **Insight Global** (Custom Strategy) - Fully operational
+- ✅ **LanceSoft** (JobDiva Platform) - Fully operational with pagination
 
 ---
 
@@ -37,22 +39,16 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure Environment
-Create a `.env` file:
+Create a `.env` file (or copy from `.env.example`):
 ```bash
 # Browser Settings
 HEADLESS=false                    # Show browser window
+KEEP_BROWSER_OPEN=true            # Keep browser open after run (for debugging)
 
 # Application Settings
 DRY_RUN=false                     # Set to true for testing without submitting
-MAX_APPLICATIONS_PER_RUN=999999   # Maximum applications per run
-SUBMISSION_COOLDOWN_SECONDS=60    # Wait time between applications
-
-# Optional: Proxy Settings
-PROXY_ENABLED=false
-PROXY_HOST=
-PROXY_PORT=
-PROXY_USERNAME=
-PROXY_PASSWORD=
+MAX_APPLICATIONS_PER_RUN=5        # Maximum applications per run (safety limit)
+SUBMISSION_COOLDOWN_SECONDS=30    # Wait time between applications
 ```
 
 ### 3. Configure Applicant Data
@@ -61,8 +57,8 @@ Edit `data/guest_form_data.json`:
 {
   "search": {
     "keyword": "AI Engineer",
-    "location": "Chicago, IL",
-    "distance": "50"
+    "location": "",
+    "distance": ""
   },
   "applicant": {
     "first_name": "YOUR_FIRST_NAME",
@@ -86,6 +82,19 @@ python scripts/init_db.py
 ```
 
 ### 6. Run the Application
+
+**Dry-run mode (recommended first):**
+```bash
+python scripts/main.py --dry-run
+```
+
+**Run for specific site:**
+```bash
+python scripts/main.py --site "LanceSoft"
+python scripts/main.py --site "Insight Global"
+```
+
+**Live mode:**
 ```bash
 python scripts/main.py
 ```
@@ -96,41 +105,72 @@ python scripts/main.py
 
 ```
 project-job-application-engine/
-├── config/
-│   └── settings.py              # Environment configuration
-├── core/
-│   ├── browser.py               # Chrome driver management
-│   ├── safe_actions.py          # Reliable element interactions
-│   ├── human_behavior.py        # Human-like automation
-│   ├── captcha_handler.py       # reCAPTCHA detection
-│   └── proxy_manager.py         # Proxy support
-├── data/
-│   ├── job_engine.duckdb        # DuckDB database
-│   ├── guest_form_data.json     # Applicant information
-│   ├── db_connection.py         # Database connection
-│   └── csv_tracker.py           # CSV backup tracking
-├── db/
-│   └── schema.sql               # Database schema
-├── engine/
-│   ├── runner.py                # Main orchestrator
-│   ├── factory.py               # Strategy loader
-│   └── guards.py                # Safety limits
-├── models/
-│   ├── config_models.py         # Configuration tables
-│   └── history_models.py        # History tables
-├── strategies/
-│   ├── base.py                  # Abstract strategy
-│   └── custom/
-│       └── insight_global.py    # Insight Global implementation
-├── scripts/
-│   ├── main.py                  # Entry point
-│   ├── init_db.py               # Database initialization
-│   ├── check_db.py              # Database summary
-│   └── query_db.py              # SQL query tool
-├── resume/
-│   └── Your_Resume.pdf          # Your resume
-├── .env                         # Environment variables
-└── requirements.txt             # Python dependencies
+├── 📄 Core Files
+│   ├── .env                      # Environment variables (create from .env.example)
+│   ├── .env.example              # Example environment configuration
+│   ├── .gitignore                # Git ignore rules
+│   ├── LICENSE                   # Apache 2.0 License
+│   ├── README.md                 # This file
+│   └── requirements.txt          # Python dependencies
+│
+├── ⚙️ config/                    # Configuration Management
+│   ├── settings.py               # Pydantic settings (loads from .env)
+│   └── secrets_validator.py      # Configuration validation
+│
+├── 🤖 core/                      # Core Automation Modules
+│   ├── browser.py                # Undetected Chrome driver management
+│   ├── captcha_handler.py        # reCAPTCHA detection & handling
+│   ├── human_behavior.py         # Human-like typing & mouse movements
+│   ├── logger.py                 # Centralized logging
+│   ├── proxy_manager.py          # Proxy configuration (optional)
+│   └── safe_actions.py           # Reliable element interactions with retry logic
+│
+├── 💾 data/                      # Data & Database
+│   ├── job_engine.duckdb         # DuckDB database (auto-created)
+│   ├── guest_form_data.json      # Applicant information & search config
+│   ├── db_connection.py          # Database connection management
+│   └── csv_tracker.py            # CSV backup tracking
+│
+├── 🗄️ db/                        # Database Schema
+│   ├── schema.sql                # Complete database schema with seed data
+│   └── init_db.py                # Database initialization script
+│
+├── 📚 docs/                      # Documentation
+│   ├── HUMAN_BEHAVIOR_GUIDE.md   # Guide to human-like automation
+│   ├── IMPLEMENTATION_SUMMARY.md # Implementation overview
+│   ├── MULTI_SEARCH_CONFIG.md    # Multi-location search configuration
+│   ├── QUICK_REFERENCE.md        # Quick reference guide
+│   ├── WORKFLOW_EXPLAINED.md     # Detailed workflow explanation
+│   └── archive/                  # Archived implementation notes
+│       ├── EEO_FORM_COMPLETE.md
+│       ├── EEO_FORM_IMPLEMENTATION.md
+│       └── IMPLEMENTATION_NEXT_BUTTON_COUNTRY.md
+│
+├── 🎯 engine/                    # Main Engine
+│   ├── runner.py                 # Main orchestrator (coordinates workflow)
+│   ├── factory.py                # Strategy factory (loads site-specific strategies)
+│   └── guards.py                 # Safety guards (limits, cooldowns, dry-run)
+│
+├── 🗃️ models/                    # Database Models (SQLAlchemy ORM)
+│   ├── __init__.py               # Model exports
+│   ├── config_models.py          # Configuration tables (job_sites, selectors)
+│   ├── history_models.py         # History tables (applications, metrics)
+│   └── persistence_models.py     # Job listings table
+│
+├── 📄 resume/                    # Resume Storage
+│   └── Your_Resume.pdf           # Your resume file
+│
+├── 🛠️ scripts/                   # Utility Scripts
+│   ├── main.py                   # Main entry point (CLI)
+│   ├── init_db.py                # Initialize database
+│   ├── check_db.py               # Database status summary
+│   └── query_db.py               # Execute SQL queries
+│
+└── 🎭 strategies/                # Job Site Strategies (Strategy Pattern)
+    ├── base.py                   # Abstract base strategy class
+    └── custom/
+        ├── insight_global.py     # Insight Global implementation (1,525 lines)
+        └── lancesoft.py          # LanceSoft/JobDiva implementation (1,104 lines)
 ```
 
 ---

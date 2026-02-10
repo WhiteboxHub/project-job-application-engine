@@ -17,7 +17,7 @@ class EngineRunner:
     def __init__(self):
         self.browser = None
         
-    def run(self):
+    def run(self, site_filter=None):
         """
         Main execution workflow:
         1. Initialize Browser
@@ -27,6 +27,9 @@ class EngineRunner:
            b. Run find_jobs()
            c. Apply to jobs (respecting guards)
         4. Cleanup and report
+        
+        Args:
+            site_filter (str, optional): Name of company to filter by (case-insensitive)
         """
         logger.info("=" * 60)
         logger.info("🚀 Starting Job Application Engine...")
@@ -41,10 +44,21 @@ class EngineRunner:
             # 2. Get Active Sites from Database
             session = db.get_session()
             try:
-                active_sites = session.query(JobSite).filter(JobSite.is_active == True).all()
+                # Base query
+                query = session.query(JobSite).filter(JobSite.is_active == True)
+                
+                # Apply filter if provided
+                if site_filter:
+                    logger.info(f"🔎 Filtering for site: {site_filter}")
+                    query = query.filter(JobSite.company_name.ilike(f"%{site_filter}%"))
+                
+                active_sites = query.all()
                 
                 if not active_sites:
-                    logger.warning("⚠️ No active job sites found in database.")
+                    if site_filter:
+                        logger.warning(f"⚠️ No active job sites found matching '{site_filter}'")
+                    else:
+                        logger.warning("⚠️ No active job sites found in database.")
                     logger.info("Run: python scripts/init_db.py to seed Insight Global")
                     return
                 
@@ -79,9 +93,19 @@ class EngineRunner:
             
         finally:
             if self.browser:
-                logger.info("\nStopping browser...")
-                browser_service.stop_browser()
-                logger.info("✅ Browser closed")
+                # Respect KEEP_BROWSER_OPEN setting for debugging
+                try:
+                    from config.settings import settings
+                    if getattr(settings, 'KEEP_BROWSER_OPEN', False):
+                        logger.info("\nKEEP_BROWSER_OPEN is True - leaving browser open for inspection")
+                    else:
+                        logger.info("\nStopping browser...")
+                        browser_service.stop_browser()
+                        logger.info("✅ Browser closed")
+                except Exception:
+                    logger.info("\nStopping browser (settings check failed)...")
+                    browser_service.stop_browser()
+                    logger.info("✅ Browser closed")
     
     def _process_site(self, session, site: JobSite):
         """
@@ -127,8 +151,17 @@ class EngineRunner:
                 return
             logger.info("✅ Login successful (or not required)")
             
-            # Find jobs
+            # Find jobs (or find and apply for LanceSoft)
             logger.info("🔍 Discovering jobs...")
+            
+            if site.company_name == "LanceSoft":
+                # LanceSoft uses apply-immediately strategy
+                logger.info(f"\n📤 Finding and applying to jobs...")
+                applied_count = strategy.find_and_apply_jobs()
+                logger.info(f"✅ Completed {site.company_name}: {applied_count} applications submitted")
+                return  # Early return for LanceSoft
+            
+            # Traditional approach for other sites
             jobs = strategy.find_jobs()
             logger.info(f"✅ Found {len(jobs)} job(s)")
             
