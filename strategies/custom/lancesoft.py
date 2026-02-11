@@ -137,6 +137,57 @@ class LanceSoftStrategy(BaseStrategy):
             logger.error(f"Error accessing JobDiva portal: {e}")
             return False
     
+    def find_and_apply_jobs(self):
+        """
+        Combined workflow: Find and apply to jobs immediately.
+        This is the main entry point for LanceSoft strategy.
+        
+        Uses a single-phase approach: apply to each job as soon as it's found.
+        This prevents issues with jobs not being found when navigating back to search results.
+        
+        Returns:
+            int: Number of successful applications
+        """
+        logger.info("🔍 Starting find_and_apply_jobs workflow...")
+        
+        if not self.config_data:
+            logger.error("No configuration data available")
+            return 0
+        
+        # Support multiple search configurations
+        search_configurations = self.config_data.get('search_configurations', [])
+        if not search_configurations:
+            # Fallback to single search config
+            search_config = self.config_data.get('search', {})
+            search_configurations = [{
+                'keyword': search_config.get('keyword', 'AI Engineer'),
+                'location': search_config.get('location', 'Chicago, IL'),
+                'distance': search_config.get('distance', '50')
+            }]
+        
+        total_applied = 0
+        
+        # Perform each search and apply immediately
+        for config in search_configurations:
+            logger.info(f"\n{'='*60}")
+            logger.info(f"🔍 Search: {config['keyword']} in {config['location']}")
+            logger.info(f"{'='*60}")
+            
+            # Search and apply immediately (single-phase)
+            applied_count = self._search_and_apply_immediately(
+                config['keyword'],
+                config['location'],
+                config.get('distance', '50')
+            )
+            total_applied += applied_count
+            
+            # Small delay between searches
+            if len(search_configurations) > 1:
+                time.sleep(random.uniform(2, 4))
+        
+        logger.info(f"\n✅ Workflow complete: {total_applied} applications submitted")
+        return total_applied
+    
     def find_jobs(self):
         """
         PHASE 1: Search for jobs on JobDiva portal
@@ -238,19 +289,23 @@ class LanceSoftStrategy(BaseStrategy):
                     logger.info("  ✓ Country 'United States' already selected")
                     country_selected = True
                 except Exception:
-                    logger.info("    Country selection needed")
+                    logger.info("    Country selection needed - attempting to select...")
                 
                 if not country_selected:
                     # Strategy 1: Find Country button and click dropdown
                     try:
                         country_btn_xpath = "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]"
                         
-                        dropdown_btn = WebDriverWait(self.driver, 5).until(
+                        logger.info("    Waiting for country dropdown button...")
+                        dropdown_btn = WebDriverWait(self.driver, 10).until(  # Increased from 5 to 10 seconds
                             EC.element_to_be_clickable((By.XPATH, country_btn_xpath))
                         )
+                        logger.info("    ✓ Found country dropdown button")
+                        
                         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_btn)
                         time.sleep(0.5)
                         self.human.human_click(dropdown_btn)
+                        logger.info("    ✓ Clicked country dropdown")
                         time.sleep(1.5)
                         
                         # Strategy 2: Select 'United States' from dropdown using multiple selectors
@@ -258,6 +313,7 @@ class LanceSoftStrategy(BaseStrategy):
                         
                         # Attempt 1: User-provided selector pattern - find anchor tags with dropdown-item class
                         try:
+                            logger.info("    Attempting to find USA option (method 1: dropdown-item)...")
                             usa_option_xpath = "//a[@class='dropdown-item'][contains(., 'United States')]"
                             usa_options = self.driver.find_elements(By.XPATH, usa_option_xpath)
                             if usa_options:
@@ -266,12 +322,14 @@ class LanceSoftStrategy(BaseStrategy):
                                 time.sleep(0.3)
                                 self.human.human_click(usa_option)
                                 usa_found = True
+                                logger.info("    ✓ Selected USA (method 1)")
                                 time.sleep(1)
                         except Exception as e:
-                            logger.debug(f"    Dropdown-item anchor approach failed: {e}")
+                            logger.debug(f"    Method 1 failed: {e}")
                         
                         # Attempt 2: General dropdown menu buttons or divs
                         if not usa_found:
+                            logger.info("    Attempting to find USA option (method 2: alternative selectors)...")
                             try:
                                 usa_option_xpaths = [
                                     "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
@@ -280,7 +338,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     "//button[contains(., 'United States')]"
                                 ]
                                 
-                                for xpath in usa_option_xpaths:
+                                for idx, xpath in enumerate(usa_option_xpaths, 1):
                                     try:
                                         usa_options = self.driver.find_elements(By.XPATH, xpath)
                                         if usa_options:
@@ -289,23 +347,25 @@ class LanceSoftStrategy(BaseStrategy):
                                             time.sleep(0.3)
                                             self.human.human_click(usa_option)
                                             usa_found = True
+                                            logger.info(f"    ✓ Selected USA (method 2, variant {idx})")
                                             time.sleep(1)
                                             break
                                     except Exception:
                                         continue
                             except Exception as e:
-                                logger.debug(f"    Alternative dropdown approach failed: {e}")
+                                logger.debug(f"    Method 2 failed: {e}")
                         
                         if usa_found:
                             country_selected = True
                         else:
-                            logger.warning("    Could not find USA option in dropdown")
+                            logger.warning("    ⚠️ Could not find USA option in dropdown")
                             
                     except Exception as e:
-                        logger.warning(f"    Could not open Country dropdown: {e}")
+                        logger.warning(f"    ⚠️ Could not open Country dropdown: {e}")
                     
                     # Fallback: Try CSS selector approach
                     if not country_selected:
+                        logger.info("    Attempting fallback country selection method...")
                         try:
                             fallback_dropdown = self.driver.find_element(By.CSS_SELECTOR, "div.hideshow-country button")
                             if "United States" not in fallback_dropdown.text:
@@ -314,16 +374,17 @@ class LanceSoftStrategy(BaseStrategy):
                                 usa_option = self.driver.find_element(By.XPATH, "//div[contains(@class, 'dropdown-menu')]//a[contains(., 'United States')]")
                                 self.human.human_click(usa_option)
                                 country_selected = True
+                                logger.info("    ✓ Selected USA (fallback method)")
                         except Exception as fb_err:
                             logger.debug(f"    Fallback country selection failed: {fb_err}")
                 
                 if country_selected:
-                    logger.info("  ✓ Country filter set to 'United States'")
+                    logger.info("  ✅ Country filter set to 'United States'")
                 else:
-                    logger.warning("  ⚠️ Country selection may have failed (continuing anyway)")
+                    logger.warning("  ⚠️ Country selection failed - continuing anyway (may affect results)")
 
             except Exception as e:
-                logger.warning(f"  Could not set country filter: {e}")
+                logger.warning(f"  ⚠️ Country filter error (non-critical, continuing): {e}")
 
             # --- Enter Search Keyword ---
             logger.info(f"  Entering search keyword: '{keyword}'")
@@ -400,6 +461,304 @@ class LanceSoftStrategy(BaseStrategy):
         
         logger.info(f"  ✅ Collection complete: {len(all_jobs)} total jobs")
         return all_jobs
+    
+    def _search_and_apply_immediately(self, keyword, location, distance):
+        """
+        SINGLE-PHASE APPROACH: Search for jobs and apply to them immediately.
+        This method finds jobs on each page and applies to them before moving to the next page.
+        
+        This is more reliable than the two-phase approach because:
+        - Jobs are applied to while they're visible on screen
+        - No need to navigate back to find specific jobs
+        - Avoids stale element issues
+        
+        Args:
+            keyword: Job title/keyword to search
+            location: Location to search in
+            distance: Distance radius
+        
+        Returns:
+            int: Number of successful applications
+        """
+        from engine.guards import guards
+        
+        total_applied = 0
+        selectors = self.selectors_config
+        
+        try:
+            # Navigate to the base portal URL
+            logger.info(f"  Navigating to JobDiva portal...")
+            self.driver.get(self.portal_url)
+            WebDriverWait(self.driver, 15).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            logger.info("  ✓ Portal loaded")
+            time.sleep(2)
+            
+            # Country Filter Selection - IMPROVED WITH MULTIPLE STRATEGIES
+            try:
+                logger.info("  Setting Country filter...")
+                time.sleep(2)
+                
+                country_selected = False
+                
+                # STRATEGY 1: Check if United States is already selected
+                try:
+                    current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
+                    logger.info("  ✓ Country 'United States' already selected")
+                    country_selected = True
+                except Exception:
+                    logger.info("    Country not pre-selected - will attempt to select...")
+                
+                # STRATEGY 2: Try to select country if not already selected
+                if not country_selected:
+                    # Try multiple approaches to find and click the country dropdown
+                    dropdown_selectors = [
+                        "//button[contains(., 'Country')]",
+                        "//button[contains(., 'Select Country')]",
+                        "//button[contains(@class, 'country')]",
+                        "div.hideshow-country button",
+                        "button[data-toggle='dropdown'][aria-label*='Country']"
+                    ]
+                    
+                    dropdown_clicked = False
+                    for selector in dropdown_selectors:
+                        if dropdown_clicked:
+                            break
+                        try:
+                            logger.info(f"    Trying dropdown selector: {selector[:50]}...")
+                            
+                            # Determine if XPath or CSS
+                            if selector.startswith("//") or selector.startswith("("):
+                                dropdown_btn = WebDriverWait(self.driver, 5).until(
+                                    EC.presence_of_element_located((By.XPATH, selector))
+                                )
+                            else:
+                                dropdown_btn = WebDriverWait(self.driver, 5).until(
+                                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                                )
+                            
+                            # Scroll into view
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_btn)
+                            time.sleep(0.5)
+                            
+                            # Try clicking
+                            try:
+                                dropdown_btn.click()
+                            except Exception:
+                                # Fallback to JavaScript click
+                                self.driver.execute_script("arguments[0].click();", dropdown_btn)
+                            
+                            logger.info("    ✓ Clicked country dropdown")
+                            dropdown_clicked = True
+                            time.sleep(1.5)
+                            
+                        except Exception as e:
+                            logger.debug(f"    Selector failed: {str(e)[:50]}")
+                            continue
+                    
+                    if not dropdown_clicked:
+                        logger.warning("    ⚠️ Could not find/click country dropdown")
+                    else:
+                        # Try to select USA from dropdown
+                        usa_selectors = [
+                            "//a[@class='dropdown-item'][contains(., 'United States')]",
+                            "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
+                            "//li[contains(., 'United States')]//a",
+                            "//button[contains(., 'United States')]",
+                            "a.dropdown-item:contains('United States')"
+                        ]
+                        
+                        usa_found = False
+                        for selector in usa_selectors:
+                            if usa_found:
+                                break
+                            try:
+                                logger.info(f"    Trying USA selector: {selector[:50]}...")
+                                
+                                # Determine if XPath or CSS
+                                if selector.startswith("//") or selector.startswith("("):
+                                    usa_options = self.driver.find_elements(By.XPATH, selector)
+                                else:
+                                    usa_options = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                                
+                                if usa_options:
+                                    usa_option = usa_options[0]
+                                    
+                                    # Scroll into view
+                                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", usa_option)
+                                    time.sleep(0.3)
+                                    
+                                    # Try clicking
+                                    try:
+                                        usa_option.click()
+                                    except Exception:
+                                        # Fallback to JavaScript click
+                                        self.driver.execute_script("arguments[0].click();", usa_option)
+                                    
+                                    usa_found = True
+                                    country_selected = True
+                                    logger.info("    ✓ Selected USA")
+                                    time.sleep(1)
+                                    
+                            except Exception as e:
+                                logger.debug(f"    USA selector failed: {str(e)[:50]}")
+                                continue
+                        
+                        if not usa_found:
+                            logger.warning("    ⚠️ Could not find USA option in dropdown")
+                
+                # Final status
+                if country_selected:
+                    logger.info("  ✅ Country filter set to 'United States'")
+                else:
+                    logger.warning("  ⚠️ Country selection failed - continuing anyway (search may show all countries)")
+
+            except Exception as e:
+                logger.warning(f"  ⚠️ Country filter error (non-critical, continuing): {e}")
+
+
+            # Enter Search Keyword
+            logger.info(f"  Entering search keyword: '{keyword}'")
+            search_input_selector = "input.inputbox_search, input[placeholder*='Search job title' i]"
+            
+            search_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, search_input_selector))
+            )
+            
+            search_input.clear()
+            self.human.fill_text_field(search_input, keyword)
+            logger.info(f"  ✓ Entered keyword: '{keyword}'")
+            
+            search_input.send_keys("\n")
+            time.sleep(3)
+            logger.info("  ✓ Search results loaded")
+            
+        except Exception as e:
+            logger.error(f"  ❌ Failed to perform search: {e}")
+            import traceback
+            traceback.print_exc()
+            return 0
+        
+        # Pagination loop: Apply to jobs on each page
+        page_num = 1
+        MAX_PAGES = 20
+        
+        while page_num <= MAX_PAGES:
+            logger.info(f"\n  📄 Processing page {page_num}...")
+            
+            # Get all job elements on current page
+            try:
+                container_selector = selectors['job_container']
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, container_selector))
+                )
+                time.sleep(1)
+                
+                job_elements = self.driver.find_elements(By.CSS_SELECTOR, container_selector)
+                logger.info(f"    Found {len(job_elements)} jobs on this page")
+                
+                # Apply to each job on this page
+                for idx, job_elem in enumerate(job_elements, 1):
+                    try:
+                        # Check if we can still apply
+                        if not guards.can_apply():
+                            logger.warning(f"\n  ⛔ Application limit reached after {total_applied} applications")
+                            return total_applied
+                        
+                        # Extract job info
+                        try:
+                            title_elem = job_elem.find_element(By.CSS_SELECTOR, selectors['job_title'])
+                            title = title_elem.text.strip()
+                            
+                            job_text = job_elem.text
+                            import re
+                            id_match = re.search(r'(\d{2}-\d{4,10})', job_text)
+                            if id_match:
+                                job_id = id_match.group(1)
+                            else:
+                                job_id = job_elem.find_element(By.CSS_SELECTOR, selectors['job_id']).text.strip()
+                            
+                            job_url = self.driver.current_url
+                            
+                            job_data = {
+                                'job_title': title,
+                                'external_id': job_id,
+                                'job_url': job_url
+                            }
+                            
+                            logger.info(f"\n    📌 Job {idx}/{len(job_elements)}: {title} ({job_id})")
+                            
+                            # Save to DB
+                            if self.db_session and self.job_site:
+                                self._save_job_to_db(job_data)
+                            
+                            # Apply to this job immediately
+                            success = self._apply_to_visible_job_immediate(job_elem, job_data)
+                            
+                            if success:
+                                guards.increment_counter()
+                                total_applied += 1
+                                logger.info(f"      ✅ Application #{total_applied} successful")
+                                
+                                # Update job status in DB
+                                if self.db_session:
+                                    self._update_job_status(job_id, 'applied')
+                            else:
+                                logger.warning(f"      ⚠️ Application failed")
+                            
+                            # Small delay between applications
+                            time.sleep(random.uniform(1, 2))
+                            
+                            # Reload the page to get fresh job list (prevents stale elements)
+                            logger.info(f"      Reloading page to continue...")
+                            self.driver.get(job_url)
+                            time.sleep(2)
+                            
+                            # Re-fetch job elements after reload
+                            job_elements = self.driver.find_elements(By.CSS_SELECTOR, container_selector)
+                            
+                        except Exception as e:
+                            logger.debug(f"      Error extracting job info: {e}")
+                            continue
+                            
+                    except Exception as e:
+                        logger.error(f"      ❌ Error processing job: {e}")
+                        continue
+                
+            except Exception as e:
+                logger.error(f"    ❌ Error processing page {page_num}: {e}")
+            
+            # Try to navigate to next page
+            try:
+                next_btn_selector = selectors['next_page_btn']
+                next_btn = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, next_btn_selector))
+                )
+                
+                is_disabled = next_btn.get_attribute('disabled')
+                has_disabled_class = 'disabled' in (next_btn.get_attribute('class') or '')
+                
+                if is_disabled or has_disabled_class:
+                    logger.info(f"    ✓ Reached last page")
+                    break
+                
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
+                time.sleep(0.5)
+                self.human.human_click(next_btn)
+                logger.info(f"    ✓ Navigating to page {page_num + 1}...")
+                time.sleep(2)
+                page_num += 1
+                
+            except Exception as e:
+                logger.info(f"    ✓ No more pages")
+                break
+        
+        if page_num > MAX_PAGES:
+            logger.warning(f"  ⚠️ Reached maximum page limit ({MAX_PAGES})")
+        
+        logger.info(f"\n  📊 Search complete: Applied to {total_applied} jobs")
+        return total_applied
     
     def _apply_to_all_jobs(self, all_jobs):
         """
@@ -1067,6 +1426,113 @@ class LanceSoftStrategy(BaseStrategy):
         Kept for reference only.
         """
         raise NotImplementedError("_apply_to_visible_job is deprecated. Use _apply_to_job_by_id instead.")
+    
+    def _apply_to_visible_job_immediate(self, job_elem, job_data):
+        """
+        Apply to a job that's currently visible on the page.
+        This is used in the single-phase approach where we apply immediately.
+        
+        Args:
+            job_elem: The WebElement representing the job listing
+            job_data: Dict with job_title, external_id, job_url
+        
+        Returns:
+            bool: True if application successful
+        """
+        try:
+            job_title = job_data['job_title']
+            job_id = job_data['external_id']
+            
+            logger.info(f"      Step 1: Clicking Details button...")
+            
+            # Click Details button
+            details_btn = job_elem.find_element(By.CSS_SELECTOR, self.selectors_config['details_button'])
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", details_btn)
+            time.sleep(1)
+            self.human.human_click(details_btn)
+            time.sleep(3)
+            
+            logger.info(f"      Step 2: Clicking Apply Now button...")
+            
+            # Click "Apply Now" button
+            apply_btn = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, self.selectors_config['apply_button']))
+            )
+            self.human.human_click(apply_btn)
+            time.sleep(5)
+            
+            # Select "Quick Apply (No Account)" option
+            logger.info(f"      Step 3: Selecting Quick Apply option...")
+            quick_apply_selector = self.selectors_config['quick_apply_option']
+            
+            quick_apply_btn = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, quick_apply_selector))
+            )
+            self.human.human_click(quick_apply_btn)
+            time.sleep(2)
+            
+            # Fill application form
+            logger.info(f"      Step 4: Filling application form...")
+            self._fill_application_form()
+            
+            # Submit initial form
+            logger.info(f"      Step 5: Submitting initial form...")
+            self._submit_initial_form()
+            
+            # Fill EEO form (if it exists - it's optional on some portals)
+            logger.info(f"      Step 6: Filling EEO form (if available)...")
+            try:
+                self._fill_eeo_form()
+                
+                # Complete application
+                logger.info(f"      Step 7: Completing application...")
+                self._complete_application()
+            except Exception as eeo_error:
+                logger.info(f"      ℹ️ EEO form not available or optional: {eeo_error}")
+                logger.info(f"      Step 7: Application may be complete (EEO form not required)")
+            
+            # Success!
+            logger.info(f"      ✅ Successfully applied")
+            
+            # Update tracking
+            csv_tracker.update_job_status(
+                'lancesoft',
+                job_data['job_url'],
+                'applied',
+                attempts_inc=1
+            )
+            
+            # Update database
+            if self.db_session and self.job_site:
+                try:
+                    application = Application(
+                        job_site_id=self.job_site.id,
+                        job_title=job_title,
+                        job_url=job_data['job_url'],
+                        status='success'
+                    )
+                    self.db_session.add(application)
+                    self.db_session.commit()
+                except Exception as e:
+                    logger.warning(f"      ⚠️ Database save failed: {e}")
+                    self.db_session.rollback()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"      ❌ Application error: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
+            
+            # Update tracking
+            csv_tracker.update_job_status(
+                'lancesoft',
+                job_data['job_url'],
+                'failed',
+                attempts_inc=1,
+                last_error=str(e)
+            )
+            return False
     
     def _update_job_status(self, job_id, status):
         """Update job status in database"""

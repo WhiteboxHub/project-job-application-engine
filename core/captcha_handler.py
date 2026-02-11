@@ -14,7 +14,7 @@ from core.logger import logger
 class CaptchaHandler:
     """Handles CAPTCHA challenges with user interaction"""
     
-    def __init__(self, driver, timeout=30):
+    def __init__(self, driver, timeout=120):
         """
         Initialize CAPTCHA handler
         
@@ -35,11 +35,11 @@ class CaptchaHandler:
         """
         timeout = custom_timeout if custom_timeout is not None else self.timeout
         
-        print(f"\n{'='*60}")
+        print(f"\n{'='*120}")
         print("🔒 CAPTCHA DETECTED!")
         print(f"Please solve the CAPTCHA within {timeout} seconds...")
         print(f"The automation will continue automatically after {timeout} seconds.")
-        print(f"{'='*60}\n")
+        print(f"{'='*120}\n")
         
         logger.info(f"CAPTCHA detected - waiting {timeout} seconds for manual solution")
         

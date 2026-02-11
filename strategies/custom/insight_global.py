@@ -30,7 +30,7 @@ class InsightGlobalStrategy(BaseStrategy):
         self.config_data = self._load_config()
         # Initialize human behavior and CAPTCHA handler
         self.human = HumanBehavior(driver)
-        self.captcha_handler = CaptchaHandler(driver, timeout=30)  # 30-second wait for CAPTCHA
+        self.captcha_handler = CaptchaHandler(driver, timeout=120)  # 120-second wait for CAPTCHA
         
         # Debug logging
         if self.db_session:
@@ -1129,9 +1129,9 @@ class InsightGlobalStrategy(BaseStrategy):
                         logger.warning("❌ AUTOMATIC reCAPTCHA SOLVING FAILED")
                         logger.warning("=" * 60 + "\n")
                         
-                        # ATTEMPT 2: Wait for user to solve manually (30 seconds)
+                        # ATTEMPT 2: Wait for user to solve manually (uses 120s timeout from constructor)
                         logger.info("Switching to manual CAPTCHA solving...")
-                        self.captcha_handler.wait_for_captcha_solution(custom_timeout=30)
+                        self.captcha_handler.wait_for_captcha_solution()
                         
                         # ATTEMPT 3: Fall back to 2Captcha API if configured (optional)
                         if not _settings.DRY_RUN:
