@@ -204,7 +204,7 @@ VALUES (
 -- =====================================================
 
 -- Insert JobDiva ATS Platform
-INSERT INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
     2,
     'JobDiva',
     'strategies.custom.LanceSoftStrategy',
@@ -212,18 +212,18 @@ INSERT INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES
 );
 
 -- Insert LanceSoft Job Site
-INSERT INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
     2,
     2,
     'LanceSoft',
     'lancesoft.com',
     'Staffing vendor',
     'https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=',
-    false  -- Set to false initially for safety, activate when ready to test
+    true  -- Enabled for active job searching
 );
 
 -- Insert LanceSoft Listing Selectors (for job discovery)
-INSERT INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (
     3,
     2,
     'listing',
@@ -259,7 +259,7 @@ INSERT INTO site_selectors (id, job_site_id, type, config_json) VALUES (
 );
 
 -- Insert LanceSoft Application Selectors (for applying to jobs)
-INSERT INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (
     4,
     2,
     'application',
