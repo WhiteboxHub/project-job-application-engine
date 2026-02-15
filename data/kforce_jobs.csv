@@ -50,8 +50,7 @@ Stacktrace:
 16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
 17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
 ",2026-02-12T18:07:39.022676,2026-02-12T18:15:12.265876
-MTY5Nn5XUUd-MjE2NzcyMlAxfjk5,Manager Data Science & AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NzcyMlAxfjk5/,,,,,,,,,failed,19,"Message: 
-",2026-02-12T18:07:39.031802,2026-02-14T23:32:16.841401
+MTY5Nn5XUUd-MjE2NzcyMlAxfjk5,Manager Data Science & AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NzcyMlAxfjk5/,,,,,,,,,applied,20,Dry run simulation,2026-02-12T18:07:39.031802,2026-02-15T01:24:14.889130
 MTY5Nn5UVlR-MjE2NDcwOVQxfjk5,Python AI/ML Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NDcwOVQxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-12T18:07:39.041035,2026-02-14T23:30:48.220390
 MTY5Nn5UVlR-MjE2NzQ5MFQxfjk5,Product Manager - Developer AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NzQ5MFQxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-12T18:07:39.050404,2026-02-14T23:34:13.059265
 MTY5Nn5UVlR-MjE2NzcwM1Qxfjk5,Program Manager - AI Applications,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NzcwM1Qxfjk5/,,,,,,,,,failed,17,"Message: 
@@ -499,8 +498,8 @@ Stacktrace:
 14  dyld                                0x000000020425b2cd start + 1805
 ",2026-02-12T20:10:39.329242,2026-02-12T21:29:46.496876
 MTY5Nn5KQVh-MjE2ODE4NFAxfjk5,AI Lead,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5KQVh-MjE2ODE4NFAxfjk5/,,,,,,,,,applied,11,Dry run simulation,2026-02-14T19:45:30.081509,2026-02-14T20:41:01.414443
-MTY5Nn5FUUd-MjE2ODIyMlAxfjk5,AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODIyMlAxfjk5/,,,,,,,,,applied,16,Dry run simulation,2026-02-14T19:45:30.093035,2026-02-14T23:27:16.526461
-MTY5Nn5FUUd-MjE2ODExM1Qxfjk5,AI Architect,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODExM1Qxfjk5/,,,,,,,,,applied,16,Dry run simulation,2026-02-14T19:45:30.103327,2026-02-14T23:28:12.858488
+MTY5Nn5FUUd-MjE2ODIyMlAxfjk5,AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODIyMlAxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-14T19:45:30.093035,2026-02-15T01:22:23.688970
+MTY5Nn5FUUd-MjE2ODExM1Qxfjk5,AI Architect,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODExM1Qxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-14T19:45:30.103327,2026-02-15T01:23:18.530997
 MTY5Nn5XUUd-MjE2ODIzN1Axfjk5,Remote RAG AI Engineer - Remote,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2ODIzN1Axfjk5/,,,,,,,,,failed,8,"Message: 
 ",2026-02-14T19:45:30.181115,2026-02-14T23:35:14.118714
 MTY5Nn5BUUd-MjE2NzkxNFQxfjk5,Junior Machine Learning Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzkxNFQxfjk5/,,,,,,,,,failed,8,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
