@@ -209,3 +209,7 @@ __marimo__/
 # Job Application Engine
 chrome_profile/
 *.duckdb
+
+# Resume files (sensitive personal data)
+resume/
+resume_json/

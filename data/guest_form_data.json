@@ -1,26 +1,27 @@
 {
     "search": {
-        "keyword": "AI Engineer",
-        "location": "",
-        "distance": ""
+        "keyword": "Software Engineer",
+        "location": "San Francisco, CA",
+        "distance": "50"
     },
     "keywords": [
-        "AI",
-        "ML",
-        "MLOPS",
-        "Machine Learning",
-        "Artificial Intelligence",
-        "Data Scientist",
-        "Python Developer",
-        "LLM",
-        "NLP"
+        "Python",
+        "JavaScript",
+        "React",
+        "Node.js",
+        "AWS",
+        "Docker",
+        "Kubernetes",
+        "CI/CD",
+        "REST API",
+        "PostgreSQL"
     ],
     "applicant": {
-        "first_name": "Ramana",
-        "last_name": "Gangarao",
-        "email": "ramanagangarao04@gmail.com",
-        "phone": "4752531393",
-        "zip_code": "06902"
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "testuser@example.com",
+        "phone": "5551234567",
+        "zip_code": "94102"
     },
-    "resume_path": "resume/resume_ramana_official.pdf"
+    "resume_path": "resume/test_resume.pdf"
 }
