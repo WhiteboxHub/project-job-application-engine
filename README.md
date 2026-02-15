@@ -263,7 +263,7 @@ The KForce Job Application Engine is a specialized tool. It does not attempt to 
 2.  **Resumes are always attached**.
 3.  **Bot detection is consistently bypassed**.
 
-The codebase is clean of all legacy references to platform names like "LanceSoft", "Infosys", "NTT", or "Capgemini." It is a dedicated, KForce-only environment.
+The codebase is clean of all legacy references to other platform names. It is a dedicated, KForce-only environment.
 
 ---
 
@@ -565,7 +565,7 @@ Every "Apply" operation is wrapped in a transactional block. If the browser cras
 The evolution of K-JAE has been one of radical simplification.
 
 ### 33.1 The "Jack-of-all-Trades" Phase
-Originally, the project supported multiple platforms like Infosys and LanceSoft. However, this led to "Selector Rot," where changes on one site would break the automation logic of another due to shared dependencies.
+Originally, the project supported multiple platforms. However, this led to "Selector Rot," where changes on one site would break the automation logic of another due to shared dependencies.
 
 ### 33.2 The KForce Specialization
 By pivoting to a KForce-only model, we achieved "Zero-Dependency UI Isolation." The `KForceStrategy` is now the sole proprietor of the browser's focus, allowing for fine-tuned wait times and interaction patterns that are impossible in a generic engine.
