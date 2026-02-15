@@ -1,133 +1,224 @@
+"""
+Engine Runner - Main Orchestration Logic
+Coordinates the entire automation workflow
+"""
+
 import time
-from sqlalchemy.orm import Session
-from data.db_mysql import db_mysql
+from data.db_connection import db
 from models.config_models import JobSite, SiteSelector
 from engine.factory import strategy_factory
+from engine.guards import guards
 from core.browser import browser_service
 from core.logger import logger
-from engine.guards import guards
-from data.db_duckdb import db_duckdb
-from models.config_models import JobSite, SiteSelector, JobListing
 
 class EngineRunner:
+    """Main orchestrator for the job application engine"""
+    
     def __init__(self):
         self.browser = None
-
-    def run(self, company_name: str = None):
-
+        
+    def run(self, site_filter=None):
         """
-        Main execution workflow.
+        Main execution workflow:
         1. Initialize Browser
-        2. Fetch Active Sites from DB
+        2. Fetch Active Sites from Database
         3. For each site:
-           a. Instantiate Strategy
-           b. Run Discovery (Find Jobs)
-           c. Filter/Validate Jobs
-           d. Run Application Loop
+           a. Load Strategy via Factory
+           b. Run find_jobs()
+           c. Apply to jobs (respecting guards)
+        4. Cleanup and report
+        
+        Args:
+            site_filter (str, optional): Name of company to filter by (case-insensitive)
         """
-        logger.info("Starting Job Engine Runner...")
+        logger.info("=" * 60)
+        logger.info("🚀 Starting Job Application Engine...")
+        logger.info("=" * 60)
         
         try:
             # 1. Start Browser
+            logger.info("Initializing browser...")
             self.browser = browser_service.start_browser()
+            logger.info("✅ Browser started successfully")
             
-            # 2. Sync DuckDB from MySQL
-            mysql_session = db_mysql.SessionLocal()
+            # 2. Get Active Sites from Database
+            session = db.get_session()
             try:
-                db_duckdb.sync_from_mysql(mysql_session)
-            finally:
-                mysql_session.close()
-
-            # 3. Get Sites
-            session = db_mysql.SessionLocal()
-            try:
+                # Base query
                 query = session.query(JobSite).filter(JobSite.is_active == True)
-                if company_name:
-                    logger.info(f"Filtering for company: {company_name}")
-                    query = query.filter(JobSite.company_name == company_name)
+                
+                # Apply filter if provided
+                if site_filter:
+                    logger.info(f"🔎 Filtering for site: {site_filter}")
+                    query = query.filter(JobSite.company_name.ilike(f"%{site_filter}%"))
                 
                 active_sites = query.all()
-                if not active_sites:
-                    if company_name:
-                        logger.warning(f"No active job site found with company name: {company_name}")
-                    else:
-                        logger.warning("No active job sites found in database.")
-                    return
-
                 
+                if not active_sites:
+                    if site_filter:
+                        logger.warning(f"⚠️ No active job sites found matching '{site_filter}'")
+                    else:
+                        logger.warning("⚠️ No active job sites found in database.")
+                    logger.info("Run: python3 init_db.py to seed KForce")
+                    return
+                
+                logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")
+                for site in active_sites:
+                    logger.info(f"   - {site.company_name} ({site.domain})")
+                
+                # 3. Process Each Site
                 for site in active_sites:
                     if not guards.can_apply():
+                        logger.warning("⛔ Application limit reached. Stopping.")
                         break
-                        
-                    self._process_site(session, site)
                     
+                    self._process_site(session, site)
+                
+                # 4. Final Report
+                stats = guards.get_stats()
+                logger.info("\n" + "=" * 60)
+                logger.info("✅ ENGINE RUN COMPLETE")
+                logger.info("=" * 60)
+                logger.info(f"Applications submitted: {stats['applications_submitted']}/{stats['max_applications']}")
+                logger.info(f"Dry run mode: {stats['dry_run_mode']}")
+                logger.info("=" * 60)
+                
             finally:
-                session.close()
-
+                db.close_session(session)
+                
         except Exception as e:
-            logger.critical(f"Engine crashed: {e}")
+            logger.critical(f"❌ Engine crashed: {e}")
+            import traceback
+            traceback.print_exc()
+            
         finally:
             if self.browser:
-                logger.info("Stopping browser...")
-                browser_service.stop_browser()
-
-    def _process_site(self, session: Session, site: JobSite):
-        logger.info(f"Processing Site: {site.company_name} ({site.domain})")
+                # Respect KEEP_BROWSER_OPEN setting for debugging
+                try:
+                    from config.settings import settings
+                    if getattr(settings, 'KEEP_BROWSER_OPEN', False):
+                        logger.info("\nKEEP_BROWSER_OPEN is True - leaving browser open for inspection")
+                    else:
+                        logger.info("\nStopping browser...")
+                        browser_service.stop_browser()
+                        logger.info("✅ Browser closed")
+                except Exception:
+                    logger.info("\nStopping browser (settings check failed)...")
+                    browser_service.stop_browser()
+                    logger.info("✅ Browser closed")
+    
+    def _process_site(self, session, site: JobSite):
+        """
+        Process a single job site
         
-        # Load Strategy from DuckDB
-        selectors = db_duckdb.get_selectors(job_site_id=site.id, ats_platform_id=site.ats_platform_id)
-
-        strategy_path = site.platform.class_handler
+        Args:
+            session: Database session
+            site: JobSite model instance
+        """
+        logger.info("\n" + "-" * 60)
+        logger.info(f"🎯 Processing: {site.company_name}")
+        logger.info("-" * 60)
+        
         try:
-            strategy = strategy_factory.get_strategy(strategy_path, self.browser, site, selectors)
-        except Exception as e:
-            logger.error(f"Skipping site {site.company_name}: {e}")
-            return
+            # Load selectors from database
+            selectors = self._load_selectors(session, site)
             
-        # Login (if needed)
-        if not strategy.login():
-            logger.error(f"Login failed for {site.company_name}")
-            return
-
-        # Discovery
-        jobs = strategy.find_jobs() 
-        logger.info(f"Found {len(jobs)} jobs for {site.company_name}")
-        
-        # Application loop
-        for job in jobs:
-            if not guards.can_apply():
-                logger.info("Application limit reached for this run.")
-                break
+            # Get strategy class path from platform
+            strategy_path = site.platform.class_handler
+            logger.info(f"Strategy: {strategy_path}")
             
-            # Check if already applied in DB
-            job_url = job.get("job_url")
-            existing_listing = session.query(JobListing).filter(JobListing.job_url == job_url).first()
-            
-            if existing_listing and existing_listing.status == 'applied':
-                logger.info(f"Skipping already applied job: {job.get('job_title')}")
-                continue
-
-            success = strategy.apply(job)
-            
-            # Update/Create listing in DB
-            if not existing_listing:
-                existing_listing = JobListing(
-                    job_site_id=site.id,
-                    external_job_id=job.get("external_id", str(hash(job_url))[:10]),
-                    job_title=job.get("job_title", "Unknown"),
-                    job_url=job_url
+            # Load strategy via factory
+            try:
+                # Debug: verify session is valid
+                logger.info(f"📊 Database session type: {type(session)}")
+                logger.info(f"📊 Passing session to strategy: {session is not None}")
+                
+                strategy = strategy_factory.get_strategy(
+                    strategy_path,
+                    self.browser,
+                    site,
+                    selectors,
+                    session  # Pass database session
                 )
-                session.add(existing_listing)
+            except Exception as e:
+                logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
+                return
             
-            if success:
-                guards.increment_counter()
-                existing_listing.status = 'applied'
-                logger.info(f"Successfully applied to {job.get('job_title', 'Unknown Job')}")
+            # Login (if required)
+            logger.info("Attempting login...")
+            if not strategy.login():
+                logger.error(f"❌ Login failed for {site.company_name}")
+                return
+            logger.info("✅ Login successful (or not required)")
+            
+            # Find jobs (or find and apply if supported by strategy)
+            logger.info("🔍 Discovering jobs...")
+            
+            if hasattr(strategy, 'find_and_apply_jobs'):
+                # Some sites use a combined apply-immediately strategy
+                logger.info(f"\n📤 Finding and applying to jobs immediately...")
+                applied_count = strategy.find_and_apply_jobs()
+                logger.info(f"✅ Completed {site.company_name}: {applied_count} applications submitted")
+                return  # Early return for combined workflow strategies
+            
+            # Traditional approach for other sites
+            jobs = strategy.find_jobs()
+            logger.info(f"✅ Found {len(jobs)} job(s)")
+            
+            # Apply to jobs
+            if jobs:
+                logger.info(f"\n📤 Starting application process...")
+                applied_count = 0
+                
+                for job in jobs:
+                    if not guards.can_apply():
+                        logger.warning("⛔ Application limit reached")
+                        break
+                    
+                    try:
+                        logger.info(f"\nApplying to: {job.get('job_title', 'Unknown Title')}")
+                        success = strategy.apply(job)
+                        
+                        if success:
+                            guards.increment_counter()
+                            applied_count += 1
+                            logger.info(f"✅ Application #{applied_count} successful")
+                        else:
+                            logger.warning("⚠️ Application failed")
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Error applying to job: {e}")
+                        continue
+                
+                logger.info(f"\n✅ Completed {site.company_name}: {applied_count} applications")
             else:
-                existing_listing.status = 'failed'
-                existing_listing.last_error = "Strategy returned False"
-                logger.error(f"Failed to apply to {job.get('job_title', 'Unknown Job')}")
-            
-            session.commit()
-
+                logger.info("ℹ️ No jobs found to apply to")
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing {site.company_name}: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _load_selectors(self, session, site: JobSite) -> dict:
+        """
+        Load selectors for a job site from database
         
+        Args:
+            session: Database session
+            site: JobSite instance
+            
+        Returns:
+            Dictionary with 'listing' and 'application' selectors
+        """
+        selectors = {}
+        
+        # Query selectors for this site
+        site_selectors = session.query(SiteSelector).filter(
+            SiteSelector.job_site_id == site.id
+        ).all()
+        
+        for selector in site_selectors:
+            selectors[selector.type] = selector.config_json
+        
+        logger.info(f"Loaded {len(selectors)} selector configuration(s)")
+        return selectors

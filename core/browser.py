@@ -1,7 +1,11 @@
 import os
 import time
-import fcntl
-import undetected_chromedriver as uc
+try:
+    import fcntl
+    _HAS_FCNTL = True
+except Exception:
+    _HAS_FCNTL = False
+uc = None
 from config.settings import settings
 from core.logger import logger
 from core.proxy_manager import proxy_manager
@@ -12,11 +16,16 @@ class BrowserService:
         self.lock_file = None
         
     def _acquire_lock(self):
-        """Ensures only one instance touches the profile."""
+        """Ensures only one instance touches the profile. On Windows (no fcntl) locking is skipped."""
         profile_path = settings.chrome_profile_path
         os.makedirs(profile_path, exist_ok=True)
         lock_path = os.path.join(profile_path, "profile.lock")
-        
+
+        self.lock_file = None
+        if not _HAS_FCNTL:
+            logger.info("fcntl not available on this platform; skipping profile locking.")
+            return
+
         self.lock_file = open(lock_path, 'w')
         try:
             fcntl.flock(self.lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -26,53 +35,82 @@ class BrowserService:
             raise RuntimeError("Browser profile is locked by another process.")
 
     def _release_lock(self):
+        if not _HAS_FCNTL:
+            return
         if self.lock_file:
-            fcntl.flock(self.lock_file, fcntl.LOCK_UN)
+            try:
+                fcntl.flock(self.lock_file, fcntl.LOCK_UN)
+            except Exception:
+                pass
             self.lock_file.close()
             logger.info("Released profile lock.")
 
     def start_browser(self):
         self._acquire_lock()
-        
+        # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
         try:
-            from selenium import webdriver
-            from selenium_stealth import stealth
+            import undetected_chromedriver as uc_local
+            global uc
+            uc = uc_local
+        except ModuleNotFoundError as e:
+            # If undetected_chromedriver can't be imported (e.g., distutils missing), log and continue to fallback
+            logger.warning(f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver.")
+            uc = None
+
+        options = None
+        if uc:
+            options = uc.ChromeOptions()
+        options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
+        
+        proxy_arg = proxy_manager.get_proxy_option()
+        if proxy_arg:
+            options.add_argument(proxy_arg)
             
-            options = webdriver.ChromeOptions()
-            # Standard selenium stability options
-            # options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
+        if settings.HEADLESS:
+            options.add_argument("--headless=new")
             
-            proxy_arg = proxy_manager.get_proxy_option()
-            if proxy_arg:
-                options.add_argument(proxy_arg)
-                
-            if settings.HEADLESS:
-                options.add_argument("--headless=new")
-                
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--disable-blink-features=AutomationControlled")
-            
-            self.driver = webdriver.Chrome(options=options)
-            
-            # Apply stealth
-            stealth(self.driver,
-                languages=["en-US", "en"],
-                vendor="Google Inc.",
-                platform="Win32",
-                webgl_vendor="Intel Inc.",
-                renderer="Intel Iris OpenGL Engine",
-                fix_hairline=True,
-            )
-            
-            logger.info("Standard Selenium with Stealth started successfully.")
-        except Exception as e:
-            logger.error(f"Failed to start standard browser: {e}")
-            self._release_lock()
-            raise
+        # Defense evasion
+        options.add_argument("--no-first-run")
+        options.add_argument("--no-service-autorun")
+        options.add_argument("--password-store=basic")
+        
+        # If undetected_chromedriver is available, prefer it
+        if uc:
+            try:
+                # Force ChromeDriver to match your Chrome version (144)
+                self.driver = uc.Chrome(
+                    options=options, 
+                    use_subprocess=True,
+                    version_main=144  # Match your Chrome version
+                )
+                logger.info("Browser started successfully (undetected-chromedriver).")
+            except Exception as e:
+                logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
+
+        # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
+        if not self.driver:
+            try:
+                from selenium import webdriver
+                from selenium.webdriver.chrome.service import Service as ChromeService
+                from webdriver_manager.chrome import ChromeDriverManager
+
+                service = ChromeService(ChromeDriverManager().install())
+                selenium_options = webdriver.ChromeOptions()
+                # copy arguments from uc options if available
+                try:
+                    for arg in getattr(options, 'arguments', []):
+                        selenium_options.add_argument(arg)
+                except Exception:
+                    pass
+
+                self.driver = webdriver.Chrome(service=service, options=selenium_options)
+                logger.info("Browser started successfully (webdriver-manager fallback).")
+            except Exception as e2:
+                logger.error(f"Failed to start browser with fallback: {e2}")
+                self._release_lock()
+                raise
 
         return self.driver
-
 
     def stop_browser(self):
         if self.driver:

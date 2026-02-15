@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from core.safe_actions import SafeActions
 from core.logger import logger
 from models.config_models import JobListing
+import os
+from config.settings import settings
 
 class BaseStrategy(ABC):
     def __init__(self, driver, job_site, selectors):
@@ -42,3 +44,37 @@ class BaseStrategy(ABC):
                 logger.error(f"Validation failed: Essential element '{selector}' missing.")
                 return False
         return True
+
+    def get_resume_path(self):
+        """
+        Resolves the absolute path to the resume file.
+        Priority:
+        1. settings.RESUME_FILE_PATH (new)
+        2. settings.RESUME_PATH (backwards compatible)
+        3. self.config_data['resume_path'] (if exists)
+        """
+        # 1. Try settings (environment variables)
+        resume_path = getattr(settings, 'RESUME_FILE_PATH', None)
+        if not resume_path:
+            resume_path = getattr(settings, 'RESUME_PATH', None)
+        
+        # 2. Try config_data (guest_form_data.json)
+        if not resume_path and hasattr(self, 'config_data') and self.config_data:
+            resume_path = self.config_data.get('resume_path')
+            
+        if not resume_path:
+            logger.warning("No resume path configured in settings or data JSON.")
+            return None
+            
+        # Ensure absolute path
+        if not os.path.isabs(resume_path):
+            # BaseStrategy is in strategies/, project root is one level up
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            resume_path = os.path.abspath(os.path.join(project_root, resume_path))
+            
+        if not os.path.exists(resume_path):
+            logger.error(f"Resume file not found at: {resume_path}")
+            return None
+            
+        logger.info(f"Resolved resume path: {resume_path}")
+        return resume_path
