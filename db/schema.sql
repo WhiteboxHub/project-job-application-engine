@@ -139,6 +139,7 @@ VALUES (
         "search_input": "input[placeholder=\"Search by Job Title or Skill\"]",
         "search_button": "input.search-icon.submitIcon",
         "container": ".linkForJob",
+        "search_keywords": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker", "Kubernetes", "CI/CD", "REST API", "PostgreSQL"],
         "fields": {
             "title": {
                 "selector": ".linkForJob",
@@ -177,6 +178,10 @@ VALUES (
             "next_btn": "//button[contains(text(), \"Next\") or @id=\"NextButton\" or contains(@class, \"next-button\")]",
             "submit_btn": "#SubmitButton"
         },
+        "questionnaire_answers": {
+            "eligibility_auth": "AuthorizedForAny",
+            "eligibility_sponsorship": "No"
+        },
         "success_indicators": [
             "Thank you",
             "Application Received",
@@ -190,3 +195,109 @@ VALUES (
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
 CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);
 CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at);
+
+-- =====================================================
+-- SEED DATA: Capgemini Configuration
+-- =====================================================
+
+-- Insert Capgemini Strategy
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required)
+VALUES (2, 'SAP SuccessFactors', 'strategies.custom.capgemini.CapgeminiStrategy', false);
+
+-- Insert Capgemini Job Site
+INSERT OR IGNORE INTO job_sites (
+    id,
+    company_name,
+    domain,
+    ats_platform_id,
+    category,
+    search_url_template,
+    apply_url_template,
+    is_active
+)
+VALUES (
+    2,
+    'Capgemini',
+    'capgemini.com',
+    2,
+    'Consulting firm',
+    'https://www.capgemini.com/us-en/careers/join-capgemini/job-search/?country_code=us-en&country_name=United%20States&size=15',
+    'https://career5.successfactors.eu/careers?company=capgemitecP3',
+    true
+);
+
+-- Insert Capgemini Listing Selectors
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
+VALUES (
+    3,
+    2,
+    'listing',
+    '{
+        "search_input": "#searchsubmit",
+        "job_cards": "a.table-tr.filter-box.joblink",
+        "load_more_button": "a.filters-more",
+        "clear_filters": "button.remove-all-tags",
+        "search_keywords": ["AI Architect", "Machine Learning", "Python Engineer", "GenAI Analyst"],
+        "fields": {
+            "title": {
+                "selector": "div",
+                "type": "text"
+            },
+            "url": {
+                "selector": "a.table-tr",
+                "attr": "href"
+            }
+        }
+    }'::JSON
+);
+
+-- Insert Capgemini Application Selectors
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
+VALUES (
+    4,
+    2,
+    'application',
+    '{
+        "flow_type": "successfactors_login",
+        "apply_button_main": "a.cta-link",
+        "sign_in_button": "//a[@onclick=\"openSignInModal()\"]",
+        "login_email": "#username",
+        "login_password": "#password",
+        "login_submit": "#fbqa_signin",
+        "form_fields": {
+            "first_name": "#fbclc_fName",
+            "last_name": "#fbclc_lName",
+            "phone": "#tor__fcellPhone",
+            "resume_upload": "input[type=\"file\"]",
+            "work_authorization": "#13\\:_input",
+            "visa_sponsorship": "#17\\:_input",
+            "prior_agreement": "#21\\:_input",
+            "ethnicity": "#25\\:_input",
+            "veteran_status": "#29\\:_input",
+            "disability_status": "#33\\:_input",
+            "previous_employment": "#37\\:_input",
+            "gender_consent": "#41\\:_input",
+            "gender": "#45\\:_input",
+            "sms_consent": "#57\\:_input",
+            "submit_btn": "#fbqa_apply"
+        },
+        "questionnaire_answers": {
+            "work_authorization": "Yes",
+            "visa_sponsorship": "No",
+            "prior_agreement": "No",
+            "ethnicity": "South Asian (e.g. Indian)",
+            "veteran_status": "Not a Protected Veteran",
+            "disability_status": "No, I don’t have a disability",
+            "previous_employment": "No",
+            "gender_consent": "Yes",
+            "gender": "Male",
+            "sms_consent": "Yes"
+        },
+        "success_indicators": [
+            "Thank you",
+            "Application submitted",
+            "Successfully applied",
+            "received your application"
+        ]
+    }'::JSON
+);

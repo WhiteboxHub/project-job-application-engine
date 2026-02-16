@@ -1,0 +1,325 @@
+external_id,job_title,job_url,location,job_type,salary,description,requirements,posted_date,company,industry,status,attempts,last_error,discovered_at,updated_at
+,Gen AI Architect,https://www.capgemini.com/us-en/jobs/240311-en_US+sap_btp/,,,,,,,,,applied,22,Dry run simulation,2026-02-15T21:26:49.067180,2026-02-16T01:09:27.639969
+,Functional Gen AI Advisor,https://www.capgemini.com/us-en/jobs/392683-en_US+sap_btp/,,,,,,,,,failed,26,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.317298,2026-02-16T01:09:44.899043
+,Data Engineer (AI/ML),https://www.capgemini.com/us-en/jobs/393076-en_US+sap_btp/,,,,,,,,,failed,26,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.332683,2026-02-16T01:09:44.904655
+,Gen AI Architect,https://www.capgemini.com/us-en/jobs/344653-en_US+sap_btp/,,,,,,,,,failed,25,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.346913,2026-02-16T01:09:44.883840
+,AI/ML Engineer,https://www.capgemini.com/us-en/jobs/412316-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.360624,2026-02-16T01:09:44.909539
+,FSSBU - AI/ML - C2 - MS,https://www.capgemini.com/us-en/jobs/408803-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.389126,2026-02-16T01:09:44.914550
+,Responsible AI Engineer,https://www.capgemini.com/us-en/jobs/409586-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.403721,2026-02-16T01:09:44.919151
+,Entry Level Data Scientist- Gen AI- ML,https://www.capgemini.com/us-en/jobs/396109-en_GB+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.417486,2026-02-16T01:09:44.923952
+,Entry Level - Data Scientist- Gen Ai - ML,https://www.capgemini.com/us-en/jobs/396217-en_GB+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.431587,2026-02-16T01:09:44.928582
+,Agentic AI Engineer,https://www.capgemini.com/us-en/jobs/391038-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.445816,2026-02-16T01:09:44.933371
+,AI Product Owner,https://www.capgemini.com/us-en/jobs/415294-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.460019,2026-02-16T01:09:44.938393
+,AI and Data Transformation Consultant,https://www.capgemini.com/us-en/jobs/397187-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.474362,2026-02-16T01:09:44.955416
+,AI and Data Transformation Consultant,https://www.capgemini.com/us-en/jobs/397167-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.489926,2026-02-16T01:09:44.960458
+,MS Dynamics 365 AI Developer,https://www.capgemini.com/us-en/jobs/368917-en_US+sap_btp/,,,,,,,,,failed,24,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-15T21:39:49.503784,2026-02-16T01:09:44.965383
+,Client Partner - Data and AI,https://www.capgemini.com/us-en/jobs/387246-en_US+sap_btp/,,,,,,,,,failed,23,"HTTPConnectionPool(host='localhost', port=61140): Max retries exceeded with url: /session/aa780c376f90345ab89c74744812d3e8/url (Caused by NewConnectionError(""HTTPConnection(host='localhost', port=61140): Failed to establish a new connection: [Errno 61] Connection refused""))",2026-02-15T21:39:49.517803,2026-02-16T00:51:25.028952
+388057-en_US+sap_btp,GTM Leader / Solution Architect - Data and AI,https://www.capgemini.com/us-en/jobs/388057-en_US+sap_btp/,,,,,,,,,failed,1,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000101131328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101128b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100b36ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000100b0a348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000100bbb058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000100bd4d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000100b7d9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000100b7e7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001010e9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001010edf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001010c9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001010ee9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001010b7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000101114f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000101115142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x0000000101128791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-16T01:07:44.573311,2026-02-16T01:09:44.943018

@@ -27,9 +27,12 @@ class Settings(BaseSettings):
     PLATFORM_FILTER: Optional[str] = None  # Filter by platform: "KForce", "InsightGlobal", etc.
     
     # KForce Defaults (Template support)
-    KFORCE_KEYWORDS: str = "AI"
     KFORCE_LOCATIONS: str = ""
     KFORCE_DISTANCE_DEFAULT: str = ""
+    
+    # Capgemini Defaults
+    CAPGEMINI_EMAIL: Optional[str] = None
+    CAPGEMINI_PASSWORD: Optional[str] = None
     # Keep browser open after run (useful for debugging)
     KEEP_BROWSER_OPEN: bool = False
     # How long to wait after clicking submit for navigation (seconds)

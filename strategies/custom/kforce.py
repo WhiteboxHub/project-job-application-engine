@@ -110,7 +110,13 @@ class KForceStrategy(BaseStrategy):
         """
         logger.info("🔍 KForce: Starting combined find-and-apply workflow")
         
-        keywords = self.config_data.get('keywords', ['AI Engineer'])
+        # Strictly database-driven keywords
+        keywords = self.selectors.get('listing', {}).get('search_keywords')
+        if not keywords:
+            logger.error("❌ KForce: Critically missing 'search_keywords' in database configuration!")
+            return 0
+            
+        logger.info(f"  📊 Using {len(keywords)} keywords from database")
         location = None # Removed location search as per user request
         
         total_applied = 0
@@ -413,63 +419,59 @@ class KForceStrategy(BaseStrategy):
             else:
                 logger.warning("  ⚠️ Skipping resume upload: path or selector missing")
             
-            # 7. Eligibility Radios
-            auth_sel = self.get_sel('application', 'form_fields', 'eligibility_auth', required=False)
-            spons_sel = self.get_sel('application', 'form_fields', 'eligibility_sponsorship', required=False)
-            
-            if auth_sel:
+            # 7. Questionnaire / Eligibility Radios
+            answers = self.selectors.get('application', {}).get('questionnaire_answers', {})
+            for field, target_val in answers.items():
+                logger.info(f"KForce [Step 7]: Handling questionnaire field '{field}'")
+                selector = self.get_sel('application', 'form_fields', field, required=False)
+                if not selector:
+                    continue
+                
                 try:
-                    # Multi-pronged approach for eligibility:
-                    # 1. Target specific value 'AuthorizedForAny'
-                    # 2. Target by text content (user requirement)
-                    # 3. Use JS click as final fallback
+                    # Multi-pronged approach for radio buttons:
+                    # 1. Try value match
+                    # 2. Try text match (label/span)
+                    # 3. Fallback to selector direct click
                     
                     selected = False
                     try:
-                        auth_radio = self.driver.find_element(By.CSS_SELECTOR, f"{auth_sel}[value='AuthorizedForAny']")
-                        self.driver.execute_script("arguments[0].click();", auth_radio)
-                        selected = True
+                        # Common values for Radios: 'AuthorizedForAny', 'No', '0', 'False'
+                        values_to_try = [target_val]
+                        if target_val == "No": 
+                            values_to_try.extend(['0', 'False', 'no'])
+                        
+                        for v in values_to_try:
+                            try:
+                                radio = self.driver.find_element(By.CSS_SELECTOR, f"{selector}[value='{v}']")
+                                self.driver.execute_script("arguments[0].click();", radio)
+                                selected = True
+                                break
+                            except: continue
                     except: pass
                     
                     if not selected:
-                        # Search for the label text provided by user
-                        target_text = "I am authorized to work in the United States for any employer."
-                        xpath_text = f"//label[contains(., '{target_text}')] | //span[contains(., '{target_text}')]"
-                        elements = self.driver.find_elements(By.XPATH, xpath_text)
-                        if elements:
-                            self.driver.execute_script("arguments[0].click();", elements[0])
-                            selected = True
-                    
-                    if selected:
-                        logger.info("  ✓ Selected 'AuthorizedForAny' eligibility")
-                    else:
-                        # Fallback to the selector ID directly
-                        auth_radio = self.driver.find_element(By.CSS_SELECTOR, auth_sel)
-                        self.driver.execute_script("arguments[0].click();", auth_radio)
-                        logger.info("  ✓ Selected eligibility via ID")
-                except Exception as e:
-                    logger.warning(f"  ⚠️ Could not click auth radio: {e}")
-            
-            if spons_sel:
-                try:
-                    # Try values commonly used: 0, 'No', 'False', or just clicking the radio directly
-                    sponsorship_radio = None
-                    for val in ['0', 'No', 'False']:
-                        try:
-                            sponsorship_radio = self.driver.find_element(By.CSS_SELECTOR, f"{spons_sel}[value='{val}']")
-                            break
-                        except: continue
-                    
-                    if not sponsorship_radio:
-                        sponsorship_radio = self.driver.find_element(By.CSS_SELECTOR, spons_sel)
+                        # Fallback strings for common kforce labels
+                        search_texts = [target_val]
+                        if field == 'eligibility_auth' and target_val == 'AuthorizedForAny':
+                            search_texts.append("I am authorized to work in the United States for any employer.")
                         
-                    try:
-                        self.human.human_click(sponsorship_radio)
-                    except:
-                        self.driver.execute_script("arguments[0].click();", sponsorship_radio)
-                    logger.info("  ✓ Selected sponsorship option")
+                        for txt in search_texts:
+                            xpath_text = f"//label[contains(., '{txt}')] | //span[contains(., '{txt}')]"
+                            elements = self.driver.find_elements(By.XPATH, xpath_text)
+                            if elements:
+                                self.driver.execute_script("arguments[0].click();", elements[0])
+                                selected = True
+                                break
+                    
+                    if not selected:
+                        radio = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        self.driver.execute_script("arguments[0].click();", radio)
+                        selected = True
+                        
+                    if selected:
+                        logger.info(f"  ✓ Selected '{target_val}' for {field}")
                 except Exception as e:
-                    logger.warning(f"  ⚠️ Could not click sponsorship radio: {e}")
+                    logger.warning(f"  ⚠️ Could not handle {field}: {e}")
 
             # 8. Click 'Next' if it exists (Multi-step form support)
             next_sel = self.get_sel('application', 'form_fields', 'next_btn', required=False)
