@@ -286,6 +286,29 @@ INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES
     }'::JSON
 );
 
+-- =====================================================
+-- SEED DATA: Wipro Configuration
+-- =====================================================
+
+-- Insert Wipro ATS Platform
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
+    3,
+    'Wipro Custom',
+    'strategies.custom.WiproStrategy',
+    false
+);
+
+-- Insert Wipro Job Site
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+    3,
+    3,
+    'Wipro',
+    'wipro.com',
+    'System integrator',
+    'https://careers.wipro.com/',
+    true
+);
+
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
