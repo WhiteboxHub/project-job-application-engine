@@ -1,6 +1,6 @@
 """
 SQLAlchemy ORM Models for History Tables
-Database: DuckDB (job_engine.duckdb)
+Database: MySQL
 """
 
 from sqlalchemy import Column, Integer, BigInteger, String, Text, Float, Date, TIMESTAMP, ForeignKey, CheckConstraint

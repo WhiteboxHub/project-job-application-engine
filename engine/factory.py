@@ -10,7 +10,7 @@ class StrategyFactory:
     """Factory for dynamically loading strategy classes"""
     
     @staticmethod
-    def get_strategy(class_path: str, driver, job_site, selectors, db_session=None):
+    def get_strategy(class_path: str, driver, job_site, selectors, db_session=None, candidate_data=None):
         """
         Dynamically imports and instantiates a strategy class.
         
@@ -20,6 +20,7 @@ class StrategyFactory:
             job_site: JobSite model instance from database
             selectors: Dictionary of selectors from database
             db_session: Database session for persistence (optional)
+            candidate_data: Candidate parameters from database (optional)
             
         Returns:
             Instantiated strategy object
@@ -40,7 +41,7 @@ class StrategyFactory:
             
             # Instantiate and return
             logger.info(f"Loaded strategy: {class_name} from {module_name}")
-            return strategy_class(driver, job_site, selectors, db_session)
+            return strategy_class(driver, job_site, selectors, db_session, candidate_data)
             
         except (ImportError, AttributeError) as e:
             logger.critical(f"Failed to load strategy '{class_path}': {e}")

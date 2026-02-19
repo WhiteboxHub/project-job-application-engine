@@ -23,23 +23,29 @@ class InsightGlobalStrategy(BaseStrategy):
     3. Applies as guest with minimal form fields
     """
     
-    def __init__(self, driver, job_site, selectors, db_session=None):
+    def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
         super().__init__(driver, job_site, selectors)
         self.db_session = db_session
         self.job_site = job_site
         self.config_data = self._load_config()
+
+        # Merge in candidate-specific data from scheduler (overrides JSON defaults)
+        if candidate_data and isinstance(candidate_data, dict):
+            self.config_data = {**self.config_data, **candidate_data}
+            logger.info("✅ Candidate-specific data merged into config")
+
         # Initialize human behavior and CAPTCHA handler
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=120)  # 120-second wait for CAPTCHA
-        
+
         # Debug logging
         if self.db_session:
-            logger.info("✅ Database session available - will save to DuckDB")
+            logger.info("✅ Database session available - will save to MySQL")
         else:
             logger.warning("⚠️ No database session - will only use CSV tracking")
     
     def _load_config(self):
-        """Load configuration from JSON file"""
+        """Load configuration from JSON file (optional - candidate_data from DB takes priority)"""
         try:
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -50,9 +56,12 @@ class InsightGlobalStrategy(BaseStrategy):
                 data = json.load(f)
             logger.info(f"Loaded configuration from {config_path}")
             return data
+        except FileNotFoundError:
+            logger.info("ℹ️ guest_form_data.json not found — will use candidate_data from DB")
+            return {}
         except Exception as e:
-            logger.error(f"Failed to load config JSON: {e}")
-            return None
+            logger.warning(f"Config JSON load error: {e} — will use candidate_data from DB")
+            return {}
     
     def _verify_upload_success(self):
         """

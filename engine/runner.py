@@ -17,7 +17,7 @@ class EngineRunner:
     def __init__(self):
         self.browser = None
         
-    def run(self, site_filter=None):
+    def run(self, site_filter=None, candidate_data=None):
         """
         Main execution workflow:
         1. Initialize Browser
@@ -30,6 +30,7 @@ class EngineRunner:
         
         Args:
             site_filter (str, optional): Name of company to filter by (case-insensitive)
+            candidate_data (dict, optional): Candidate parameters from database (run_parameters)
         """
         logger.info("=" * 60)
         logger.info("🚀 Starting Job Application Engine...")
@@ -72,7 +73,7 @@ class EngineRunner:
                         logger.warning("⛔ Application limit reached. Stopping.")
                         break
                     
-                    self._process_site(session, site)
+                    self._process_site(session, site, candidate_data)
                 
                 # 4. Final Report
                 stats = guards.get_stats()
@@ -107,13 +108,14 @@ class EngineRunner:
                     browser_service.stop_browser()
                     logger.info("✅ Browser closed")
     
-    def _process_site(self, session, site: JobSite):
+    def _process_site(self, session, site: JobSite, candidate_data=None):
         """
         Process a single job site
         
         Args:
             session: Database session
             site: JobSite model instance
+            candidate_data: Optional candidate parameters from database
         """
         logger.info("\n" + "-" * 60)
         logger.info(f"🎯 Processing: {site.company_name}")
@@ -138,7 +140,8 @@ class EngineRunner:
                     self.browser,
                     site,
                     selectors,
-                    session  # Pass database session
+                    session,  # Pass database session
+                    candidate_data  # Pass candidate data from database
                 )
             except Exception as e:
                 logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
@@ -151,17 +154,18 @@ class EngineRunner:
                 return
             logger.info("✅ Login successful (or not required)")
             
-            # Find jobs (or find and apply for LanceSoft)
+            # Find jobs and apply
             logger.info("🔍 Discovering jobs...")
             
-            if site.company_name == "LanceSoft":
-                # LanceSoft uses apply-immediately strategy
-                logger.info(f"\n📤 Finding and applying to jobs...")
+            # If the strategy implements find_and_apply_jobs, use the unified workflow
+            # (covers LanceSoft, Infosys, and any future strategy with this pattern)
+            if hasattr(strategy, 'find_and_apply_jobs') and callable(getattr(strategy, 'find_and_apply_jobs')):
+                logger.info(f"\n📤 Finding and applying to jobs (unified workflow)...")
                 applied_count = strategy.find_and_apply_jobs()
                 logger.info(f"✅ Completed {site.company_name}: {applied_count} applications submitted")
-                return  # Early return for LanceSoft
+                return
             
-            # Traditional approach for other sites
+            # Traditional approach for strategies without find_and_apply_jobs
             jobs = strategy.find_jobs()
             logger.info(f"✅ Found {len(jobs)} job(s)")
             

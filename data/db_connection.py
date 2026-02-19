@@ -1,44 +1,51 @@
 """
-DuckDB Connection Manager (Singleton Pattern)
+MySQL Connection Manager (Singleton Pattern)
 Handles all database connections for both configuration and history.
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 from config.settings import settings
 import logging
-import os
 
 logger = logging.getLogger(__name__)
 
 # Base class for ORM models
 Base = declarative_base()
 
-class DuckDBConnection:
-    """Singleton connection manager for DuckDB"""
+class MySQLConnection:
+    """Singleton connection manager for MySQL"""
     _instance = None
     
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(DuckDBConnection, cls).__new__(cls)
+            cls._instance = super(MySQLConnection, cls).__new__(cls)
             cls._instance._initialize()
         return cls._instance
     
     def _initialize(self):
-        """Initialize DuckDB connection and session factory"""
+        """Initialize MySQL connection and session factory"""
         try:
-            # Ensure directory exists
-            db_path = settings.DUCKDB_PATH
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            # URL encode password to handle special characters
+            from urllib.parse import quote_plus
+            encoded_password = quote_plus(settings.DB_PASSWORD)
             
-            # Create DuckDB engine
-            # SQLAlchemy URL format: duckdb:///path/to/file
-            db_url = f"duckdb:///{db_path}"
+            # Create MySQL connection URL
+            # Format: mysql+pymysql://user:password@host:port/database
+            db_url = (
+                f"mysql+pymysql://{settings.DB_USER}:{encoded_password}"
+                f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+            )
             
             self.engine = create_engine(
                 db_url,
                 echo=False,  # Set to True for SQL debugging
-                connect_args={'read_only': False}
+                pool_pre_ping=True,  # Verify connections before using
+                pool_recycle=3600,   # Recycle connections after 1 hour
+                connect_args={
+                    'charset': 'utf8mb4',
+                    'connect_timeout': 10
+                }
             )
             
             # Create session factory
@@ -50,10 +57,10 @@ class DuckDBConnection:
                 )
             )
             
-            logger.info(f"DuckDB connection initialized at: {db_path}")
+            logger.info(f"MySQL connection initialized: {settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
             
         except Exception as e:
-            logger.critical(f"Failed to initialize DuckDB connection: {e}")
+            logger.critical(f"Failed to initialize MySQL connection: {e}")
             raise
     
     def get_session(self):
@@ -65,31 +72,18 @@ class DuckDBConnection:
         if session:
             session.close()
     
-    def execute_sql_file(self, sql_file_path):
-        """Execute SQL file (for initialization)"""
+    def test_connection(self):
+        """Test database connection"""
         try:
-            import duckdb
-            
-            with open(sql_file_path, 'r', encoding='utf-8') as f:
-                sql_content = f.read()
-            
-            # Use DuckDB directly for initialization (more reliable than SQLAlchemy for DDL)
-            db_path = settings.DUCKDB_PATH
-            conn = duckdb.connect(db_path)
-            
-            try:
-                # Execute the entire SQL file at once
-                conn.execute(sql_content)
-                logger.info(f"Successfully executed SQL file: {sql_file_path}")
-                return True
-            finally:
-                conn.close()
-            
+            session = self.get_session()
+            session.execute(text("SELECT 1"))
+            session.close()
+            logger.info("MySQL connection test successful")
+            return True
         except Exception as e:
-            logger.error(f"Error executing SQL file {sql_file_path}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"MySQL connection test failed: {e}")
             return False
 
 # Singleton instance
-db = DuckDBConnection()
+db = MySQLConnection()
+

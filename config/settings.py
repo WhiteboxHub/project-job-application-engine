@@ -3,8 +3,12 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Database
-    DUCKDB_PATH: str = "data/job_engine.duckdb"
+    # Database - MySQL
+    DB_HOST: str = "127.0.0.1"
+    DB_PORT: int = 3306
+    DB_USER: str = "root"
+    DB_PASSWORD: str = ""
+    DB_NAME: str = "new_db"
     
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"

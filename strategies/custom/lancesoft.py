@@ -2,7 +2,6 @@ from strategies.base import BaseStrategy
 from core.logger import logger
 from core.human_behavior import HumanBehavior
 from core.captcha_handler import CaptchaHandler
-from core.safe_actions import SafeActions
 import time
 import os
 import json
@@ -29,14 +28,19 @@ class LanceSoftStrategy(BaseStrategy):
     This strategy implements the complete flow discovered through manual exploration.
     """
     
-    def __init__(self, driver, job_site, selectors, db_session=None):
+    def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
         super().__init__(driver, job_site, selectors)
         self.db_session = db_session
         self.job_site = job_site
         self.config_data = self._load_config()
+        
+        # Merge in candidate-specific data from scheduler (overrides JSON defaults)
+        if candidate_data and isinstance(candidate_data, dict):
+            self.config_data = {**self.config_data, **candidate_data}
+            logger.info("✅ Candidate-specific data merged into config")
+        
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=30)
-        self.safe_actions = SafeActions(driver)
         
         # JobDiva portal base URL
         self.portal_url = job_site.search_url_template
@@ -46,12 +50,12 @@ class LanceSoftStrategy(BaseStrategy):
         
         # Debug logging
         if self.db_session:
-            logger.info("✅ Database session available - will save to DuckDB")
+            logger.info("✅ Database session available - will save to MySQL")
         else:
             logger.warning("⚠️ No database session - will only use CSV tracking")
     
     def _load_config(self):
-        """Load configuration from JSON file"""
+        """Load configuration from JSON file (optional - candidate_data from DB takes priority)"""
         try:
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -62,9 +66,12 @@ class LanceSoftStrategy(BaseStrategy):
                 data = json.load(f)
             logger.info(f"Loaded configuration from {config_path}")
             return data
+        except FileNotFoundError:
+            logger.info("ℹ️ guest_form_data.json not found — will use candidate_data from DB")
+            return {}
         except Exception as e:
-            logger.error(f"Failed to load config JSON: {e}")
-            return None
+            logger.warning(f"Config JSON load error: {e} — will use candidate_data from DB")
+            return {}
     
     def _load_selectors(self):
         """
@@ -139,16 +146,16 @@ class LanceSoftStrategy(BaseStrategy):
     
     def find_and_apply_jobs(self):
         """
-        Combined workflow: Find and apply to jobs immediately.
+        Combined workflow: Find and apply to jobs immediately (Single-Phase).
         This is the main entry point for LanceSoft strategy.
         
         Uses a single-phase approach: apply to each job as soon as it's found.
-        This prevents issues with jobs not being found when navigating back to search results.
+        This prevents issues with jobs not being found when navigating back to search results (Phase 2 constraint).
         
         Returns:
             int: Number of successful applications
         """
-        logger.info("🔍 Starting find_and_apply_jobs workflow...")
+        logger.info("🔍 Starting find_and_apply_jobs workflow (Single-Phase)...")
         
         if not self.config_data:
             logger.error("No configuration data available")
@@ -157,13 +164,19 @@ class LanceSoftStrategy(BaseStrategy):
         # Support multiple search configurations
         search_configurations = self.config_data.get('search_configurations', [])
         if not search_configurations:
-            # Fallback to single search config
             search_config = self.config_data.get('search', {})
-            search_configurations = [{
-                'keyword': search_config.get('keyword', 'AI Engineer'),
-                'location': search_config.get('location', 'Chicago, IL'),
-                'distance': search_config.get('distance', '50')
-            }]
+            keywords = search_config.get('keywords', [])  # run_parameters uses 'keywords' (list)
+            if not keywords:
+                # Fallback: single keyword key
+                keywords = [search_config.get('keyword', 'AI Engineer')]
+            location = search_config.get('location', 'USA')
+            distance = search_config.get('distance', '50')
+            # Expand each keyword into its own search config
+            search_configurations = [
+                {'keyword': kw, 'location': location, 'distance': distance}
+                for kw in keywords
+            ]
+            logger.info(f"📋 Built {len(search_configurations)} search configs from run_parameters")
         
         total_applied = 0
         
@@ -187,6 +200,7 @@ class LanceSoftStrategy(BaseStrategy):
         
         logger.info(f"\n✅ Workflow complete: {total_applied} applications submitted")
         return total_applied
+
     
     def find_jobs(self):
         """
@@ -644,90 +658,124 @@ class LanceSoftStrategy(BaseStrategy):
         page_num = 1
         MAX_PAGES = 20
         
+        # Pagination loop: Apply to jobs on each page
+        page_num = 1
+        MAX_PAGES = 20
+        
         while page_num <= MAX_PAGES:
             logger.info(f"\n  📄 Processing page {page_num}...")
             
-            # Get all job elements on current page
             try:
                 container_selector = selectors['job_container']
                 WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, container_selector))
                 )
-                time.sleep(1)
+                time.sleep(2)
                 
+                # 1. Collect all Job IDs on this page first (updates 'seen' list)
+                job_ids_on_page = []
                 job_elements = self.driver.find_elements(By.CSS_SELECTOR, container_selector)
-                logger.info(f"    Found {len(job_elements)} jobs on this page")
                 
-                # Apply to each job on this page
-                for idx, job_elem in enumerate(job_elements, 1):
+                for job_elem in job_elements:
                     try:
-                        # Check if we can still apply
-                        if not guards.can_apply():
-                            logger.warning(f"\n  ⛔ Application limit reached after {total_applied} applications")
-                            return total_applied
+                        # Extract ID
+                        job_text = job_elem.text
+                        import re
+                        id_match = re.search(r'(\d{2}-\d{4,10})', job_text)
+                        if id_match:
+                            job_id = id_match.group(1)
+                        else:
+                            job_id = job_elem.find_element(By.CSS_SELECTOR, selectors['job_id']).text.strip()
                         
-                        # Extract job info
-                        try:
-                            title_elem = job_elem.find_element(By.CSS_SELECTOR, selectors['job_title'])
-                            title = title_elem.text.strip()
-                            
-                            job_text = job_elem.text
-                            import re
-                            id_match = re.search(r'(\d{2}-\d{4,10})', job_text)
-                            if id_match:
-                                job_id = id_match.group(1)
-                            else:
-                                job_id = job_elem.find_element(By.CSS_SELECTOR, selectors['job_id']).text.strip()
-                            
-                            job_url = self.driver.current_url
-                            
-                            job_data = {
-                                'job_title': title,
-                                'external_id': job_id,
-                                'job_url': job_url
-                            }
-                            
-                            logger.info(f"\n    📌 Job {idx}/{len(job_elements)}: {title} ({job_id})")
-                            
-                            # Save to DB
-                            if self.db_session and self.job_site:
-                                self._save_job_to_db(job_data)
-                            
-                            # Apply to this job immediately
-                            success = self._apply_to_visible_job_immediate(job_elem, job_data)
-                            
-                            if success:
-                                guards.increment_counter()
-                                total_applied += 1
-                                logger.info(f"      ✅ Application #{total_applied} successful")
-                                
-                                # Update job status in DB
-                                if self.db_session:
-                                    self._update_job_status(job_id, 'applied')
-                            else:
-                                logger.warning(f"      ⚠️ Application failed")
-                            
-                            # Small delay between applications
-                            time.sleep(random.uniform(1, 2))
-                            
-                            # Reload the page to get fresh job list (prevents stale elements)
-                            logger.info(f"      Reloading page to continue...")
-                            self.driver.get(job_url)
-                            time.sleep(2)
-                            
-                            # Re-fetch job elements after reload
-                            job_elements = self.driver.find_elements(By.CSS_SELECTOR, container_selector)
-                            
-                        except Exception as e:
-                            logger.debug(f"      Error extracting job info: {e}")
-                            continue
-                            
-                    except Exception as e:
-                        logger.error(f"      ❌ Error processing job: {e}")
+                        job_ids_on_page.append(job_id)
+                    except Exception:
                         continue
                 
+                logger.info(f"    Found {len(job_ids_on_page)} jobs on page {page_num}")
+                
+                # 2. Iterate through IDs and apply (re-finding element each time)
+                items_processed = 0
+                for job_id in job_ids_on_page:
+                    try:
+                        # Check limits
+                        if not guards.can_apply():
+                            logger.warning(f"\n  ⛔ Application limit reached")
+                            return total_applied
+                        
+                        # Re-find the specific job row by ID
+                        # (This prevents StaleElementReferenceException)
+                        current_job_rows = self.driver.find_elements(By.CSS_SELECTOR, container_selector)
+                        target_row = None
+                        for row in current_job_rows:
+                            if job_id in row.text:
+                                target_row = row
+                                break
+                        
+                        if not target_row:
+                            logger.warning(f"    ⚠️ Could not re-locate job {job_id} (page state changed?)")
+                            continue
+                            
+                        # Extract title and link for data
+                        try:
+                            title_elem = target_row.find_element(By.CSS_SELECTOR, selectors['job_title'])
+                            title = title_elem.text.strip()
+                            # Get link if available, else current URL
+                            try:
+                                link_elem = target_row.find_element(By.TAG_NAME, 'a')
+                                url = link_elem.get_attribute('href')
+                            except:
+                                url = self.driver.current_url
+                        except:
+                            title = "Unknown Title"
+                            url = self.driver.current_url
+                            
+                        job_data = {
+                            'job_title': title,
+                            'external_id': job_id,
+                            'job_url': url
+                        }
+                        
+                        # Apply to this job
+                        # (This method handles clicking Details -> Apply -> Form)
+                        logger.info(f"    💼 Processing: {title} ({job_id})")
+                        
+                        # Save discovery to DB
+                        if self.db_session:
+                            self._save_job_to_db(job_data)
+                            
+                        success = self._apply_to_visible_job_immediate(target_row, job_data)
+                        
+                        if success:
+                            guards.increment_counter()
+                            total_applied += 1
+                            if self.db_session:
+                                self._update_job_status(job_id, 'applied')
+                            
+                            # VITAL: Navigate back if we left the list
+                            # _apply_to_visible_job_immediate likely ends on 'Success' page
+                            # We must return to the list for the next job
+                            logger.info("    Returning to search results...")
+                            self.driver.back()
+                            time.sleep(3)
+                            
+                            # If back took us to Page 1 instead of Current Page, we might need to handle that
+                            # For now, let's assume sticking to Page 1 behavior or simple back works
+                        
+                        items_processed += 1
+                        
+                    except Exception as e:
+                        logger.error(f"    ❌ Error processing job {job_id}: {e}")
+                        # Try to recover state
+                        try:
+                            self.driver.back()
+                            time.sleep(2)
+                        except:
+                            pass
+                        continue
+                        
             except Exception as e:
                 logger.error(f"    ❌ Error processing page {page_num}: {e}")
+
             
             # Try to navigate to next page
             try:
@@ -1724,125 +1772,106 @@ class LanceSoftStrategy(BaseStrategy):
             raise
     
     def _fill_eeo_form(self):
-        """Fill the EEO (Equal Employment Opportunity) form with user-provided selectors"""
+        """
+        Fill EEO/Veteran forms: Select 'I do not wish to provide this information' for all options
+        (Gender, Ethnicity, Race, Veteran Status)
+        """
         try:
-            logger.info("Filling EEO form...")
-            time.sleep(1)  # Wait for form to fully render
+            logger.info("Filling EEO/Veteran form...")
+            time.sleep(2)  # Wait for modal content
             
-            # Gender - select "I do not wish to provide this information"
-            try:
-                logger.info("  Selecting Gender: I do not wish to provide this information")
-                gender_input = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, self.selectors_config['gender_radio']))
-                )
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", gender_input)
-                time.sleep(0.3)
-                self.human.human_click(gender_input)
-                logger.info("  ✓ Selected Gender")
-                time.sleep(0.5)
-            except Exception as e:
-                logger.warning(f"  Could not select gender: {e}")
+            # STRATEGY: Find all 'I do not wish...' options and select them
+            # This covers Gender, Ethnicity, Race, and Veteran status all at once
+            target_texts = [
+                "I do not wish to provide this information",
+                "I do not wish to answer",
+                "Decline to identify"
+            ]
             
-            # Ethnicity - select "I do not wish to provide this information"
-            try:
-                logger.info("  Selecting Ethnicity: I do not wish to provide this information")
-                ethnicity_input = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, self.selectors_config['ethnicity_radio']))
-                )
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", ethnicity_input)
-                time.sleep(0.3)
-                self.human.human_click(ethnicity_input)
-                logger.info("  ✓ Selected Ethnicity")
-                time.sleep(0.5)
-            except Exception as e:
-                logger.debug(f"  Direct ethnicity selector failed: {e}")
-                # Fallback 1: Try to find the span with "I do not wish" text
+            clicked_count = 0
+            
+            for text in target_texts:
                 try:
-                    logger.info("  Trying ethnicity via span selector: //span[@class='radio-buttons-label'][contains(., 'I do not wish')]...")
-                    ethnicity_span_xpath = "//span[@class='radio-buttons-label'][contains(., 'I do not wish')]"
-                    ethnicity_span = self.driver.find_element(By.XPATH, ethnicity_span_xpath)
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", ethnicity_span)
-                    time.sleep(0.3)
-                    self.human.human_click(ethnicity_span)
-                    logger.info("  ✓ Selected Ethnicity (via span)")
-                    time.sleep(0.5)
-                except Exception as e2:
-                    logger.debug(f"  Span-based ethnicity selector failed: {e2}")
-                    # Fallback 2: Try to find any ethnicity radio with "not wish" text
-                    try:
-                        logger.info("  Trying ethnicity fallback: finding 'I do not wish' option...")
-                        ethnicity_fallback_xpath = "//input[@type='radio'][@name='ethnicity']"
-                        ethnicity_options = self.driver.find_elements(By.XPATH, ethnicity_fallback_xpath)
-                        
-                        for eth_input in ethnicity_options:
-                            try:
-                                # Check associated label
-                                eth_id = eth_input.get_attribute('id')
-                                if eth_id:
-                                    eth_label = self.driver.find_element(By.XPATH, f"//label[@for='{eth_id}']")
-                                    if "not wish" in eth_label.text.lower() or "decline" in eth_label.text.lower():
-                                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", eth_input)
-                                        time.sleep(0.3)
-                                        self.human.human_click(eth_input)
-                                        logger.info(f"  ✓ Selected Ethnicity (fallback): {eth_label.text}")
-                                        time.sleep(0.5)
-                                        break
-                            except Exception:
-                                continue
-                    except Exception as e3:
-                        logger.warning(f"  Could not select ethnicity: {e3}")
-            
-            # Race - select "I do not wish to provide this information"
-            try:
-                logger.info("  Selecting Race: I do not wish to provide this information")
-                race_input = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, self.selectors_config['race_radio']))
-                )
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", race_input)
-                time.sleep(0.3)
-                self.human.human_click(race_input)
-                logger.info("  ✓ Selected Race")
-                time.sleep(0.5)
-            except Exception as e:
-                logger.debug(f"  Input-based race selector failed: {e}")
-                # Fallback: Try clicking the span directly
-                try:
-                    logger.info("  Trying span-based race selection...")
-                    race_span_xpath = "//span[@name='race'][@value='2,8'][@class='radio-buttons-label'][contains(., 'I do not wish')]"
-                    race_span = self.driver.find_element(By.XPATH, race_span_xpath)
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", race_span)
-                    time.sleep(0.3)
-                    self.human.human_click(race_span)
-                    logger.info("  ✓ Selected Race (via span)")
-                    time.sleep(0.5)
-                except Exception as e2:
-                    logger.warning(f"  Could not select race: {e2}")
-            
-            # Veteran Status (optional field)
-            try:
-                logger.info("  Checking Veteran Status...")
-                veteran_inputs = self.driver.find_elements(By.XPATH, self.selectors_config['veteran_radios'])
-                if veteran_inputs:
-                    # Look for "I do not wish to provide" option
-                    for vet_input in veteran_inputs:
+                    # Find all elements containing the text
+                    # We look for labels, spans, or divs that might be clickable
+                    xpath = f"//*[contains(text(), '{text}')]"
+                    elements = self.driver.find_elements(By.XPATH, xpath)
+                    
+                    for elem in elements:
                         try:
-                            vet_label = vet_input.find_element(By.XPATH, "following-sibling::label | parent::label")
-                            if "not wish" in vet_label.text.lower():
-                                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", vet_input)
-                                time.sleep(0.3)
-                                self.human.human_click(vet_input)
-                                logger.info("  ✓ Selected Veteran Status")
-                                break
-                        except Exception:
+                            # Check if visible
+                            if not elem.is_displayed():
+                                continue
+                            
+                            # Avoid clicking things that are already selected (hard to check for custom UI, but try)
+                            # Just click them. Usually safe for radios.
+                            
+                            logger.info(f"  Found option: '{text}' - Clicking...")
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
+                            time.sleep(0.3)
+                            
+                            # Try standard click then JS click
+                            try:
+                                elem.click()
+                            except:
+                                self.driver.execute_script("arguments[0].click();", elem)
+                                
+                            clicked_count += 1
+                            time.sleep(0.2)
+                            
+                        except Exception as click_err:
+                            logger.debug(f"  Failed to click element: {click_err}")
                             continue
-            except Exception as e:
-                logger.debug(f"  Veteran status field not found: {e}")
+                            
+                except Exception as find_err:
+                    logger.debug(f"  Error searching for '{text}': {find_err}")
+                    continue
             
-            logger.info("✅ EEO form completed")
+            if clicked_count > 0:
+                logger.info(f"  ✓ Selected {clicked_count} 'I do not wish...' options")
+            else:
+                logger.warning("  ⚠️ No EEO options found (checked for 'I do not wish...')")
             
+            # Click Save/Submit button
+            logger.info("  Clicking Save/Submit button...")
+            
+            save_btn_selectors = [
+                "//button[contains(., 'Save')]",
+                "//button[contains(., 'Submit')]",
+                "#quickApplyModal .job-app-btns button:last-child",
+                "#quickApplyModal .job-app-btns button:nth-child(2)"
+            ]
+            
+            btn_clicked = False
+            for selector in save_btn_selectors:
+                if btn_clicked: break
+                try:
+                    if selector.startswith("//"):
+                        btns = self.driver.find_elements(By.XPATH, selector)
+                    else:
+                        btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    
+                    for btn in btns:
+                        if btn.is_displayed():
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                            time.sleep(0.5)
+                            try:
+                                btn.click()
+                            except:
+                                self.driver.execute_script("arguments[0].click();", btn)
+                            
+                            logger.info("  ✓ Clicked Save/Submit")
+                            btn_clicked = True
+                            time.sleep(2)
+                            break
+                except:
+                    continue
+            
+            if not btn_clicked:
+                logger.warning("  ⚠️ Could not find Save button")
+
         except Exception as e:
-            logger.error(f"Error filling EEO form: {e}")
-            raise
+            logger.warning(f"  EEO/Veteran form handling warning: {e}")
 
     def _submit_initial_form(self):
         """Submit the initial application form and proceed to EEO"""
