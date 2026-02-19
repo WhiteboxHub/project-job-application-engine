@@ -220,3 +220,4 @@ resume_json/
 
 # CSV trackers for discovered/applied jobs
 data/*_jobs.csv
+data/guest_form_data_real.json.bak

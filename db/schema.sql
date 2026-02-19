@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 -- SEED DATA: ATS Platforms
 -- =====================================================
 
-INSERT OR REPLACE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES 
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES 
 (1, 'KForce Custom', 'strategies.custom.kforce.KForceStrategy', false),
 (2, 'SAP SuccessFactors', 'strategies.custom.capgemini.CapgeminiStrategy', false),
 (3, 'Insight Global Custom', 'strategies.custom.InsightGlobalStrategy', false),
@@ -132,7 +132,7 @@ INSERT OR REPLACE INTO ats_platforms (id, name, class_handler, is_headless_requi
 -- SEED DATA: Job Sites
 -- =====================================================
 
-INSERT OR REPLACE INTO job_sites (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active) VALUES 
+INSERT OR IGNORE INTO job_sites (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active) VALUES 
 (1, 'KForce', 'kforce.com', 1, 'Staffing vendor', 'https://www.kforce.com/find-work/search-jobs/', 'https://www.kforce.com/Jobs/{job_id}/ApplyOnline/', true),
 (2, 'Capgemini', 'capgemini.com', 2, 'Consulting firm', 'https://www.capgemini.com/us-en/careers/join-capgemini/job-search/?country_code=us-en&country_name=United%20States&size=15', 'https://career5.successfactors.eu/careers?company=capgemitecP3', true),
 (3, 'Insight Global', 'insightglobal.com', 3, 'Staffing vendor', 'https://insightglobal.com/jobs/', 'https://jobs.insightglobal.com/users/jobapplynoaccount.aspx?jobid={job_id}', true),
@@ -292,6 +292,33 @@ INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUE
         "race_asian": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div:nth-child(4) > div:nth-child(5) > span.radio-buttons-label",
         "veteran_no_answer": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div.radio-buttons-div > div:nth-child(7) > input[type=checkbox]",
         "save_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button > span > span"
+    }
+}'::JSON);
+
+-- 5. Wipro Selectors (IDs 9-10)
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUES 
+(9, 5, 'listing', '{
+    "keyword_input": "input[data-testid=''searchByKeywords''], input[name=''q''], input.form-control[placeholder*=''Skills'']",
+    "location_input": "input[data-testid=''searchByLocation''], input[name=''locationsearch''], input.location-input",
+    "search_button": "button[data-testid=''submitJobSearchBtn''], button.keywordsearchbutton, button[title=''Search Jobs'']",
+    "job_container": "li[data-testid=''jobCard''], li[class*=''jobCard'']",
+    "job_title": "a[data-testid^=''jobCardTitle''], a[class*=''jobCardTitle'']",
+    "job_link": "a[data-testid^=''jobCardTitle''], a[class*=''jobCardTitle'']",
+    "job_id": "span[data-help-id^=''jobCardFooterValue'']:first-of-type, div[data-help-id^=''jobCardFooterRow''] span[class*=''jobCardFooterValue'']:first-of-type",
+    "next_page": "button[data-testid=''goToNextPageBtn''], button[aria-label=''Go to next page''], button:contains(''Next'')",
+    "page_numbers": "ul[data-help-id=''paginatorWrapperUl''] li, nav[data-testid=''paginatorWrapper''] li"
+}'::JSON),
+(10, 5, 'application', '{
+    "flow_type": "legacy_form",
+    "apply_button_dropdown": "button#unifyApplyNowTopButton, button.unify-apply-now, button[id*=''ApplyNow'']",
+    "apply_button_menu_item": "a#applyOption--manual, a.applyOption[aria-label=''Apply Now''], ul#unifyApplyNowButtonListDropDown a:first-child",
+    "form_fields": {
+        "first_name": "input[name*=''FirstName'']",
+        "last_name": "input[name*=''LastName'']",
+        "email": "input[name*=''Email'']",
+        "phone": "input[name*=''Phone'']",
+        "resume_upload": "input[type=''file'']",
+        "submit_btn": "#ContentPlaceHolder1_cmdApply"
     }
 }'::JSON);
 

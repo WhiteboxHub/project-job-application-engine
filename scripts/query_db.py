@@ -21,13 +21,18 @@ def run_query(sql_query):
         print(f"QUERY: {sql_query}")
         print("=" * 70)
         
-        result = conn.execute(sql_query).df()
+        rows = conn.execute(sql_query).fetchall()
+        columns = [desc[0] for desc in conn.execute(f"DESCRIBE {sql_query.split(' ')[sql_query.lower().split(' ').index('from') + 1]}").fetchall()] if "from" in sql_query.lower() else []
         
-        if len(result) == 0:
+        if not rows:
             print("\n❌ No results found")
         else:
-            print(f"\n✅ Found {len(result)} row(s):\n")
-            print(result.to_string())
+            print(f"\n✅ Found {len(rows)} row(s):\n")
+            if columns:
+                print(" | ".join(columns))
+                print("-" * 70)
+            for row in rows:
+                print(" | ".join(str(val) for val in row))
         
         conn.close()
         print("\n" + "=" * 70)

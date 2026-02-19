@@ -1,49 +1,49 @@
 {
     "search": {
-        "keyword": "AIML Engineer",
-        "location": "california",
-        "distance": "0"
+        "keyword": "Software Engineer",
+        "location": "San Francisco, CA",
+        "distance": "50"
     },
     "applicant": {
-        "first_name": "Ghazal",
-        "last_name": "Sultan",
-        "email": "ghazal.sultan1616@gmail.com",
-        "gender": "Female",
-        "phone": "6692133034",
-        "address": "440 Oceanside dr",
-        "city": "Mountain House",
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "testuser@example.com",
+        "gender": "Male",
+        "phone": "5551234567",
+        "address": "123 Test St",
+        "city": "Testville",
         "state": "California",
-        "zip_code": "95391",
+        "zip_code": "90210",
         "country": "United States",
         "countrycode": "USA (+1)",
-        "preferred_name": "",
+        "preferred_name": "Tester",
         "social_account_url": "",
         "disability_assistance": "No",
         "disability_assistance_explain": "",
         "experience": [
             {
-                "title": "AIML Engineer",
-                "company": "Gainwell Technologies",
-                "location": "Irving, TX",
+                "title": "Software Engineer",
+                "company": "Test Corp",
+                "location": "Remote",
                 "country": "United States",
-                "state": "Texas",
-                "city": "Irving",
-                "start_date": "10/01/2023",
+                "state": "California",
+                "city": "San Francisco",
+                "start_date": "01/01/2020",
                 "end_date": "Present"
             }
         ],
         "education": [
             {
-                "degree": "BA",
-                "University": "University of Sindh",
-                "major": "Political Science",
+                "degree": "Bachelors",
+                "University": "Test University",
+                "major": "Computer Science",
                 "education_type": "University",
-                "country": "Pakistan",
-                "state": "Pakistan",
-                "city": "JAMSHORO",
-                "year_of_passing": "06/01/2013",
-                "start_date": "09/01/2011",
-                "end_date": "06/01/2013"
+                "country": "United States",
+                "state": "California",
+                "city": "San Francisco",
+                "year_of_passing": "05/01/2019",
+                "start_date": "09/01/2015",
+                "end_date": "05/01/2019"
             }
         ],
         "auth_country_select": "Yes",
@@ -59,8 +59,8 @@
         "wipro_employee_id": ""
     },
     "wipro_credentials": {
-        "email": "ghazal.sultan1616@gmail.com",
-        "password": "Innovapath@1"
+        "email": "testuser@example.com",
+        "password": "testing_password123"
     },
-    "resume_path": "resume/Ghazal_Sultan.pdf"
+    "resume_path": "resume/test_resume.pdf"
 }
