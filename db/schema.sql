@@ -1,7 +1,7 @@
 /*
-  Job Application Engine - DuckDB Schema
-  Single database for both configuration and history
-  Version: 1.0 (KForce Only)
+  Enterprise Job Application Engine (E-JAE) - DuckDB Schema
+  Unified database for configuration, discovery, and application history
+  Version: 2.0 (Multi-Platform: KForce, Capgemini, Insight Global, LanceSoft, Wipro)
 */
 
 -- =====================================================
@@ -99,205 +99,203 @@ CREATE TABLE IF NOT EXISTS applications (
     FOREIGN KEY (job_listing_id) REFERENCES job_listings(id)
 );
 
+-- 6. Metrics (Performance Tracking)
+CREATE TABLE IF NOT EXISTS metrics (
+    id BIGINT PRIMARY KEY,
+    run_date DATE NOT NULL,
+    job_site_id INTEGER,
+    
+    total_jobs_found INTEGER DEFAULT 0,
+    total_applications_attempted INTEGER DEFAULT 0,
+    total_applications_successful INTEGER DEFAULT 0,
+    total_applications_failed INTEGER DEFAULT 0,
+    
+    avg_application_time_seconds FLOAT,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (job_site_id) REFERENCES job_sites(id)
+);
+
 -- =====================================================
--- SEED DATA: KForce Configuration
+-- SEED DATA: ATS Platforms
 -- =====================================================
 
--- Insert KForce Strategy
-INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required)
-VALUES (1, 'KForce Custom', 'strategies.custom.kforce.KForceStrategy', false);
+INSERT OR REPLACE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES 
+(1, 'KForce Custom', 'strategies.custom.kforce.KForceStrategy', false),
+(2, 'SAP SuccessFactors', 'strategies.custom.capgemini.CapgeminiStrategy', false),
+(3, 'Insight Global Custom', 'strategies.custom.InsightGlobalStrategy', false),
+(4, 'JobDiva', 'strategies.custom.LanceSoftStrategy', false),
+(5, 'Wipro Custom', 'strategies.custom.WiproStrategy', false);
 
--- Insert KForce Job Site
-INSERT OR IGNORE INTO job_sites (
-    id,
-    company_name,
-    domain,
-    ats_platform_id,
-    category,
-    search_url_template,
-    apply_url_template,
-    is_active
-)
-VALUES (
-    1,
-    'KForce',
-    'kforce.com',
-    1,
-    'Staffing vendor',
-    'https://www.kforce.com/find-work/search-jobs/',
-    'https://www.kforce.com/Jobs/{job_id}/ApplyOnline/',
-    true
-);
+-- =====================================================
+-- SEED DATA: Job Sites
+-- =====================================================
 
--- Insert KForce Listing Selectors
-INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
-VALUES (
-    1,
-    1,
-    'listing',
-    '{
-        "search_input": "input[placeholder=\"Search by Job Title or Skill\"]",
-        "search_button": "input.search-icon.submitIcon",
-        "container": ".linkForJob",
-        "search_keywords": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker", "Kubernetes", "CI/CD", "REST API", "PostgreSQL"],
-        "fields": {
-            "title": {
-                "selector": ".linkForJob",
-                "type": "text"
-            },
-            "url": {
-                "selector": ".linkForJob",
-                "attr": "href"
-            }
-        }
-    }'::JSON
-);
+INSERT OR REPLACE INTO job_sites (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active) VALUES 
+(1, 'KForce', 'kforce.com', 1, 'Staffing vendor', 'https://www.kforce.com/find-work/search-jobs/', 'https://www.kforce.com/Jobs/{job_id}/ApplyOnline/', true),
+(2, 'Capgemini', 'capgemini.com', 2, 'Consulting firm', 'https://www.capgemini.com/us-en/careers/join-capgemini/job-search/?country_code=us-en&country_name=United%20States&size=15', 'https://career5.successfactors.eu/careers?company=capgemitecP3', true),
+(3, 'Insight Global', 'insightglobal.com', 3, 'Staffing vendor', 'https://insightglobal.com/jobs/', 'https://jobs.insightglobal.com/users/jobapplynoaccount.aspx?jobid={job_id}', true),
+(4, 'LanceSoft', 'lancesoft.com', 4, 'Staffing vendor', 'https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=', NULL, true),
+(5, 'Wipro', 'wipro.com', 5, 'System integrator', 'https://careers.wipro.com/', NULL, true);
 
--- Insert KForce Application Selectors
-INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
-VALUES (
-    2,
-    1,
-    'application',
-    '{
-        "flow_type": "kforce_guest",
-        "apply_initiator": "#TK_WIDGET_INITIATOR",
-        "apply_link_option": ".TK_WIDGET[rel=\"form\"] a",
-        "form_fields": {
-            "first_name": "#firstName",
-            "last_name": "#lastName",
-            "email": "#emailAddress",
-            "email_verify": "#emailAddressVerify",
-            "phone": "#phoneNumberAll",
-            "zip_code": "#postalCode",
-            "state": "#state",
-            "resume_upload": "#uploadFileSystemResume",
-            "eligibility_auth": "#eligibility0",
-            "eligibility_employer": "#eligibility1",
-            "eligibility_sponsorship": "#eligibility2",
-            "next_btn": "//button[contains(text(), \"Next\") or @id=\"NextButton\" or contains(@class, \"next-button\")]",
-            "submit_btn": "#SubmitButton"
-        },
-        "questionnaire_answers": {
-            "eligibility_auth": "AuthorizedForAny",
-            "eligibility_sponsorship": "No"
-        },
-        "success_indicators": [
-            "Thank you",
-            "Application Received",
-            "Successfully Submitted",
-            "received your application"
-        ]
-    }'::JSON
-);
+-- =====================================================
+-- SEED DATA: Site Selectors
+-- =====================================================
+
+-- 1. KForce Selectors (IDs 1-2)
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUES 
+(1, 1, 'listing', '{
+    "search_input": "input[placeholder=\"Search by Job Title or Skill\"]",
+    "search_button": "input.search-icon.submitIcon",
+    "container": ".linkForJob",
+    "search_keywords": ["Python", "JavaScript", "React", "Node.js", "AWS", "Docker", "Kubernetes", "CI/CD", "REST API", "PostgreSQL"],
+    "fields": {
+        "title": { "selector": ".linkForJob", "type": "text" },
+        "url": { "selector": ".linkForJob", "attr": "href" }
+    }
+}'::JSON),
+(2, 1, 'application', '{
+    "flow_type": "kforce_guest",
+    "apply_initiator": "#TK_WIDGET_INITIATOR",
+    "apply_link_option": ".TK_WIDGET[rel=\"form\"] a",
+    "form_fields": {
+        "first_name": "#firstName",
+        "last_name": "#lastName",
+        "email": "#emailAddress",
+        "email_verify": "#emailAddressVerify",
+        "phone": "#phoneNumberAll",
+        "zip_code": "#postalCode",
+        "state": "#state",
+        "resume_upload": "#uploadFileSystemResume",
+        "eligibility_auth": "#eligibility0",
+        "eligibility_employer": "#eligibility1",
+        "eligibility_sponsorship": "#eligibility2",
+        "next_btn": "//button[contains(text(), \"Next\") or @id=\"NextButton\" or contains(@class, \"next-button\")]",
+        "submit_btn": "#SubmitButton"
+    },
+    "questionnaire_answers": {
+        "eligibility_auth": "AuthorizedForAny",
+        "eligibility_sponsorship": "No"
+    },
+    "success_indicators": ["Thank you", "Application Received", "Successfully Submitted", "received your application"]
+}'::JSON);
+
+-- 2. Capgemini Selectors (IDs 3-4)
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUES 
+(3, 2, 'listing', '{
+    "search_input": "#searchsubmit",
+    "job_cards": "a.table-tr.filter-box.joblink",
+    "load_more_button": "a.filters-more",
+    "clear_filters": "button.remove-all-tags",
+    "search_keywords": ["AI Architect", "Machine Learning", "Python Engineer", "GenAI Analyst"],
+    "fields": {
+        "title": { "selector": "div", "type": "text" },
+        "url": { "selector": "a.table-tr", "attr": "href" }
+    }
+}'::JSON),
+(4, 2, 'application', '{
+    "flow_type": "successfactors_login",
+    "apply_button_main": "a.cta-link",
+    "sign_in_button": "//a[@onclick=\"openSignInModal()\"]",
+    "login_email": "#username",
+    "login_password": "#password",
+    "login_submit": "#fbqa_signin",
+    "form_fields": {
+        "first_name": "#fbclc_fName",
+        "last_name": "#fbclc_lName",
+        "phone": "#tor__fcellPhone",
+        "resume_upload": "input[type=\"file\"]",
+        "work_authorization": "#13\\:_input",
+        "visa_sponsorship": "#17\\:_input",
+        "prior_agreement": "#21\\:_input",
+        "ethnicity": "#25\\:_input",
+        "veteran_status": "#29\\:_input",
+        "disability_status": "#33\\:_input",
+        "previous_employment": "#37\\:_input",
+        "gender_consent": "#41\\:_input",
+        "gender": "#45\\:_input",
+        "sms_consent": "#57\\:_input",
+        "submit_btn": "#fbqa_apply"
+    },
+    "questionnaire_answers": {
+        "work_authorization": "Yes",
+        "visa_sponsorship": "No",
+        "prior_agreement": "No",
+        "ethnicity": "South Asian (e.g. Indian)",
+        "veteran_status": "Not a Protected Veteran",
+        "disability_status": "No, I don’t have a disability",
+        "previous_employment": "No",
+        "gender_consent": "Yes",
+        "gender": "Male",
+        "sms_consent": "Yes"
+    },
+    "success_indicators": ["Thank you", "Application submitted", "Successfully applied", "received your application"]
+}'::JSON);
+
+-- 3. Insight Global Selectors (IDs 5-6)
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUES 
+(5, 3, 'listing', '{
+    "container": "div.result",
+    "pagination_type": "click_next",
+    "pagination_selector": "a[title=\"Page Forward\"]",
+    "fields": {
+        "job_id": { "selector": "button[id=\"btnSaveJob\"]", "attr": "jobId" },
+        "title": { "selector": ".job-title a", "type": "text" },
+        "url": { "selector": ".job-title a", "attr": "href" }
+    }
+}'::JSON),
+(6, 3, 'application', '{
+    "flow_type": "legacy_form",
+    "form_fields": {
+        "first_name": "input[name*=\"FirstName\"]",
+        "last_name": "input[name*=\"LastName\"]",
+        "email": "input[name*=\"Email\"]",
+        "phone": "input[name*=\"Phone\"]",
+        "resume_upload": "input[type=\"file\"]",
+        "submit_btn": "#ContentPlaceHolder1_cmdApply"
+    }
+}'::JSON);
+
+-- 4. LanceSoft Selectors (IDs 7-8)
+INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json) VALUES 
+(7, 4, 'listing', '{
+    "search_input": "#root > div > div > div:nth-child(2) > div:nth-child(1) > div > div.col > form > div > input",
+    "search_button": "button.btn.jd-btn",
+    "container": "div.list-group-item.list-group-item-action",
+    "pagination_type": "click_next",
+    "pagination_selector": "button.jd-btn-outline.jd-btn-small.jd-btn-square[aria-label=\"Next Page\"]",
+    "fields": {
+        "title": { "selector": "span.text-capitalize.jd-nav-label.notranslate", "type": "text" },
+        "details_button": { "selector": "button.btn.jd-btn", "type": "button" },
+        "job_id": { "selector": "div.d-flex.text-muted small:nth-child(3)", "type": "text" },
+        "location": { "selector": "div.d-flex.text-muted small:nth-child(4)", "type": "text" },
+        "salary": { "selector": "div.d-flex.text-muted small:nth-child(1)", "type": "text" }
+    }
+}'::JSON),
+(8, 4, 'application', '{
+    "flow_type": "jobdiva_portal",
+    "apply_button": "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
+    "quick_apply_option": "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
+    "form_fields": {
+        "first_name": "input[placeholder*=\"First Name\" i]",
+        "last_name": "input[placeholder*=\"Last Name\" i]",
+        "email": "input[type=\"email\"]",
+        "phone": "input[type=\"tel\"]",
+        "resume_upload": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div > div > div:nth-child(4) > div > div:nth-child(1) > div > div:nth-child(5) > label > svg",
+        "submit_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
+        "next_btn": "button.btn.jd-btn-outline"
+    },
+    "eeo_form": {
+        "gender_no_answer": "input[type=\"radio\"][value*=\"not wish\" i]",
+        "ethnicity_no_answer": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div:nth-child(3) > div:nth-child(4)",
+        "race_asian": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div:nth-child(4) > div:nth-child(5) > span.radio-buttons-label",
+        "veteran_no_answer": "#quickApplyModal > div > div > div:nth-child(1) > div.modal-body-main.notranslate > div.job-app-main > div > div.radio-buttons-div > div:nth-child(7) > input[type=checkbox]",
+        "save_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button > span > span"
+    }
+}'::JSON);
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
 CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);
 CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at);
-
--- =====================================================
--- SEED DATA: Capgemini Configuration
--- =====================================================
-
--- Insert Capgemini Strategy
-INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required)
-VALUES (2, 'SAP SuccessFactors', 'strategies.custom.capgemini.CapgeminiStrategy', false);
-
--- Insert Capgemini Job Site
-INSERT OR IGNORE INTO job_sites (
-    id,
-    company_name,
-    domain,
-    ats_platform_id,
-    category,
-    search_url_template,
-    apply_url_template,
-    is_active
-)
-VALUES (
-    2,
-    'Capgemini',
-    'capgemini.com',
-    2,
-    'Consulting firm',
-    'https://www.capgemini.com/us-en/careers/join-capgemini/job-search/?country_code=us-en&country_name=United%20States&size=15',
-    'https://career5.successfactors.eu/careers?company=capgemitecP3',
-    true
-);
-
--- Insert Capgemini Listing Selectors
-INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
-VALUES (
-    3,
-    2,
-    'listing',
-    '{
-        "search_input": "#searchsubmit",
-        "job_cards": "a.table-tr.filter-box.joblink",
-        "load_more_button": "a.filters-more",
-        "clear_filters": "button.remove-all-tags",
-        "search_keywords": ["AI Architect", "Machine Learning", "Python Engineer", "GenAI Analyst"],
-        "fields": {
-            "title": {
-                "selector": "div",
-                "type": "text"
-            },
-            "url": {
-                "selector": "a.table-tr",
-                "attr": "href"
-            }
-        }
-    }'::JSON
-);
-
--- Insert Capgemini Application Selectors
-INSERT OR REPLACE INTO site_selectors (id, job_site_id, type, config_json)
-VALUES (
-    4,
-    2,
-    'application',
-    '{
-        "flow_type": "successfactors_login",
-        "apply_button_main": "a.cta-link",
-        "sign_in_button": "//a[@onclick=\"openSignInModal()\"]",
-        "login_email": "#username",
-        "login_password": "#password",
-        "login_submit": "#fbqa_signin",
-        "form_fields": {
-            "first_name": "#fbclc_fName",
-            "last_name": "#fbclc_lName",
-            "phone": "#tor__fcellPhone",
-            "resume_upload": "input[type=\"file\"]",
-            "work_authorization": "#13\\:_input",
-            "visa_sponsorship": "#17\\:_input",
-            "prior_agreement": "#21\\:_input",
-            "ethnicity": "#25\\:_input",
-            "veteran_status": "#29\\:_input",
-            "disability_status": "#33\\:_input",
-            "previous_employment": "#37\\:_input",
-            "gender_consent": "#41\\:_input",
-            "gender": "#45\\:_input",
-            "sms_consent": "#57\\:_input",
-            "submit_btn": "#fbqa_apply"
-        },
-        "questionnaire_answers": {
-            "work_authorization": "Yes",
-            "visa_sponsorship": "No",
-            "prior_agreement": "No",
-            "ethnicity": "South Asian (e.g. Indian)",
-            "veteran_status": "Not a Protected Veteran",
-            "disability_status": "No, I don’t have a disability",
-            "previous_employment": "No",
-            "gender_consent": "Yes",
-            "gender": "Male",
-            "sms_consent": "Yes"
-        },
-        "success_indicators": [
-            "Thank you",
-            "Application submitted",
-            "Successfully applied",
-            "received your application"
-        ]
-    }'::JSON
-);

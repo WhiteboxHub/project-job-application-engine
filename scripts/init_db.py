@@ -1,3 +1,4 @@
+
 import sys
 import os
 
@@ -10,10 +11,10 @@ from config.settings import settings
 from core.logger import logger
 
 def init_database():
-    """Initialize DuckDB database with schema and seed data from root"""
+    """Initialize DuckDB database with schema and seed data"""
     try:
         logger.info("=" * 60)
-        logger.info("Starting database initialization from root...")
+        logger.info("Starting database initialization...")
         logger.info("=" * 60)
         
         # Get paths
@@ -39,7 +40,7 @@ def init_database():
             logger.info("\nNext steps:")
             logger.info(f"1. Review database at: {db_path}")
             logger.info("2. Test with: python scripts/main.py --dry-run")
-            logger.info("3. Check seeded data for KForce")
+            logger.info("3. Check seeded data for all supported platforms")
             return True
         else:
             logger.error("Failed to initialize database")

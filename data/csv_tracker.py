@@ -121,6 +121,14 @@ class CSVTracker:
             return [r for r in rows if r.get('status') == status]
         return rows
 
+    def get_job_status(self, site_name: str, job_url: str) -> Optional[dict]:
+        """Returns the full row for a specific job_url if it exists."""
+        rows = self._read(site_name)
+        for r in rows:
+            if r.get('job_url') == job_url:
+                return r
+        return None
+
 
 # module-level default tracker
 tracker = CSVTracker()

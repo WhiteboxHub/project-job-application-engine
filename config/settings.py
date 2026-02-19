@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     DUCKDB_PATH: str = "data/job_engine.duckdb"
     
     # Browser
+    # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
     HEADLESS: bool = False
     
@@ -19,9 +20,13 @@ class Settings(BaseSettings):
     PROXY_URL: Optional[str] = None
 
     # Safety
-    MAX_APPLICATIONS_PER_RUN: int = 10
-    SUBMISSION_COOLDOWN_SECONDS: int = 30
+    MAX_APPLICATIONS_PER_RUN: int = 200  # Effectively unlimited
+    SUBMISSION_COOLDOWN_SECONDS: int = 60
     DRY_RUN: bool = False
+    # Keep browser open after run (useful for debugging)
+    KEEP_BROWSER_OPEN: bool = False
+    # How long to wait after clicking submit for navigation (seconds)
+    SUBMIT_POST_CLICK_WAIT: int = 15
 
     # Multi-platform support (backward compatible)
     PLATFORM_FILTER: Optional[str] = None  # Filter by platform: "KForce", "InsightGlobal", etc.
@@ -33,10 +38,6 @@ class Settings(BaseSettings):
     # Capgemini Defaults
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
-    # Keep browser open after run (useful for debugging)
-    KEEP_BROWSER_OPEN: bool = False
-    # How long to wait after clicking submit for navigation (seconds)
-    SUBMIT_POST_CLICK_WAIT: int = 15
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -15,7 +15,7 @@ class StrategyFactory:
         Dynamically imports and instantiates a strategy class.
         
         Args:
-            class_path: Python module path (e.g., 'strategies.custom.kforce.KForceStrategy')
+            class_path: Python module path (e.g., 'strategies.custom.kforce.KForceStrategy' or 'strategies.custom.InsightGlobalStrategy')
             driver: Selenium WebDriver instance
             job_site: JobSite model instance from database
             selectors: Dictionary of selectors from database

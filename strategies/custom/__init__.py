@@ -3,8 +3,11 @@ Custom job application strategies.
 
 This module contains platform-specific automation strategies.
 Currently supports:
-- KForce
-- Capgemini
+- KForce (Custom Guest Flow)
+- Capgemini (SAP SuccessFactors)
+- Insight Global (Legacy Portal)
+- LanceSoft (JobDiva Portal)
+- Wipro (Custom Talent Portal)
 """
 
 __all__ = []
@@ -18,5 +21,23 @@ except ImportError:
 try:
     from .capgemini import CapgeminiStrategy
     __all__.append('CapgeminiStrategy')
+except ImportError:
+    pass
+
+try:
+    from .insight_global import InsightGlobalStrategy
+    __all__.append('InsightGlobalStrategy')
+except ImportError:
+    pass
+
+try:
+    from .lancesoft import LanceSoftStrategy
+    __all__.append('LanceSoftStrategy')
+except ImportError:
+    pass
+
+try:
+    from .wipro import WiproStrategy
+    __all__.append('WiproStrategy')
 except ImportError:
     pass

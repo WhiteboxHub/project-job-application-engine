@@ -49,20 +49,20 @@ class EngineRunner:
                 
                 # Apply filter if provided
                 if site_filter:
-                    logger.info(f"🔎 Filtering for site: {site_filter}")
+                    logger.info(f"🔎 [SEARCH] Filtering for site: {site_filter}")
                     query = query.filter(JobSite.company_name.ilike(f"%{site_filter}%"))
                 
                 active_sites = query.all()
                 
                 if not active_sites:
                     if site_filter:
-                        logger.warning(f"⚠️ No active job sites found matching '{site_filter}'")
+                        logger.warning(f"⚠️ [WARNING] No active job sites found matching '{site_filter}'")
                     else:
-                        logger.warning("⚠️ No active job sites found in database.")
-                    logger.info("Run: python3 init_db.py to seed KForce")
+                        logger.warning("⚠️ [WARNING] No active job sites found in database.")
+                    logger.info("Run: python scripts/init_db.py to initialize database")
                     return
                 
-                logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")
+                logger.info(f"\n📋 [LIST] Found {len(active_sites)} active job site(s):")
                 for site in active_sites:
                     logger.info(f"   - {site.company_name} ({site.domain})")
                 
@@ -87,7 +87,7 @@ class EngineRunner:
                 db.close_session(session)
                 
         except Exception as e:
-            logger.critical(f"❌ Engine crashed: {e}")
+            logger.critical(f"❌ [ERROR] Engine crashed: {e}")
             import traceback
             traceback.print_exc()
             
@@ -130,8 +130,8 @@ class EngineRunner:
             # Load strategy via factory
             try:
                 # Debug: verify session is valid
-                logger.info(f"📊 Database session type: {type(session)}")
-                logger.info(f"📊 Passing session to strategy: {session is not None}")
+                logger.info(f"📊 [DEBUG] Database session type: {type(session)}")
+                logger.info(f"📊 [DEBUG] Passing session to strategy: {session is not None}")
                 
                 strategy = strategy_factory.get_strategy(
                     strategy_path,
@@ -141,20 +141,20 @@ class EngineRunner:
                     session  # Pass database session
                 )
             except Exception as e:
-                logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
+                logger.error(f"❌ [ERROR] Failed to load strategy for {site.company_name}: {e}")
                 return
             
             # Login (if required)
             logger.info("Attempting login...")
             if not strategy.login():
-                logger.error(f"❌ Login failed for {site.company_name}")
+                logger.error(f"❌ [ERROR] Login failed for {site.company_name}")
                 return
             logger.info("✅ Login successful (or not required)")
             
             # Find jobs (or find and apply if supported by strategy)
             logger.info("🔍 Discovering jobs...")
             
-            if hasattr(strategy, 'find_and_apply_jobs'):
+            if hasattr(strategy, 'find_and_apply_jobs') or site.company_name == "LanceSoft":
                 # Some sites use a combined apply-immediately strategy
                 logger.info(f"\n📤 Finding and applying to jobs immediately...")
                 applied_count = strategy.find_and_apply_jobs()
@@ -172,7 +172,7 @@ class EngineRunner:
                 
                 for job in jobs:
                     if not guards.can_apply():
-                        logger.warning("⛔ Application limit reached")
+                        logger.warning("⛔ [WARNING] Application limit reached")
                         break
                     
                     try:
@@ -187,15 +187,19 @@ class EngineRunner:
                             logger.warning("⚠️ Application failed")
                             
                     except Exception as e:
-                        logger.error(f"❌ Error applying to job: {e}")
+                        logger.error(f"❌ [ERROR] Error applying to job: {e}")
+                        # Check if browser is closed/dead - if so, stop processing this site
+                        if "no such window" in str(e).lower() or "disconnected" in str(e).lower():
+                            logger.error("❌ [FATAL] Browser window was closed. Stopping.")
+                            break
                         continue
                 
-                logger.info(f"\n✅ Completed {site.company_name}: {applied_count} applications")
+                logger.info(f"\n✅ [OK] Completed {site.company_name}: {applied_count} applications")
             else:
                 logger.info("ℹ️ No jobs found to apply to")
                 
         except Exception as e:
-            logger.error(f"❌ Error processing {site.company_name}: {e}")
+            logger.error(f"❌ [ERROR] Error processing {site.company_name}: {e}")
             import traceback
             traceback.print_exc()
     

@@ -24,6 +24,29 @@ class CaptchaHandler:
         """
         self.driver = driver
         self.timeout = timeout
+    def detect_recaptcha(self):
+        """
+        Detect if reCAPTCHA is present on the page.
+        Checks for various reCAPTCHA iframe patterns.
+        """
+        from selenium.webdriver.common.by import By
+        try:
+            # Check for common reCAPTCHA iframe patterns
+            iframes = self.driver.find_elements(
+                By.CSS_SELECTOR, 
+                "iframe[src*='recaptcha/api2/anchor'], iframe[title*='reCAPTCHA'], iframe[src*='recaptcha/api2/bframe']"
+            )
+            
+            # Filter for visible iframes
+            visible_iframes = [f for f in iframes if f.is_displayed()]
+            
+            if visible_iframes:
+                logger.info(f"CAPTCHA detected: {len(visible_iframes)} visible reCAPTCHA element(s)")
+                return True
+            return False
+        except Exception as e:
+            logger.debug(f"Error detecting reCAPTCHA: {e}")
+            return False
     
     def wait_for_captcha_solution(self, custom_timeout=None):
         """
