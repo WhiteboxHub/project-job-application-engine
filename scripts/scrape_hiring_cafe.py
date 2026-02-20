@@ -7,15 +7,16 @@ Usage:
 """
 
 import argparse
-import sys
+import json
 import os
+import sys
 
 # Ensure project root is in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.browser import browser_service
 from core.logger import logger
-from strategies.custom.hiring_cafe import HiringCafeStrategy
+from strategies.custom.hiring_cafe import HiringCafeStrategy, categorize_jobs_by_ats
 from config.settings import settings
 
 
@@ -78,6 +79,13 @@ Examples:
         default=None,
         help="Max number of jobs to process (default: all)"
     )
+    parser.add_argument(
+        "--ats-batch-size",
+        type=int,
+        metavar="N",
+        default=100,
+        help="Enrich ATS URLs in batches of N, per keyword (default: 100)"
+    )
     
     args = parser.parse_args()
     args.enrich_ats = not args.no_enrich_ats
@@ -108,8 +116,20 @@ Examples:
             enrich_ats=args.enrich_ats,
             enrich_ats_limit=args.enrich_ats_limit,
             job_limit=args.job_limit,
+            ats_batch_size=args.ats_batch_size,
         )
         
+        # Categorize by ATS and write second file (all URLs grouped per platform)
+        if jobs:
+            by_ats = categorize_jobs_by_ats(jobs)
+            out_dir = os.path.dirname(args.output)
+            by_ats_path = os.path.join(out_dir, "hiring_cafe_by_ats.json") if out_dir else "hiring_cafe_by_ats.json"
+            payload = {"source": "hiring.cafe", "categorized_by": "ats_platform", "platforms": list(by_ats.keys()), "by_ats": by_ats}
+            with open(by_ats_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            logger.info("💾 Saved by-ATS file: %s", by_ats_path)
+            print(f"📂 By ATS: {by_ats_path}")
+
         # Print summary
         print("\n" + "=" * 60)
         print(f"✅ Scraping completed!")

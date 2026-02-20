@@ -26,6 +26,7 @@ ATS_PLATFORM_PATTERNS = [
     (r"greenhouse\.io|boards\.greenhouse|jobs\.greenhouse", "greenhouse"),
     (r"sapsf\.com|successfactors\.com", "sapsf"),
     (r"workday\.com", "workday"),
+    (r"adp\.com|workforcenow\.adp\.com", "adp"),
     (r"ashhq\.by|ashhqby", "ashhqby"),
     (r"smartrecruiters\.com", "smartrecruiters"),
     (r"icims\.com", "icims"),
@@ -35,6 +36,7 @@ ATS_PLATFORM_PATTERNS = [
     (r"apply\.workable\.com|workable\.com", "workable"),
     (r"bamboohr\.com", "bamboohr"),
     (r"paycom\.com", "paycom"),
+    (r"paychex\.com|myapps\.paychex\.com", "paychex"),
     (r"ultipro\.com", "ultipro"),
     (r"linkedin\.com/jobs", "linkedin"),
     (r"indeed\.com", "indeed"),
@@ -42,6 +44,9 @@ ATS_PLATFORM_PATTERNS = [
     (r"recruitee\.com", "recruitee"),
     (r"teamtailor\.com", "teamtailor"),
     (r"personio\.com", "personio"),
+    (r"oraclecloud\.com", "oraclecloud"),
+    (r"applytojob\.com", "applytojob"),
+    (r"brassring\.com", "brassring"),
 ]
 
 
@@ -69,9 +74,52 @@ def _load_hiring_cafe_config() -> dict:
     return {}
 
 
-def _build_search_url(keyword: str, base_url: str = "https://hiring.cafe") -> str:
-    """Build hiring.cafe search URL from keyword. searchState is URL-encoded JSON {"searchQuery": keyword}."""
-    search_state = json.dumps({"searchQuery": keyword})
+# Date filter: dateFetchedPastNDays in searchState (default 2 = 24 hours)
+DATE_FETCHED_PRESETS = {
+    "24h": 2,   # 24 hours
+    "3d": 4,    # 3 days
+    "1w": 14,   # 1 week
+    "2w": 21,   # 2 weeks
+    "all": -1,  # All time
+}
+
+
+def _parse_date_fetched_past_n_days(value) -> int:
+    """Parse config value to dateFetchedPastNDays. Presets: 24h=2, 3d=4, 1w=14, 2w=21, all=-1. Default 2 (24h)."""
+    if value is None:
+        return 2
+    if isinstance(value, int):
+        return value
+    s = str(value).strip().lower()
+    if s in DATE_FETCHED_PRESETS:
+        return DATE_FETCHED_PRESETS[s]
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 2
+
+
+def _normalize_search_keyword(keyword: str) -> str:
+    """Use + for spaces in searchQuery (e.g. 'AI Engineer' -> 'AI+Engineer'). Hiring.cafe expects AI+Engineer (encoded as AI%2BEngineer in URL)."""
+    if not keyword:
+        return keyword
+    s = keyword.strip()
+    if " " in s and "+" not in s:
+        s = s.replace(" ", "+")
+    return s
+
+
+def _build_search_url(
+    keyword: str,
+    base_url: str = "https://hiring.cafe",
+    date_fetched_past_n_days: int = 2,
+) -> str:
+    """Build hiring.cafe search URL. searchState = {"searchQuery": "AI+Engineer", "dateFetchedPastNDays": N}; + is encoded as %2B."""
+    search_query = _normalize_search_keyword(keyword)
+    search_state = json.dumps({
+        "searchQuery": search_query,
+        "dateFetchedPastNDays": date_fetched_past_n_days,
+    })
     encoded = quote(search_state, safe="")
     return f"{base_url}/?searchState={encoded}"
 
@@ -90,6 +138,26 @@ def detect_ats_platform(url: str) -> str | None:
     return None
 
 
+def categorize_jobs_by_ats(jobs: list[dict]) -> dict[str, list[dict]]:
+    """
+    Group jobs by ats_platform. Each group is a list of job entries with
+    job_id, title, hiring_cafe_url, ats_url. Keys are platform names; "unknown" for null/missing.
+    """
+    by_platform = {}
+    for j in jobs:
+        platform = (j.get("ats_platform") or "unknown").strip() or "unknown"
+        entry = {
+            "job_id": j.get("job_id"),
+            "title": j.get("title"),
+            "hiring_cafe_url": j.get("url") or j.get("hiring_cafe_url"),
+            "ats_url": j.get("ats_url"),
+        }
+        if platform not in by_platform:
+            by_platform[platform] = []
+        by_platform[platform].append(entry)
+    return by_platform
+
+
 class HiringCafeStrategy(BaseStrategy):
     """
     Hiring Cafe scraper strategy.
@@ -102,15 +170,24 @@ class HiringCafeStrategy(BaseStrategy):
     
     def __init__(self, driver, job_site=None, selectors=None, db_session=None):
         config = _load_hiring_cafe_config()
-        # Env override: HIRING_CAFE_SEARCH_KEYWORD; else config file; else "AI"
-        keyword = (
-            os.environ.get("HIRING_CAFE_SEARCH_KEYWORD")
-            or config.get("search_keyword")
-            or "AI"
-        ).strip()
-        self._search_keyword = keyword
+        # Support multiple keywords: search_keywords (list) or search_keyword (single) or env
+        env_kw = os.environ.get("HIRING_CAFE_SEARCH_KEYWORD", "").strip()
+        if env_kw:
+            keywords = [env_kw]
+        elif config.get("search_keywords"):
+            keywords = [str(k).strip() for k in config["search_keywords"] if str(k).strip()]
+        elif config.get("search_keyword"):
+            keywords = [str(config["search_keyword"]).strip()]
+        else:
+            keywords = ["AI"]
+        self._search_keywords = keywords if keywords else ["AI"]
+        self._date_fetched_past_n_days = _parse_date_fetched_past_n_days(
+            config.get("date_fetched_past_n_days") or config.get("date_filter") or 2
+        )
         base_url = "https://hiring.cafe"
-        search_url = _build_search_url(keyword, base_url)
+        search_url = _build_search_url(
+            self._search_keywords[0], base_url, self._date_fetched_past_n_days
+        )
 
         # Allow initialization without job_site for standalone use
         if job_site is None:
@@ -126,7 +203,11 @@ class HiringCafeStrategy(BaseStrategy):
         self.base_url = base_url
         self.search_url = search_url
 
-        logger.info("✅ HiringCafeStrategy initialized (search_keyword=%s)", keyword)
+        logger.info(
+            "✅ HiringCafeStrategy initialized (keywords=%s, date_fetched_past_n_days=%s)",
+            self._search_keywords,
+            self._date_fetched_past_n_days,
+        )
     
     def login(self):
         """
@@ -416,46 +497,134 @@ class HiringCafeStrategy(BaseStrategy):
             for j in jobs[limit:]:
                 out.append({**j, "ats_url": j.get("ats_url"), "ats_platform": j.get("ats_platform")})
         return out
+
+    def enrich_jobs_with_ats_links_batched(
+        self,
+        jobs: list[dict],
+        batch_size: int = 100,
+        output_file: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict]:
+        """
+        Enrich jobs in batches of batch_size (default 100), ordered per keyword.
+        After each batch, updates jobs in place and writes output_file if given.
+        """
+        ordered = self._jobs_ordered_per_keyword(jobs)
+        if limit is not None:
+            ordered = ordered[:limit]
+        total = len(ordered)
+        logger.info("🔗 Enriching %d jobs in batches of %d (per-keyword order)", total, batch_size)
+        for start in range(0, total, batch_size):
+            batch = ordered[start : start + batch_size]
+            batch_num = start // batch_size + 1
+            max_batch = (total + batch_size - 1) // batch_size
+            logger.info("📦 Batch %d/%d: jobs %d–%d", batch_num, max_batch, start + 1, start + len(batch))
+            try:
+                for i, job in enumerate(batch):
+                    jid = job.get("job_id") or job.get("external_id")
+                    if not jid:
+                        continue
+                    ats = self._get_ats_link_from_job_page(jid)
+                    job["ats_url"] = ats["ats_url"] if ats else None
+                    job["ats_platform"] = ats["ats_platform"] if ats else None
+                    if ats:
+                        logger.info("  -> %s: %s...", ats["ats_platform"], (ats["ats_url"] or "")[:60])
+                    self.human.random_delay(1, 2)
+                if output_file:
+                    self._write_jobs_payload(output_file, jobs)
+            except BaseException:
+                logger.warning("⚠️ Batch %d interrupted; saving current state.", batch_num)
+                if output_file:
+                    self._write_jobs_payload(output_file, jobs)
+                raise
+        return jobs
     
-    def find_jobs(self):
+    def find_jobs_for_keyword(self, keyword: str) -> list[dict]:
         """
-        Navigates to the search URL, scrolls until the end, and scrapes job listings.
-        
-        Returns:
-            List of dictionaries with job details (external_id, title, url).
+        Run search for one keyword: navigate, scroll to end, extract jobs.
+        Returns list of job dicts (job_id, title, url, ...).
         """
+        search_url = _build_search_url(
+            keyword, self.base_url, self._date_fetched_past_n_days
+        )
         try:
-            logger.info(f"🌐 Navigating to: {self.search_url}")
-            self.driver.get(self.search_url)
-            
-            # Wait for page to load
+            logger.info("🌐 Keyword %r -> %s", keyword, search_url)
+            self.driver.get(search_url)
             time.sleep(3)
             self.human.random_delay(2, 4)
-            
-            # Check if page loaded successfully
             if "hiring.cafe" not in self.driver.current_url.lower():
-                logger.warning(f"⚠️ Unexpected URL after navigation: {self.driver.current_url}")
-            
-            # Debug page structure if no jobs found initially
+                logger.warning("⚠️ Unexpected URL: %s", self.driver.current_url)
             initial_count = self._get_current_job_count()
             if initial_count == 0:
-                logger.warning("⚠️ No jobs found initially. Running page structure analysis...")
                 self._debug_page_structure()
-            
-            # Scroll until the end
             self._scroll_until_end(max_scrolls=100, scroll_delay=2)
-            
-            # Extract all job listings
             jobs = self._extract_job_listings()
-            
-            logger.info(f"✅ Found {len(jobs)} total job listings")
+            logger.info("✅ Keyword %r: %d jobs", keyword, len(jobs))
             return jobs
-            
         except Exception as e:
-            logger.error(f"❌ Error in find_jobs: {e}")
+            logger.error("❌ Error for keyword %r: %s", keyword, e)
             import traceback
             traceback.print_exc()
             return []
+
+    def _merge_jobs_unique(self, keyword_job_lists: list[tuple[str, list[dict]]]) -> list[dict]:
+        """
+        Merge (keyword, jobs) pairs into one unique list by job_id.
+        Each job gets source_keywords: list of keywords that found it.
+        """
+        by_id = {}
+        for keyword, lst in keyword_job_lists:
+            for j in lst:
+                jid = j.get("job_id") or j.get("external_id")
+                if not jid:
+                    continue
+                if jid not in by_id:
+                    by_id[jid] = {**j, "source_keywords": [keyword]}
+                else:
+                    if keyword not in by_id[jid].get("source_keywords", []):
+                        by_id[jid].setdefault("source_keywords", []).append(keyword)
+        return list(by_id.values())
+
+    def _jobs_ordered_per_keyword(self, jobs: list[dict]) -> list[dict]:
+        """Order jobs so we process by keyword: all from first keyword, then second, etc. Each job once."""
+        order = []
+        seen_ids = set()
+        for keyword in self._search_keywords:
+            for j in jobs:
+                jid = j.get("job_id") or j.get("external_id")
+                if not jid or jid in seen_ids:
+                    continue
+                if keyword in (j.get("source_keywords") or []):
+                    order.append(j)
+                    seen_ids.add(jid)
+        # Any job not in any keyword (shouldn't happen) append at end
+        for j in jobs:
+            jid = j.get("job_id") or j.get("external_id")
+            if jid and jid not in seen_ids:
+                order.append(j)
+                seen_ids.add(jid)
+        return order
+
+    def find_jobs(self) -> list[dict]:
+        """
+        Phase 1: Infinite scroll per keyword, collect all jobs into a unique set (by job_id).
+        Each job has source_keywords listing which keyword(s) found it.
+        Returns list of job dicts (deduplicated).
+        """
+        if len(self._search_keywords) == 1:
+            kw = self._search_keywords[0]
+            jobs = self.find_jobs_for_keyword(kw)
+            for j in jobs:
+                j["source_keywords"] = [kw]
+            return jobs
+        keyword_job_lists = []
+        for keyword in self._search_keywords:
+            jobs = self.find_jobs_for_keyword(keyword)
+            keyword_job_lists.append((keyword, jobs))
+            self.human.random_delay(1, 2)
+        merged = self._merge_jobs_unique(keyword_job_lists)
+        logger.info("✅ Unique jobs across all keywords: %d", len(merged))
+        return merged
     
     def apply(self, listing: JobListing):
         """
@@ -470,6 +639,34 @@ class HiringCafeStrategy(BaseStrategy):
         """
         logger.warning("⚠️ Apply functionality not implemented for Hiring Cafe")
         return False
+
+    def _write_jobs_payload(self, output_file: str, jobs: list) -> None:
+        """Write current jobs to JSON file (used for normal save and on unexpected exit)."""
+        if not jobs:
+            return
+        try:
+            payload = {
+                "source": "hiring.cafe",
+                "updated": datetime.now().isoformat(),
+                "count": len(jobs),
+                "jobs": [
+                    {
+                        "job_id": j.get("job_id"),
+                        "title": j.get("title"),
+                        "hiring_cafe_url": j.get("url"),
+                        "ats_url": j.get("ats_url"),
+                        "ats_platform": j.get("ats_platform"),
+                        "source_keywords": j.get("source_keywords"),
+                        "scraped_at": j.get("scraped_at"),
+                    }
+                    for j in jobs
+                ],
+            }
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            logger.info("💾 Saved %d jobs to %s", len(jobs), output_file)
+        except Exception as e:
+            logger.error("❌ Error saving to file: %s", e)
     
     def scrape_and_save(
         self,
@@ -477,24 +674,18 @@ class HiringCafeStrategy(BaseStrategy):
         enrich_ats: bool = False,
         enrich_ats_limit: int | None = None,
         job_limit: int | None = None,
+        ats_batch_size: int = 100,
     ):
         """
-        Standalone method to scrape jobs and save to JSON file.
-        
-        Args:
-            output_file: Path to output JSON file (default: hiring_cafe_jobs_TIMESTAMP.json)
-            enrich_ats: If True, open each job page, click Apply now, capture ATS URL and platform
-            enrich_ats_limit: Max number of jobs to enrich (None = all)
-            job_limit: Max number of jobs to process/save (None = all). Use for test runs.
-            
-        Returns:
-            List of scraped jobs (with ats_url, ats_platform if enrich_ats=True)
+        Phase 1: Infinite scroll per keyword, collect unique jobs (set by job_id) with source_keywords.
+        Phase 2: Enrich in batches of ats_batch_size (default 100), ordered per keyword; write after each batch.
+        Phase 3: Combine and categorize by ATS at end (caller writes hiring_cafe_by_ats.json).
         """
         if output_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = f"hiring_cafe_jobs_{timestamp}.json"
         
-        logger.info("🚀 Starting Hiring Cafe scraper...")
+        logger.info("🚀 Phase 1: Infinite scroll per keyword, collect unique jobs...")
         if job_limit is not None:
             logger.info("🧪 Test mode: limiting to %d jobs", job_limit)
         
@@ -504,36 +695,24 @@ class HiringCafeStrategy(BaseStrategy):
             jobs = jobs[:job_limit]
             logger.info("📋 Using first %d jobs (test limit)", len(jobs))
         
+        self._write_jobs_payload(output_file, jobs)
+        
         if enrich_ats and jobs:
-            logger.info("🔗 Enriching jobs with ATS links (Apply now -> new tab)...")
-            jobs = self.enrich_jobs_with_ats_links(jobs, limit=enrich_ats_limit)
-        
-        if jobs:
+            logger.info("🔗 Phase 2: Enrich in batches of %d (per-keyword order)...", ats_batch_size)
             try:
-                # Single maintained output: hiring cafe link + corresponding ATS link per job
-                payload = {
-                    "source": "hiring.cafe",
-                    "updated": datetime.now().isoformat(),
-                    "count": len(jobs),
-                    "jobs": [
-                        {
-                            "job_id": j.get("job_id"),
-                            "title": j.get("title"),
-                            "hiring_cafe_url": j.get("url"),
-                            "ats_url": j.get("ats_url"),
-                            "ats_platform": j.get("ats_platform"),
-                            "scraped_at": j.get("scraped_at"),
-                        }
-                        for j in jobs
-                    ],
-                }
-                with open(output_file, "w", encoding="utf-8") as f:
-                    json.dump(payload, f, indent=2, ensure_ascii=False)
-                logger.info(f"💾 Saved {len(jobs)} jobs to {output_file}")
-            except Exception as e:
-                logger.error(f"❌ Error saving to file: {e}")
-        else:
-            logger.warning("⚠️ No jobs found to save")
+                self.enrich_jobs_with_ats_links_batched(
+                    jobs,
+                    batch_size=ats_batch_size,
+                    output_file=output_file,
+                    limit=enrich_ats_limit,
+                )
+                self._write_jobs_payload(output_file, jobs)
+            except BaseException:
+                logger.warning("⚠️ Enrichment interrupted; current state saved to JSON.")
+                self._write_jobs_payload(output_file, jobs)
+                raise
         
+        if not jobs:
+            logger.warning("⚠️ No jobs found to save")
         return jobs
 
