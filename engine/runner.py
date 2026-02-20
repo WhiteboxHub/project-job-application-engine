@@ -17,7 +17,7 @@ class EngineRunner:
     def __init__(self):
         self.browser = None
         
-    def run(self, site_filter=None, candidate_data=None):
+    def run(self, site_filter=None):
         """
         Main execution workflow:
         1. Initialize Browser
@@ -30,17 +30,16 @@ class EngineRunner:
         
         Args:
             site_filter (str, optional): Name of company to filter by (case-insensitive)
-            candidate_data (dict, optional): Candidate parameters from database (run_parameters)
         """
         logger.info("=" * 60)
-        logger.info("🚀 Starting Job Application Engine...")
+        logger.info("Starting Job Application Engine...")
         logger.info("=" * 60)
         
         try:
             # 1. Start Browser
             logger.info("Initializing browser...")
             self.browser = browser_service.start_browser()
-            logger.info("✅ Browser started successfully")
+            logger.info("Browser started successfully")
             
             # 2. Get Active Sites from Database
             session = db.get_session()
@@ -50,35 +49,35 @@ class EngineRunner:
                 
                 # Apply filter if provided
                 if site_filter:
-                    logger.info(f"🔎 Filtering for site: {site_filter}")
+                    logger.info(f"[SEARCH] Filtering for site: {site_filter}")
                     query = query.filter(JobSite.company_name.ilike(f"%{site_filter}%"))
                 
                 active_sites = query.all()
                 
                 if not active_sites:
                     if site_filter:
-                        logger.warning(f"⚠️ No active job sites found matching '{site_filter}'")
+                        logger.warning(f"[WARNING] No active job sites found matching '{site_filter}'")
                     else:
-                        logger.warning("⚠️ No active job sites found in database.")
-                    logger.info("Run: python scripts/init_db.py to seed strategies")
+                        logger.warning("[WARNING] No active job sites found in database.")
+                    logger.info("Run: python scripts/init_db.py to seed Insight Global")
                     return
                 
-                logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")
+                logger.info(f"\n[LIST] Found {len(active_sites)} active job site(s):")
                 for site in active_sites:
                     logger.info(f"   - {site.company_name} ({site.domain})")
                 
                 # 3. Process Each Site
                 for site in active_sites:
                     if not guards.can_apply():
-                        logger.warning("⛔ Application limit reached. Stopping.")
+                        logger.warning("Application limit reached. Stopping.")
                         break
                     
-                    self._process_site(session, site, candidate_data)
+                    self._process_site(session, site)
                 
                 # 4. Final Report
                 stats = guards.get_stats()
                 logger.info("\n" + "=" * 60)
-                logger.info("✅ ENGINE RUN COMPLETE")
+                logger.info("ENGINE RUN COMPLETE")
                 logger.info("=" * 60)
                 logger.info(f"Applications submitted: {stats['applications_submitted']}/{stats['max_applications']}")
                 logger.info(f"Dry run mode: {stats['dry_run_mode']}")
@@ -88,7 +87,7 @@ class EngineRunner:
                 db.close_session(session)
                 
         except Exception as e:
-            logger.critical(f"❌ Engine crashed: {e}")
+            logger.critical(f"[ERROR] Engine crashed: {e}")
             import traceback
             traceback.print_exc()
             
@@ -102,23 +101,22 @@ class EngineRunner:
                     else:
                         logger.info("\nStopping browser...")
                         browser_service.stop_browser()
-                        logger.info("✅ Browser closed")
+                        logger.info("Browser closed")
                 except Exception:
                     logger.info("\nStopping browser (settings check failed)...")
                     browser_service.stop_browser()
                     logger.info("✅ Browser closed")
     
-    def _process_site(self, session, site: JobSite, candidate_data=None):
+    def _process_site(self, session, site: JobSite):
         """
         Process a single job site
         
         Args:
             session: Database session
             site: JobSite model instance
-            candidate_data: Optional candidate parameters from database
         """
         logger.info("\n" + "-" * 60)
-        logger.info(f"🎯 Processing: {site.company_name}")
+        logger.info(f"Processing: {site.company_name}")
         logger.info("-" * 60)
         
         try:
@@ -132,51 +130,49 @@ class EngineRunner:
             # Load strategy via factory
             try:
                 # Debug: verify session is valid
-                logger.info(f"📊 Database session type: {type(session)}")
-                logger.info(f"📊 Passing session to strategy: {session is not None}")
+                logger.info(f"[DEBUG] Database session type: {type(session)}")
+                logger.info(f"[DEBUG] Passing session to strategy: {session is not None}")
                 
                 strategy = strategy_factory.get_strategy(
                     strategy_path,
                     self.browser,
                     site,
                     selectors,
-                    session,  # Pass database session
-                    candidate_data  # Pass candidate data from database
+                    session  # Pass database session
                 )
             except Exception as e:
-                logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
+                logger.error(f"[ERROR] Failed to load strategy for {site.company_name}: {e}")
                 return
             
             # Login (if required)
             logger.info("Attempting login...")
             if not strategy.login():
-                logger.error(f"❌ Login failed for {site.company_name}")
+                logger.error(f"Login failed for {site.company_name}")
                 return
-            logger.info("✅ Login successful (or not required)")
+            logger.info("Login successful (or not required)")
             
-            # Find jobs and apply
-            logger.info("🔍 Discovering jobs...")
+            # Find jobs (or find and apply for LanceSoft)
+            logger.info("Discovering jobs...")
             
-            # If the strategy implements find_and_apply_jobs, use the unified workflow
-            # (covers LanceSoft, Infosys, and any future strategy with this pattern)
-            if hasattr(strategy, 'find_and_apply_jobs') and callable(getattr(strategy, 'find_and_apply_jobs')):
-                logger.info(f"\n📤 Finding and applying to jobs (unified workflow)...")
+            if site.company_name == "LanceSoft":
+                # LanceSoft uses apply-immediately strategy
+                logger.info(f"\nFinding and applying to jobs...")
                 applied_count = strategy.find_and_apply_jobs()
-                logger.info(f"✅ Completed {site.company_name}: {applied_count} applications submitted")
-                return
+                logger.info(f"Completed {site.company_name}: {applied_count} applications submitted")
+                return  # Early return for LanceSoft
             
-            # Traditional approach for strategies without find_and_apply_jobs
+            # Traditional approach for other sites
             jobs = strategy.find_jobs()
-            logger.info(f"✅ Found {len(jobs)} job(s)")
+            logger.info(f"Found {len(jobs)} job(s)")
             
             # Apply to jobs
             if jobs:
-                logger.info(f"\n📤 Starting application process...")
+                logger.info("\n[APPLY] Starting application process...")
                 applied_count = 0
                 
                 for job in jobs:
                     if not guards.can_apply():
-                        logger.warning("⛔ Application limit reached")
+                        logger.warning("[WARNING] Application limit reached")
                         break
                     
                     try:
@@ -186,22 +182,24 @@ class EngineRunner:
                         if success:
                             guards.increment_counter()
                             applied_count += 1
-                            logger.info(f"✅ Application #{applied_count} successful")
+                            logger.info(f"Application #{applied_count} successful")
                         else:
-                            logger.warning("⚠️ Application failed")
+                            logger.warning("Application failed")
                             
                     except Exception as e:
-                        logger.error(f"❌ Error applying to job: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        logger.error(f"[ERROR] Error applying to job: {e}")
+                        # Check if browser is closed/dead - if so, stop processing this site
+                        if "no such window" in str(e).lower() or "disconnected" in str(e).lower():
+                            logger.error("[FATAL] Browser window was closed. Stopping.")
+                            break
                         continue
                 
-                logger.info(f"\n✅ Completed {site.company_name}: {applied_count} applications")
+                logger.info(f"\n[OK] Completed {site.company_name}: {applied_count} applications")
             else:
                 logger.info("ℹ️ No jobs found to apply to")
                 
         except Exception as e:
-            logger.error(f"❌ Error processing {site.company_name}: {e}")
+            logger.error(f"[ERROR] Error processing {site.company_name}: {e}")
             import traceback
             traceback.print_exc()
     

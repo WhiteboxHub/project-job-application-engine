@@ -1,27 +1,66 @@
 {
-    "search_configurations": [
-        {
-            "keyword": "Software Engineer",
-            "location": "San Francisco, CA",
-            "distance": "50"
-        },
-        {
-            "keyword": "AI Engineer",
-            "location": "San Francisco, CA",
-            "distance": "50"
-        },
-        {
-            "keyword": "Python Developer",
-            "location": "San Francisco, CA",
-            "distance": "50"
-        }
-    ],
-    "applicant": {
-        "first_name": "Test",
-        "last_name": "User",
-        "email": "testuser@example.com",
-        "phone": "0000000000",
-        "zip_code": "00000"
+    "search": {
+        "keyword": "AIML Engineer",
+        "location": "california",
+        "distance": "0"
     },
-    "resume_path": "resume/test_resume.pdf"
+    "applicant": {
+        "first_name": "Ghazal",
+        "last_name": "Sultan",
+        "email": "ghazal.sultan1616@gmail.com",
+        "gender": "Female",
+        "phone": "6692133034",
+        "address": "440 Oceanside dr",
+        "city": "Mountain House",
+        "state": "California",
+        "zip_code": "95391",
+        "country": "United States",
+        "countrycode": "USA (+1)",
+        "preferred_name": "",
+        "social_account_url": "",
+        "disability_assistance": "No",
+        "disability_assistance_explain": "",
+        "experience": [
+            {
+                "title": "AIML Engineer",
+                "company": "Gainwell Technologies",
+                "location": "Irving, TX",
+                "country": "United States",
+                "state": "Texas",
+                "city": "Irving",
+                "start_date": "10/01/2023",
+                "end_date": "Present"
+            }
+        ],
+        "education": [
+            {
+                "degree": "BA",
+                "University": "University of Sindh",
+                "major": "Political Science",
+                "education_type": "University",
+                "country": "Pakistan",
+                "state": "Pakistan",
+                "city": "JAMSHORO",
+                "year_of_passing": "06/01/2013",
+                "start_date": "09/01/2011",
+                "end_date": "06/01/2013"
+            }
+        ],
+        "auth_country_select": "Yes",
+        "auth_work_country": "United States",
+        "visa_status": "Citizen",
+        "sponsorship_future": "No",
+        "citizenship": "American",
+        "govt_employed": "No",
+        "race": "Opt Out",
+        "veteran": "No",
+        "disability": "No",
+        "employed_before_wipro": "No",
+        "wipro_employee_id": ""
+    },
+    "wipro_credentials": {
+        "email": "ghazal.sultan1616@gmail.com",
+        "password": "Innovapath@1"
+    },
+    "resume_path": "resume/Ghazal_Sultan.pdf"
 }
