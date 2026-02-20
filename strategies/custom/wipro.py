@@ -32,7 +32,7 @@ class WiproStrategy(BaseStrategy):
     portal structure.
     """
     
-    def __init__(self, driver, job_site, selectors, db_session=None):
+    def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
         super().__init__(driver, job_site, selectors)
         self.db_session = db_session
         self.job_site = job_site

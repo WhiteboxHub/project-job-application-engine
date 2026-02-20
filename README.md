@@ -1,19 +1,19 @@
 # 🤖 Job Application Engine
 
-An automated job application system that applies to jobs on behalf of candidates using Selenium-based browser automation. Supports multiple job portals with a database-driven configuration system.
+An automated job application system that applies to jobs on behalf of candidates using Selenium-based browser automation. Supports multiple job portals with a database-driven configuration system using DuckDB and MySQL.
 
 ---
 
 ## ✨ Features
 
-- **Multi-site automation** — Infosys, LanceSoft, Insight Global
-- **Scheduler-driven** — runs daily via Windows Task Scheduler or cron
-- **Database-driven config** — selectors, keywords, and URLs stored in MySQL
-- **Candidate management** — per-candidate `marketing_flag` ON/OFF switch
-- **Resume parsing** — auto-extracts skills and keywords from PDF resumes
-- **Application tracking** — logs every run to MySQL `automation_logs` table
-- **Dry-run mode** — test the full flow without submitting any applications
-- **Human behavior simulation** — randomized delays, mouse movements, typing speed
+- **Multi-site automation** — Wipro, Hiring Cafe, Infosys, LanceSoft, Insight Global, Kforce, Capgemini
+- **Integrated Architecture** — Consolidated multi-site integration branch
+- **Database-driven config** — Selectors, keywords, and URLs stored in DuckDB (`data/job_engine.duckdb`)
+- **Automated Seeding** — Unified initialization and seeding script for all sites
+- **Resume parsing** — Auto-extracts skills and keywords from PDF resumes
+- **Application tracking** — Logs applications concurrently in DuckDB and CSV
+- **Dry-run mode** — Test discovery and form pre-filling without final submission
+- **Human behavior simulation** — Randomized delays, mouse movements, and typing speed
 
 ---
 
@@ -21,22 +21,24 @@ An automated job application system that applies to jobs on behalf of candidates
 
 ```
 project-job-application-engine/
-├── config/              # App settings (settings.py)
-├── core/                # Browser, logger, human behavior, captcha handler
-├── data/                # Runtime tracking (csv_tracker.py, db_connection.py)
-├── db/                  # SQL schema and migrations
-├── docs/                # Developer documentation
-├── engine/              # Runner, factory, application guards
-├── logs/automation/     # Per-run log files (gitignored)
-├── models/              # SQLAlchemy models
+├── config/              # App settings (settings.py, hiring_cafe.json)
+├── core/                # Browser, logger, human behavior, captcha handler, safe actions
+├── data/                # Database and tracking (duckdb, csv_tracker.py, db_connection.py)
+├── db/                  # SQL schema and migration definitions
+├── engine/              # Main runner, strategy factory, application guards
+├── models/              # SQLAlchemy models for DuckDB (config & history)
 ├── resume/              # Candidate resume files (gitignored)
-├── scripts/             # Operational scripts (scheduler, migrations, utilities)
+├── scripts/             # Operational scripts (init, test, scrape, scheduler)
 └── strategies/
     ├── base.py          # Abstract base strategy
     └── custom/
-        ├── infosys.py       # Infosys Digital Careers automation
-        ├── lancesoft.py     # LanceSoft JobDiva portal automation
-        └── insight_global.py # Insight Global automation
+        ├── wipro.py          # Wipro Custom Portal (Fully Automated)
+        ├── hiring_cafe.py    # Hiring Cafe Job Scraper & ATS Link Extractor
+        ├── infosys.py        # Infosys Digital Careers automation
+        ├── lancesoft.py      # LanceSoft JobDiva portal automation
+        ├── insight_global.py # Insight Global automation
+        ├── kforce.py         # Kforce portal automation
+        └── capgemini.py      # Capgemini careers automation
 ```
 
 ---
@@ -46,9 +48,9 @@ project-job-application-engine/
 ### 1. Prerequisites
 
 - Python 3.10+
-- MySQL 8.0+
-- Google Chrome + ChromeDriver (matching version)
+- Google Chrome + ChromeDriver (auto-managed by browser service)
 - `pdfplumber` (for resume parsing)
+- `duckdb`, `sqlalchemy`
 
 ### 2. Clone & Install
 
@@ -63,107 +65,53 @@ venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment
+### 3. Initialize & Seed Integrated Sites
+
+This unified script sets up the DuckDB schema and seeds configurations for Wipro, Hiring Cafe, and more.
 
 ```bash
-cp .env.example .env
-```
-
-Edit `.env` with your credentials:
-
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=new_db
-```
-
-### 4. Initialize Database
-
-```bash
-python scripts/init_db.py
-python scripts/run_migration.py
-```
-
-### 5. Add a Candidate
-
-Insert a row into `candidate_marketing` with `marketing_flag = 1`, `status = 'active'`, and a **DIRECT PDF LINK** for `resume_url`, then populate `run_parameters`:
-
-```bash
-python scripts/populate_run_parameters.py
+python scripts/init_and_seed_integrated.py
 ```
 
 ---
 
 ## 🚀 Running
 
-### Test Specific Site (Recommended)
+### Test Wipro Automation (Dry Run)
 
 ```bash
-python scripts/test_site.py --site infosys
-python scripts/test_site.py --site lancesoft
-python scripts/test_site.py --site insight
+python scripts/test_wipro_dry.py
 ```
 
-### Live Run (Submits Applications)
+### Scrape Hiring Cafe
 
 ```bash
-python scripts/test_site.py --site lancesoft --live
+# Standalone scraper (Step 1-3 combined)
+python scripts/scrape_hiring_cafe.py --output hiring_cafe_results.json
+
+# Or via the pipeline steps
+python scripts/hiring_cafe_step1_extract_urls.py
+python scripts/hiring_cafe_step2_extract_ats_urls.py
+python scripts/hiring_cafe_step3_combine_by_ats.py
 ```
 
-### Full Scheduler Run
+### Run General Engine Runner
 
 ```bash
-python scripts/scheduler_worker.py
-```
-
-### Dry Run (Full Scheduler)
-
-```bash
-python scripts/scheduler_worker.py --dry-run
+python -m scripts.main --site Wipro
 ```
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (DuckDB)
 
 | Table | Purpose |
 |---|---|
-| `ats_platforms` | Platform registry (Infosys, LanceSoft, etc.) with `automation_level` |
+| `ats_platforms` | Platform registry (Wipro Custom, Hiring Cafe Custom, etc.) |
 | `job_sites` | Site config — URL templates, strategy class path |
-| `site_selectors` | CSS/XPath selectors per site |
-| `candidate_marketing` | Candidates + `marketing_flag`, `run_parameters`, `is_processed` |
-| `automation_logs` | Per-run results and error logs |
-| `job_listings` | Discovered jobs |
-
-### `run_parameters` JSON structure
-
-```json
-{
-  "search": {
-    "keywords": ["AI Engineer", "Machine Learning"],
-    "location": "USA",
-    "distance": "50"
-  },
-  "applicant": {
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "email": "jane@example.com",
-    "phone": "555-1234"
-  }
-}
-```
-
----
-
-## 🔄 Automation Levels
-
-| Level | Behavior |
-|---|---|
-| `fully` | Picked up automatically by the scheduler |
-| `semi` | Requires manual trigger |
-| `manual` | Not automated |
+| `site_selectors` | CSS/XPath selectors (stored as JSON) per site |
+| `job_listings` | Discovered jobs queue and history |
+| `applications` | Application submission history |
 
 ---
 
@@ -171,35 +119,19 @@ python scripts/scheduler_worker.py --dry-run
 
 | Script | Purpose |
 |---|---|
-| `test_site.py` | **Primary Test Tool** — run individual site tests |
+| `init_and_seed_integrated.py` | **One-click Setup** — initializes and seeds the entire database |
+| `test_wipro_dry.py` | **Wipro Test Tool** — verifies discovery and application flow |
+| `scrape_hiring_cafe.py` | **Hiring Cafe All-in-one** — scraps jobs and extracts ATS links |
 | `scheduler_worker.py` | **Main Scheduler** — runs all active candidates |
-| `populate_run_parameters.py` | Populate `run_parameters` from resume URL + DB |
-| `reset_processed_flag.py` | Reset `is_processed = 0` to re-enable candidates |
-| `parse_resume.py` | Parse a PDF resume to JSON (utility) |
 | `run_migration.py` | Apply DB migrations |
-| `init_db.py` | Initialize the database schema |
 
 ---
 
 ## 🔒 Security Notes
 
-- **Never commit `.env`** — it contains database credentials
+- **Never commit `.env`** — it contains sensitive credentials
 - **Never commit `resume/`** — contains personal candidate data
-- Both are gitignored by default
-
----
-
-## 📅 Scheduling (Windows)
-
-Use Windows Task Scheduler to run daily:
-
-```
-Program: C:\path\to\venv\Scripts\python.exe
-Arguments: C:\path\to\scripts\scheduler_worker.py
-Trigger: Daily at 9:00 AM
-```
-
-See `docs/WORKFLOW_EXPLAINED.md` for a full walkthrough.
+- **Never commit `*.duckdb`** — database files are gitignored by default
 
 ---
 
