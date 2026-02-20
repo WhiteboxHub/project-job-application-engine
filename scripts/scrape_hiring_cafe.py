@@ -39,9 +39,9 @@ Examples:
         help="Output JSON file (default: hiring_cafe_output.json)"
     )
     parser.add_argument(
-        "--headless", 
-        action="store_true", 
-        help="Run browser in headless mode"
+        "--headless",
+        action="store_true",
+        help="Run browser in headless mode (works for job collection and ATS URL extraction)"
     )
     parser.add_argument(
         "--max-scrolls",
@@ -119,16 +119,21 @@ Examples:
             ats_batch_size=args.ats_batch_size,
         )
         
-        # Categorize by ATS and write second file (all URLs grouped per platform)
+        # Job posting URLs by ATS (second file)
         if jobs:
             by_ats = categorize_jobs_by_ats(jobs)
             out_dir = os.path.dirname(args.output)
-            by_ats_path = os.path.join(out_dir, "hiring_cafe_by_ats.json") if out_dir else "hiring_cafe_by_ats.json"
-            payload = {"source": "hiring.cafe", "categorized_by": "ats_platform", "platforms": list(by_ats.keys()), "by_ats": by_ats}
+            by_ats_path = os.path.join(out_dir, "job_posting_urls_by_ats.json") if out_dir else "job_posting_urls_by_ats.json"
+            payload = {
+                "source": "hiring.cafe",
+                "description": "Job posting URLs by ATS",
+                "platforms": list(by_ats.keys()),
+                "job_posting_urls_by_ats": by_ats,
+            }
             with open(by_ats_path, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2, ensure_ascii=False)
-            logger.info("💾 Saved by-ATS file: %s", by_ats_path)
-            print(f"📂 By ATS: {by_ats_path}")
+            logger.info("💾 Saved job posting URLs by ATS: %s", by_ats_path)
+            print(f"📂 Job posting URLs by ATS: {by_ats_path}")
 
         # Print summary
         print("\n" + "=" * 60)
@@ -148,9 +153,10 @@ Examples:
         if jobs:
             print("\n📋 Sample jobs (first 5):")
             for i, job in enumerate(jobs[:5], 1):
+                ats = job.get("ats") or {"url": job.get("ats_url"), "platform": job.get("ats_platform")}
                 print(f"\n{i}. {job.get('job_id', job.get('external_id', 'N/A'))} - {job.get('title', 'N/A')}")
-                print(f"   Hiring Cafe: {job.get('url', 'N/A')}")
-                print(f"   ATS: {job.get('ats_platform', 'N/A')} -> {job.get('ats_url', 'N/A') or ''}")
+                print(f"   job_posting_url: {job.get('url', 'N/A')}")
+                print(f"   ats: {ats.get('platform', 'N/A')} -> {ats.get('url', '') or 'N/A'}")
         
         return 0
         

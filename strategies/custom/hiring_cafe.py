@@ -24,7 +24,7 @@ APPLY_NOW_BUTTON_XPATH = "//button[.//span[contains(translate(text(), 'ABCDEFGHI
 ATS_PLATFORM_PATTERNS = [
     (r"lever\.co|jobs\.lever\.", "lever"),
     (r"greenhouse\.io|boards\.greenhouse|jobs\.greenhouse", "greenhouse"),
-    (r"sapsf\.com|successfactors\.com", "sapsf"),
+    (r"sapsf\.com|successfactors\.com", "successfactors"),  # SAP SuccessFactors (sapsf = same ATS)
     (r"workday\.com", "workday"),
     (r"adp\.com|workforcenow\.adp\.com", "adp"),
     (r"ashhq\.by|ashhqby", "ashhqby"),
@@ -47,6 +47,7 @@ ATS_PLATFORM_PATTERNS = [
     (r"oraclecloud\.com", "oraclecloud"),
     (r"applytojob\.com", "applytojob"),
     (r"brassring\.com", "brassring"),
+    (r"rippling\.com", "rippling"),
 ]
 
 
@@ -126,7 +127,7 @@ def _build_search_url(
 
 def detect_ats_platform(url: str) -> str | None:
     """
-    Detect ATS platform from URL (e.g. lever, greenhouse, sapsf, workday, ashhqby).
+    Detect ATS platform from URL (e.g. lever, greenhouse, successfactors, workday, ashhqby).
     Returns platform name or None if unknown.
     """
     if not url:
@@ -140,17 +141,24 @@ def detect_ats_platform(url: str) -> str | None:
 
 def categorize_jobs_by_ats(jobs: list[dict]) -> dict[str, list[dict]]:
     """
-    Group jobs by ats_platform. Each group is a list of job entries with
-    job_id, title, hiring_cafe_url, ats_url. Keys are platform names; "unknown" for null/missing.
+    Group jobs by ATS platform. Each group is a list of entries with
+    job_id, title, job_posting_url, ats: { url, platform }. Keys are platform names; "unknown" for null/missing.
     """
     by_platform = {}
     for j in jobs:
-        platform = (j.get("ats_platform") or "unknown").strip() or "unknown"
+        ats_obj = j.get("ats")
+        if isinstance(ats_obj, dict):
+            platform = (ats_obj.get("platform") or "unknown").strip() or "unknown"
+            ats_url = ats_obj.get("url")
+        else:
+            platform = (j.get("ats_platform") or "unknown").strip() or "unknown"
+            ats_url = j.get("ats_url")
+        job_posting_url = j.get("url") or j.get("job_posting_url") or j.get("hiring_cafe_url")
         entry = {
             "job_id": j.get("job_id"),
             "title": j.get("title"),
-            "hiring_cafe_url": j.get("url") or j.get("hiring_cafe_url"),
-            "ats_url": j.get("ats_url"),
+            "job_posting_url": job_posting_url,
+            "ats": {"url": ats_url, "platform": platform},
         }
         if platform not in by_platform:
             by_platform[platform] = []
@@ -653,9 +661,11 @@ class HiringCafeStrategy(BaseStrategy):
                     {
                         "job_id": j.get("job_id"),
                         "title": j.get("title"),
-                        "hiring_cafe_url": j.get("url"),
-                        "ats_url": j.get("ats_url"),
-                        "ats_platform": j.get("ats_platform"),
+                        "job_posting_url": j.get("url"),
+                        "ats": {
+                            "url": j.get("ats_url"),
+                            "platform": j.get("ats_platform"),
+                        },
                         "source_keywords": j.get("source_keywords"),
                         "scraped_at": j.get("scraped_at"),
                     }

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Build a by-ATS file from hiring_cafe_output.json: all URLs grouped by ATS platform.
+Build job posting URLs by ATS from hiring_cafe_output.json.
 
 Usage:
   python scripts/categorize_hiring_cafe_by_ats.py [input.json] [output.json]
 
-Defaults: input = hiring_cafe_output.json, output = hiring_cafe_by_ats.json
+Defaults: input = hiring_cafe_output.json, output = job_posting_urls_by_ats.json
 """
 
 import argparse
@@ -21,7 +21,7 @@ from strategies.custom.hiring_cafe import categorize_jobs_by_ats
 def main():
     parser = argparse.ArgumentParser(description="Categorize Hiring Cafe jobs by ATS platform")
     parser.add_argument("input", nargs="?", default="hiring_cafe_output.json", help="Input JSON (default: hiring_cafe_output.json)")
-    parser.add_argument("output", nargs="?", default="hiring_cafe_by_ats.json", help="Output JSON (default: hiring_cafe_by_ats.json)")
+    parser.add_argument("output", nargs="?", default="job_posting_urls_by_ats.json", help="Output JSON (default: job_posting_urls_by_ats.json)")
     args = parser.parse_args()
 
     input_path = args.input
@@ -43,9 +43,9 @@ def main():
 
     payload = {
         "source": "hiring.cafe",
-        "categorized_by": "ats_platform",
+        "description": "Job posting URLs by ATS",
         "platforms": list(by_ats.keys()),
-        "by_ats": by_ats,
+        "job_posting_urls_by_ats": by_ats,
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
