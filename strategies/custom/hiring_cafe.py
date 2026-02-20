@@ -425,9 +425,75 @@ class HiringCafeStrategy(BaseStrategy):
             traceback.print_exc()
             return []
 
+    def _try_get_ats_url_from_dom(self) -> str | None:
+        """
+        Try to get ATS URL from the job page DOM without clicking (e.g. from a wrapper <a>
+        or nearby external link). Returns URL string or None.
+        """
+        try:
+            buttons = self.driver.find_elements(By.XPATH, APPLY_NOW_BUTTON_XPATH)
+            if not buttons:
+                return None
+            btn = buttons[0]
+
+            def is_external(url: str) -> bool:
+                if not url or not url.strip().startswith("http"):
+                    return False
+                return "hiring.cafe" not in url.lower()
+
+            # 1) Ancestor <a href="..."> wrapping the button
+            try:
+                parent = btn
+                for _ in range(10):
+                    parent = parent.find_element(By.XPATH, "..")
+                    tag = parent.tag_name.lower()
+                    if tag == "a":
+                        href = parent.get_attribute("href")
+                        if is_external(href):
+                            return href.strip()
+                        break
+                    if tag == "body":
+                        break
+            except Exception:
+                pass
+
+            # 2) Sibling or following <a> with external href (e.g. next to button)
+            try:
+                container = btn.find_element(By.XPATH, "..")
+                for a in container.find_elements(By.TAG_NAME, "a"):
+                    href = a.get_attribute("href")
+                    if is_external(href):
+                        return href.strip()
+            except Exception:
+                pass
+
+            # 3) In the same section as the button: <a target="_blank"> or "apply" in text
+            try:
+                # Walk up to a likely section (e.g. card or action area), then look for <a>
+                root = btn
+                for _ in range(8):
+                    root = root.find_element(By.XPATH, "..")
+                    for a in root.find_elements(By.CSS_SELECTOR, 'a[href^="http"]'):
+                        href = a.get_attribute("href")
+                        if not is_external(href):
+                            continue
+                        target = (a.get_attribute("target") or "").lower()
+                        rel = (a.get_attribute("rel") or "").lower()
+                        text = (a.text or "").lower()
+                        if "apply" in text or target == "_blank" or "noopener" in rel:
+                            return href.strip()
+            except Exception:
+                pass
+
+            return None
+        except Exception as e:
+            logger.debug(f"DOM ATS URL extraction failed: {e}")
+            return None
+
     def _get_ats_link_from_job_page(self, job_id: str) -> dict | None:
         """
-        Open job page, click Apply now, capture ATS URL from new tab, close tab.
+        Open job page, get ATS URL from Apply button link if visible in DOM; otherwise
+        click Apply now and capture ATS URL from new tab. Close tab when applicable.
         Returns {"ats_url": str, "ats_platform": str} or None if failed.
         """
         job_url = f"{self.base_url}/viewjob/{job_id}"
@@ -438,7 +504,14 @@ class HiringCafeStrategy(BaseStrategy):
 
             main_handle = self.driver.current_window_handle
 
-            # Find and click "Apply now" button
+            # Try to get ATS URL from DOM first (wrapper <a> or nearby external link)
+            ats_url_from_dom = self._try_get_ats_url_from_dom()
+            if ats_url_from_dom:
+                platform = detect_ats_platform(ats_url_from_dom) or "unknown"
+                logger.info(f"Got ATS URL from page link for {job_id}: {platform}")
+                return {"ats_url": ats_url_from_dom, "ats_platform": platform}
+
+            # Find and click "Apply now" button to open ATS in new tab
             try:
                 btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, APPLY_NOW_BUTTON_XPATH))
