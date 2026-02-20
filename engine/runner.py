@@ -17,11 +17,7 @@ class EngineRunner:
     def __init__(self):
         self.browser = None
         
-<<<<<<< HEAD
     def run(self, site_filter=None, candidate_data=None):
-=======
-    def run(self, site_filter=None):
->>>>>>> bavish_dev
         """
         Main execution workflow:
         1. Initialize Browser
@@ -34,10 +30,7 @@ class EngineRunner:
         
         Args:
             site_filter (str, optional): Name of company to filter by (case-insensitive)
-<<<<<<< HEAD
             candidate_data (dict, optional): Candidate parameters from database (run_parameters)
-=======
->>>>>>> bavish_dev
         """
         logger.info("=" * 60)
         logger.info("🚀 Starting Job Application Engine...")
@@ -67,11 +60,7 @@ class EngineRunner:
                         logger.warning(f"⚠️ No active job sites found matching '{site_filter}'")
                     else:
                         logger.warning("⚠️ No active job sites found in database.")
-<<<<<<< HEAD
-                    logger.info("Run: python scripts/init_db.py to seed Insight Global")
-=======
-                    logger.info("Run: python3 init_db.py to seed KForce")
->>>>>>> bavish_dev
+                    logger.info("Run: python scripts/init_db.py to seed strategies")
                     return
                 
                 logger.info(f"\n📋 Found {len(active_sites)} active job site(s):")
@@ -84,11 +73,7 @@ class EngineRunner:
                         logger.warning("⛔ Application limit reached. Stopping.")
                         break
                     
-<<<<<<< HEAD
                     self._process_site(session, site, candidate_data)
-=======
-                    self._process_site(session, site)
->>>>>>> bavish_dev
                 
                 # 4. Final Report
                 stats = guards.get_stats()
@@ -123,21 +108,14 @@ class EngineRunner:
                     browser_service.stop_browser()
                     logger.info("✅ Browser closed")
     
-<<<<<<< HEAD
     def _process_site(self, session, site: JobSite, candidate_data=None):
-=======
-    def _process_site(self, session, site: JobSite):
->>>>>>> bavish_dev
         """
         Process a single job site
         
         Args:
             session: Database session
             site: JobSite model instance
-<<<<<<< HEAD
             candidate_data: Optional candidate parameters from database
-=======
->>>>>>> bavish_dev
         """
         logger.info("\n" + "-" * 60)
         logger.info(f"🎯 Processing: {site.company_name}")
@@ -162,12 +140,8 @@ class EngineRunner:
                     self.browser,
                     site,
                     selectors,
-<<<<<<< HEAD
                     session,  # Pass database session
                     candidate_data  # Pass candidate data from database
-=======
-                    session  # Pass database session
->>>>>>> bavish_dev
                 )
             except Exception as e:
                 logger.error(f"❌ Failed to load strategy for {site.company_name}: {e}")
@@ -180,7 +154,6 @@ class EngineRunner:
                 return
             logger.info("✅ Login successful (or not required)")
             
-<<<<<<< HEAD
             # Find jobs and apply
             logger.info("🔍 Discovering jobs...")
             
@@ -193,19 +166,6 @@ class EngineRunner:
                 return
             
             # Traditional approach for strategies without find_and_apply_jobs
-=======
-            # Find jobs (or find and apply if supported by strategy)
-            logger.info("🔍 Discovering jobs...")
-            
-            if hasattr(strategy, 'find_and_apply_jobs'):
-                # Some sites use a combined apply-immediately strategy
-                logger.info(f"\n📤 Finding and applying to jobs immediately...")
-                applied_count = strategy.find_and_apply_jobs()
-                logger.info(f"✅ Completed {site.company_name}: {applied_count} applications submitted")
-                return  # Early return for combined workflow strategies
-            
-            # Traditional approach for other sites
->>>>>>> bavish_dev
             jobs = strategy.find_jobs()
             logger.info(f"✅ Found {len(jobs)} job(s)")
             
@@ -232,6 +192,8 @@ class EngineRunner:
                             
                     except Exception as e:
                         logger.error(f"❌ Error applying to job: {e}")
+                        import traceback
+                        traceback.print_exc()
                         continue
                 
                 logger.info(f"\n✅ Completed {site.company_name}: {applied_count} applications")

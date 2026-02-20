@@ -1,9 +1,21 @@
 {
-    "search": {
-        "keyword": "Software Engineer",
-        "location": "San Francisco, CA",
-        "distance": "50"
-    },
+    "search_configurations": [
+        {
+            "keyword": "Software Engineer",
+            "location": "San Francisco, CA",
+            "distance": "50"
+        },
+        {
+            "keyword": "AI Engineer",
+            "location": "San Francisco, CA",
+            "distance": "50"
+        },
+        {
+            "keyword": "Python Developer",
+            "location": "San Francisco, CA",
+            "distance": "50"
+        }
+    ],
     "applicant": {
         "first_name": "Test",
         "last_name": "User",

@@ -33,11 +33,8 @@ class Guards:
     
     def is_dry_run(self) -> bool:
         """Check if running in dry-run mode"""
-<<<<<<< HEAD
         return self.dry_run
-=======
-        return settings.DRY_RUN
->>>>>>> bavish_dev
+
     
     def get_stats(self) -> dict:
         """Get current guard statistics"""
@@ -45,11 +42,7 @@ class Guards:
             'applications_submitted': self.application_count,
             'max_applications': self.max_applications,
             'remaining': self.max_applications - self.application_count,
-<<<<<<< HEAD
             'dry_run_mode': self.dry_run
-=======
-            'dry_run_mode': settings.DRY_RUN
->>>>>>> bavish_dev
         }
 
 # Singleton instance
