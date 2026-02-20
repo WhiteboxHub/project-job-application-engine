@@ -1,23 +1,17 @@
 """
 Custom job application strategies.
 
-<<<<<<< HEAD
-Supports 3 active job sites:
+Supports 5 active job sites:
 - LanceSoft
 - Insight Global
 - Infosys
-=======
-This module contains platform-specific automation strategies.
-Currently supports:
 - KForce
 - Capgemini
->>>>>>> bavish_dev
 """
 
 __all__ = []
 
 try:
-<<<<<<< HEAD
     from .lancesoft import LanceSoftStrategy
     __all__.append('LanceSoftStrategy')
 except ImportError as e:
@@ -34,7 +28,8 @@ try:
     __all__.append('InfosysStrategy')
 except ImportError as e:
     print(f"Warning: Could not import InfosysStrategy: {e}")
-=======
+
+try:
     from .kforce import KForceStrategy
     __all__.append('KForceStrategy')
 except ImportError:
@@ -45,4 +40,3 @@ try:
     __all__.append('CapgeminiStrategy')
 except ImportError:
     pass
->>>>>>> bavish_dev
