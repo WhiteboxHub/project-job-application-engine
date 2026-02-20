@@ -57,9 +57,11 @@ class BrowserService:
             logger.warning(f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver.")
             uc = None
 
-        options = None
         if uc:
             options = uc.ChromeOptions()
+        else:
+            from selenium.webdriver import ChromeOptions
+            options = ChromeOptions()
         options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
         
         proxy_arg = proxy_manager.get_proxy_option()
@@ -95,20 +97,19 @@ class BrowserService:
                 from webdriver_manager.chrome import ChromeDriverManager
 
                 service = ChromeService(ChromeDriverManager().install())
-                selenium_options = webdriver.ChromeOptions()
-                # copy arguments from uc options if available
-                try:
-                    for arg in getattr(options, 'arguments', []):
-                        selenium_options.add_argument(arg)
-                except Exception:
-                    pass
-
-                self.driver = webdriver.Chrome(service=service, options=selenium_options)
+                # options is already selenium ChromeOptions when uc was None
+                self.driver = webdriver.Chrome(service=service, options=options)
                 logger.info("Browser started successfully (webdriver-manager fallback).")
             except Exception as e2:
                 logger.error(f"Failed to start browser with fallback: {e2}")
                 self._release_lock()
                 raise
+
+        if self.driver and not settings.HEADLESS:
+            try:
+                self.driver.maximize_window()
+            except Exception as e:
+                logger.warning(f"Could not maximize window: {e}")
 
         return self.driver
 
