@@ -77,6 +77,7 @@ def _load_hiring_cafe_config() -> dict:
 
 # Date filter: dateFetchedPastNDays in searchState (default 2 = 24 hours)
 DATE_FETCHED_PRESETS = {
+    "today": 2,
     "24h": 2,   # 24 hours
     "3d": 4,    # 3 days
     "1w": 14,   # 1 week
@@ -139,6 +140,42 @@ def detect_ats_platform(url: str) -> str | None:
     return None
 
 
+# Domains that are NOT job application (ATS) URLs - reject these when resolving Apply link
+NON_ATS_URL_DOMAINS = (
+    "reddit.com",
+    "twitter.com",
+    "x.com",
+    "facebook.com",
+    "linkedin.com/share",
+    "linkedin.com/feed",
+    "t.co",
+    "wa.me",
+    "telegram.me",
+    "whatsapp.com",
+)
+
+
+def is_likely_ats_url(url: str) -> bool:
+    """
+    Return True only if url looks like a job/application URL. Rejects Reddit, social sharing, etc.
+    """
+    if not url or not url.strip().startswith("http"):
+        return False
+    url_lower = url.lower().strip()
+    if "hiring.cafe" in url_lower:
+        return False
+    for domain in NON_ATS_URL_DOMAINS:
+        if domain in url_lower:
+            return False
+    # Known ATS platform -> accept
+    if detect_ats_platform(url):
+        return True
+    # Heuristic: job/apply/careers paths often indicate ATS (reject generic external links)
+    if any(p in url_lower for p in ("/job", "/jobs", "/career", "/apply", "/opportunity", "jobdetail", "jobboard")):
+        return True
+    return False
+
+
 def categorize_jobs_by_ats(jobs: list[dict]) -> dict[str, list[dict]]:
     """
     Group jobs by ATS platform. Each group is a list of entries with
@@ -176,21 +213,23 @@ class HiringCafeStrategy(BaseStrategy):
     - Can be run standalone for scraping only
     """
     
-    def __init__(self, driver, job_site=None, selectors=None, db_session=None):
+    def __init__(self, driver, job_site=None, selectors=None, db_session=None, date_filter_override=None):
         config = _load_hiring_cafe_config()
-        # Support multiple keywords: search_keywords (list) or search_keyword (single) or env
-        env_kw = os.environ.get("HIRING_CAFE_SEARCH_KEYWORD", "").strip()
-        if env_kw:
-            keywords = [env_kw]
-        elif config.get("search_keywords"):
+        # Keywords: prefer config/hiring_cafe.json (search_keywords list, then search_keyword), then env, then default
+        if config.get("search_keywords"):
             keywords = [str(k).strip() for k in config["search_keywords"] if str(k).strip()]
         elif config.get("search_keyword"):
             keywords = [str(config["search_keyword"]).strip()]
         else:
-            keywords = ["AI"]
+            env_kw = os.environ.get("HIRING_CAFE_SEARCH_KEYWORD", "").strip()
+            keywords = [env_kw] if env_kw else ["AI"]
         self._search_keywords = keywords if keywords else ["AI"]
-        self._date_fetched_past_n_days = _parse_date_fetched_past_n_days(
-            config.get("date_fetched_past_n_days") or config.get("date_filter") or 2
+        self._date_fetched_past_n_days = (
+            _parse_date_fetched_past_n_days(date_filter_override)
+            if date_filter_override is not None
+            else _parse_date_fetched_past_n_days(
+                config.get("date_fetched_past_n_days") or config.get("date_filter") or 2
+            )
         )
         base_url = "https://hiring.cafe"
         search_url = _build_search_url(
@@ -441,6 +480,9 @@ class HiringCafeStrategy(BaseStrategy):
                     return False
                 return "hiring.cafe" not in url.lower()
 
+            def accept_url(href: str) -> bool:
+                return is_external(href) and is_likely_ats_url(href)
+
             # 1) Ancestor <a href="..."> wrapping the button
             try:
                 parent = btn
@@ -449,7 +491,7 @@ class HiringCafeStrategy(BaseStrategy):
                     tag = parent.tag_name.lower()
                     if tag == "a":
                         href = parent.get_attribute("href")
-                        if is_external(href):
+                        if accept_url(href):
                             return href.strip()
                         break
                     if tag == "body":
@@ -462,20 +504,19 @@ class HiringCafeStrategy(BaseStrategy):
                 container = btn.find_element(By.XPATH, "..")
                 for a in container.find_elements(By.TAG_NAME, "a"):
                     href = a.get_attribute("href")
-                    if is_external(href):
+                    if accept_url(href):
                         return href.strip()
             except Exception:
                 pass
 
-            # 3) In the same section as the button: <a target="_blank"> or "apply" in text
+            # 3) In the same section as the button: <a target="_blank"> or "apply" in text (must be ATS-like)
             try:
-                # Walk up to a likely section (e.g. card or action area), then look for <a>
                 root = btn
                 for _ in range(8):
                     root = root.find_element(By.XPATH, "..")
                     for a in root.find_elements(By.CSS_SELECTOR, 'a[href^="http"]'):
                         href = a.get_attribute("href")
-                        if not is_external(href):
+                        if not accept_url(href):
                             continue
                         target = (a.get_attribute("target") or "").lower()
                         rel = (a.get_attribute("rel") or "").lower()
@@ -493,7 +534,7 @@ class HiringCafeStrategy(BaseStrategy):
     def _get_ats_link_from_job_page(self, job_id: str) -> dict | None:
         """
         Open job page, get ATS URL from Apply button link if visible in DOM; otherwise
-        click Apply now and capture ATS URL from new tab. Close tab when applicable.
+        click Apply now and capture ATS URL from new tab. Rejects non-ATS URLs (e.g. Reddit).
         Returns {"ats_url": str, "ats_platform": str} or None if failed.
         """
         job_url = f"{self.base_url}/viewjob/{job_id}"
@@ -504,11 +545,11 @@ class HiringCafeStrategy(BaseStrategy):
 
             main_handle = self.driver.current_window_handle
 
-            # Try to get ATS URL from DOM first (wrapper <a> or nearby external link)
+            # Try to get ATS URL from DOM first (wrapper <a> or nearby external link; already filtered to ATS-like)
             ats_url_from_dom = self._try_get_ats_url_from_dom()
-            if ats_url_from_dom:
+            if ats_url_from_dom and is_likely_ats_url(ats_url_from_dom):
                 platform = detect_ats_platform(ats_url_from_dom) or "unknown"
-                logger.info(f"Got ATS URL from page link for {job_id}: {platform}")
+                logger.info(f"hiring_cafe_url: {job_url} -> ats_url: {ats_url_from_dom}")
                 return {"ats_url": ats_url_from_dom, "ats_platform": platform}
 
             # Find and click "Apply now" button to open ATS in new tab
@@ -519,6 +560,7 @@ class HiringCafeStrategy(BaseStrategy):
                 self.actions.safe_click_element(btn)
             except (TimeoutException, NoSuchElementException) as e:
                 logger.warning(f"Apply now button not found on {job_id}: {e}")
+                logger.info(f"hiring_cafe_url: {job_url} -> ats_url: null")
                 return None
 
             time.sleep(2)
@@ -529,20 +571,29 @@ class HiringCafeStrategy(BaseStrategy):
             if not new_handles:
                 # Same-tab redirect
                 current = self.driver.current_url
-                if "hiring.cafe" not in current.lower():
+                if "hiring.cafe" not in current.lower() and is_likely_ats_url(current):
                     platform = detect_ats_platform(current) or "unknown"
+                    logger.info(f"hiring_cafe_url: {job_url} -> ats_url: {current}")
                     return {"ats_url": current, "ats_platform": platform}
                 logger.warning(f"No new tab opened for job {job_id}")
+                logger.info(f"hiring_cafe_url: {job_url} -> ats_url: null")
                 return None
 
             self.driver.switch_to.window(new_handles[0])
             ats_url = self.driver.current_url
-            ats_platform = detect_ats_platform(ats_url) or "unknown"
             self.driver.close()
             self.driver.switch_to.window(main_handle)
+
+            if not is_likely_ats_url(ats_url):
+                logger.warning(f"Rejected non-ATS URL (e.g. Reddit) for {job_id}: {ats_url[:80]}...")
+                logger.info(f"hiring_cafe_url: {job_url} -> ats_url: null (rejected)")
+                return None
+            ats_platform = detect_ats_platform(ats_url) or "unknown"
+            logger.info(f"hiring_cafe_url: {job_url} -> ats_url: {ats_url}")
             return {"ats_url": ats_url, "ats_platform": ats_platform}
         except Exception as e:
             logger.warning(f"Error getting ATS link for job {job_id}: {e}")
+            logger.info(f"hiring_cafe_url: {job_url} -> ats_url: null")
             try:
                 if len(self.driver.window_handles) > 1:
                     self.driver.switch_to.window(self.driver.window_handles[0])
@@ -565,13 +616,16 @@ class HiringCafeStrategy(BaseStrategy):
             if not jid:
                 out.append({**job, "ats_url": None, "ats_platform": None})
                 continue
+            hiring_cafe_url = job.get("url") or job.get("hiring_cafe_url") or f"{self.base_url}/viewjob/{jid}"
             logger.info(f"Enriching job {i+1}/{len(to_process)}: {jid}")
             ats = self._get_ats_link_from_job_page(jid)
             enriched = {**job, "ats_url": None, "ats_platform": None}
             if ats:
                 enriched["ats_url"] = ats["ats_url"]
                 enriched["ats_platform"] = ats["ats_platform"]
-                logger.info(f"  -> {ats['ats_platform']}: {ats['ats_url'][:80]}...")
+                logger.info(f"  hiring_cafe_url: {hiring_cafe_url} -> ats_url: {ats['ats_url']}")
+            else:
+                logger.info(f"  hiring_cafe_url: {hiring_cafe_url} -> ats_url: null")
             out.append(enriched)
             self.human.random_delay(1, 2)
         if limit is not None and len(jobs) > limit:
@@ -605,11 +659,14 @@ class HiringCafeStrategy(BaseStrategy):
                     jid = job.get("job_id") or job.get("external_id")
                     if not jid:
                         continue
+                    hiring_cafe_url = job.get("url") or job.get("hiring_cafe_url") or f"{self.base_url}/viewjob/{jid}"
                     ats = self._get_ats_link_from_job_page(jid)
                     job["ats_url"] = ats["ats_url"] if ats else None
                     job["ats_platform"] = ats["ats_platform"] if ats else None
                     if ats:
-                        logger.info("  -> %s: %s...", ats["ats_platform"], (ats["ats_url"] or "")[:60])
+                        logger.info("  hiring_cafe_url: %s -> ats_url: %s", hiring_cafe_url, ats["ats_url"])
+                    else:
+                        logger.info("  hiring_cafe_url: %s -> ats_url: null", hiring_cafe_url)
                     self.human.random_delay(1, 2)
                 if output_file:
                     self._write_jobs_payload(output_file, jobs)
