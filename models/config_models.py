@@ -1,6 +1,6 @@
 """
 SQLAlchemy ORM Models for Configuration Tables
-Database: MySQL
+Database: MySQL (Primary) / DuckDB (Job History)
 """
 
 from sqlalchemy import Column, Integer, String, Text, Boolean, TIMESTAMP, ForeignKey, JSON, CheckConstraint

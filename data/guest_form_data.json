@@ -1,0 +1,15 @@
+{
+    "search": {
+        "keyword": "Software Engineer",
+        "location": "San Francisco, CA",
+        "distance": "50"
+    },
+    "applicant": {
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "testuser@example.com",
+        "phone": "0000000000",
+        "zip_code": "00000"
+    },
+    "resume_path": "resume/test_resume.pdf"
+}

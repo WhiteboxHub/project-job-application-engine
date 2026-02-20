@@ -1,0 +1,540 @@
+external_id,job_title,job_url,location,job_type,salary,description,requirements,posted_date,company,industry,status,attempts,last_error,discovered_at,updated_at
+MTY5Nn5BUUd-MjE2NzQ1MFQxfjk5,AWS AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzQ1MFQxfjk5/,,,,,,,,,failed,20,"Message: 
+",2026-02-12T18:07:38.942935,2026-02-14T23:31:22.068633
+MTY5Nn5BUUd-MjE1NzI3MlQxfjk5,Senior Platform AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE1NzI3MlQxfjk5/,,,,,,,,,failed,17,"Message: 
+",2026-02-12T18:07:38.964501,2026-02-14T23:32:43.847362
+MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5,AI/ML Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5/,,,,,,,,,failed,17,"Message: 
+",2026-02-12T18:07:38.974903,2026-02-14T23:31:49.382559
+MTY5Nn5FUUd-MjE2NjYxOFQxfjk5,AI Engineer / Applied AI Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NjYxOFQxfjk5/,,,,,,,,,failed,6,❌ KForce: Critical selector 'apply_link_option' missing in database 'application' config!,2026-02-12T18:07:38.985222,2026-02-12T20:23:02.491535
+MTY5Nn5FUUd-MjE2NzkwOVQxfjk5,AI/ML Engineer - Salesforce Platform,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzkwOVQxfjk5/,,,,,,,,,failed,15,"Message: 
+",2026-02-12T18:07:38.995406,2026-02-14T23:34:47.346395
+MTY5Nn5FUUd-MjE2Njg3MFQxfjk5,Senior AWS Cloud & Agentic AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Njg3MFQxfjk5/,,,,,,,,,failed,13,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T18:07:39.004812,2026-02-14T23:53:22.977182
+MTY5Nn5UVlR-MjE2NDcwN1Qxfjk5,Python AI/ML Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NDcwN1Qxfjk5/,,,,,,,,,applied,19,Dry run simulation,2026-02-12T18:07:39.013886,2026-02-14T23:29:08.277280
+MTY5Nn5FUUd-MjE2ODAyMFQxfjk5,PGD Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODAyMFQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.022676,2026-02-12T18:15:12.265876
+MTY5Nn5XUUd-MjE2NzcyMlAxfjk5,Manager Data Science & AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NzcyMlAxfjk5/,,,,,,,,,applied,20,Dry run simulation,2026-02-12T18:07:39.031802,2026-02-15T01:24:14.889130
+MTY5Nn5UVlR-MjE2NDcwOVQxfjk5,Python AI/ML Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NDcwOVQxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-12T18:07:39.041035,2026-02-14T23:30:48.220390
+MTY5Nn5UVlR-MjE2NzQ5MFQxfjk5,Product Manager - Developer AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NzQ5MFQxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-12T18:07:39.050404,2026-02-14T23:34:13.059265
+MTY5Nn5UVlR-MjE2NzcwM1Qxfjk5,Program Manager - AI Applications,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NzcwM1Qxfjk5/,,,,,,,,,failed,17,"Message: 
+",2026-02-12T18:07:39.059047,2026-02-14T23:33:10.259069
+MTY5Nn5XUUd-MjE2MTQ5NFQxfjk5,Staff Embedded Software Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2MTQ5NFQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.068382,2026-02-12T18:15:37.393889
+MTY5Nn5UVlR-MjE2NDY5MlQxfjk5,Lead / VP Python AI/ML Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NDY5MlQxfjk5/,,,,,,,,,failed,14,"Message: invalid session id: session deleted as the browser has closed the connection
+from disconnected: not connected to DevTools
+  (Session info: chrome=144.0.7559.133); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x000000010450cf0d undetected_chromedriver + 347917
+4   undetected_chromedriver             0x000000010453613c undetected_chromedriver + 516412
+5   undetected_chromedriver             0x00000001045ab270 undetected_chromedriver + 995952
+6   undetected_chromedriver             0x00000001045c4d68 undetected_chromedriver + 1101160
+7   undetected_chromedriver             0x000000010456d9e1 undetected_chromedriver + 743905
+8   undetected_chromedriver             0x000000010456e7e1 undetected_chromedriver + 747489
+9   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+10  undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+11  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+12  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+13  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+14  undetected_chromedriver             0x0000000104b04f88 undetected_chromedriver + 6606728
+15  undetected_chromedriver             0x0000000104b05142 undetected_chromedriver + 6607170
+16  undetected_chromedriver             0x0000000104b18791 undetected_chromedriver + 6686609
+17  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+18  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.077329,2026-02-14T23:35:26.130563
+MTY5Nn5UVlR-MjE2NDcwNlQxfjk5,Lead / VP Python AI/ML Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NDcwNlQxfjk5/,,,,,,,,,failed,14,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T18:07:39.086068,2026-02-14T23:53:12.824376
+MTY5Nn5FUUd-MjE2NzY0NlQxfjk5,Senior MLOps Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzY0NlQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.094531,2026-02-12T18:15:57.501785
+MTY5Nn5FUUd-MjE2NzU5OFAxfjk5,Kubernetes / Integration Platform Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzU5OFAxfjk5/,,,,,,,,,failed,13,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T18:07:39.103484,2026-02-15T00:11:30.300293
+MTY5Nn5FUUd-MjE2NTQ1N1Qxfjk5,Data Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1N1Qxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.112123,2026-02-12T18:15:52.478082
+MTY5Nn5FUUd-MjE2MTcwMVQxfjk5,Developer AI & Automation,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MTcwMVQxfjk5/,,,,,,,,,failed,5,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000103653328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x000000010364ab8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000103058cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010309eb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001030d4946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x00000001030cf10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x00000001030ce31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x000000010301efef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x000000010360bbe1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010360ff8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001035eb369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001036109f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001035d9a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x000000010301ca7e undetected_chromedriver + 207486
+14  dyld                                0x000000020425b2cd start + 1805
+",2026-02-12T18:07:39.120984,2026-02-12T20:38:51.582037
+MTY5Nn5KQVh-MjE2ODAzN1Qxfjk5,Azure Systems Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5KQVh-MjE2ODAzN1Qxfjk5/,,,,,,,,,failed,5,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000103653328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x000000010364ab8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000103058cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010309eb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001030d4946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x00000001030cf10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x00000001030ce31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x000000010301efef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x000000010360bbe1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010360ff8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001035eb369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001036109f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001035d9a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x000000010301ca7e undetected_chromedriver + 207486
+14  dyld                                0x000000020425b2cd start + 1805
+",2026-02-12T18:07:39.129637,2026-02-12T21:29:41.448630
+MTY5Nn5FUUd-MjE2Nzc5NVQxfjk5,Senior Data Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Nzc5NVQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.138757,2026-02-12T18:16:17.616122
+MTY5Nn5FUUd-MjE2NjczOFQxfjk5,Machine Learning Engineer (Ops),https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NjczOFQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.147517,2026-02-12T18:16:27.675132
+MTY5Nn5BUUd-MjE2NzYwMFQxfjk5,Machine Learning Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzYwMFQxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:07:39.156639,2026-02-12T18:16:22.648288
+MTY5Nn5UVlR-MjE2NjUwNFQxfjk5,Remote Solutions Architect - Generative AI,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NjUwNFQxfjk5/,,,,,,,,,failed,3,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000103653328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x000000010364ab8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000103058cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010309eb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001030d4946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x00000001030cf10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x00000001030ce31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x000000010301efef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x000000010360bbe1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010360ff8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001035eb369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001036109f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001035d9a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x000000010301ca7e undetected_chromedriver + 207486
+14  dyld                                0x000000020425b2cd start + 1805
+",2026-02-12T18:07:39.165291,2026-02-12T20:38:56.622935
+MTY5Nn5FUUd-MjE2NDM2NVAxfjk5,IAM Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NDM2NVAxfjk5/,,,,,,,,,failed,1,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x000000010123e328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000101235b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000100c43cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x0000000100c89b64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x0000000100cbf946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x0000000100cba10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x0000000100cb931c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x0000000100c09fef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x00000001011f6be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001011faf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001011d6369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001011fb9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001011c4a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000100c07a7e undetected_chromedriver + 207486
+14  dyld                                0x0000000201dbd2cd start + 1805
+",2026-02-12T18:07:39.176732,2026-02-12T18:08:55.374814
+MTY5Nn5FUUd-MjE2NzY4NFQxfjk5,MLOps/Data Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzY4NFQxfjk5/,,,,,,,,,failed,2,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x00000001030bf328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x00000001030b6b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102ac4ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102a98348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102b49058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102b62d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b0b9e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b0c7e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x0000000103077be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010307bf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000103057369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x000000010307c9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000103045a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001030a2f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x00000001030a3142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x00000001030b6791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T18:10:19.848938,2026-02-12T18:16:32.694541
+MTY5Nn5UVlR-MjE2NjcxN1Qxfjk5,Project Manager (AI Presentation QA) - Remote,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2NjcxN1Qxfjk5/,,,,,,,,,failed,12,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T18:10:19.869465,2026-02-14T23:53:17.940604
+MTY5Nn5XUUd-MjE2NDA3MVQxfjk5,Senior Python Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NDA3MVQxfjk5/,,,,,,,,,failed,10,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T20:10:39.256165,2026-02-14T23:53:28.015758
+MTY5Nn5UVlR-MjE2Njg3NFQxfjk5,Watsonx.gov Solutions Architect (Remote),https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE2Njg3NFQxfjk5/,,,,,,,,,failed,10,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T20:10:39.266105,2026-02-14T23:53:43.132241
+MTY5Nn5XUUd-MjE2NDA3M1Qxfjk5,Principal Python Developer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NDA3M1Qxfjk5/,,,,,,,,,failed,10,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T20:10:39.276105,2026-02-14T23:53:38.092947
+MTY5Nn5FUUd-MjE2Nzg2MlAxfjk5,Digital Designer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Nzg2MlAxfjk5/,,,,,,,,,failed,10,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T20:10:39.287322,2026-02-15T00:27:02.042529
+MTY5Nn5XUUd-MjE2NzIwNVAxfjk5,Senior Data Scientist,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2NzIwNVAxfjk5/,,,,,,,,,failed,3,"Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   undetected_chromedriver             0x0000000103134328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x000000010312bb8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000102b39ec5 undetected_chromedriver + 454341
+3   undetected_chromedriver             0x0000000102b0d348 undetected_chromedriver + 271176
+4   undetected_chromedriver             0x0000000102bbe058 undetected_chromedriver + 995416
+5   undetected_chromedriver             0x0000000102bd7d68 undetected_chromedriver + 1101160
+6   undetected_chromedriver             0x0000000102b809e1 undetected_chromedriver + 743905
+7   undetected_chromedriver             0x0000000102b817e1 undetected_chromedriver + 747489
+8   undetected_chromedriver             0x00000001030ecbe1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x00000001030f0f8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001030cc369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001030f19f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001030baa50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x0000000103117f88 undetected_chromedriver + 6606728
+14  undetected_chromedriver             0x0000000103118142 undetected_chromedriver + 6607170
+15  undetected_chromedriver             0x000000010312b791 undetected_chromedriver + 6686609
+16  libsystem_pthread.dylib             0x00007ff8163fb253 _pthread_start + 99
+17  libsystem_pthread.dylib             0x00007ff8163f6bef thread_start + 15
+",2026-02-12T20:10:39.303415,2026-02-14T20:19:19.525173
+MTY5Nn5FUUd-MjE2NzM4NFAxfjk5,"Senior Manager, Artificial Intelligence",https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzM4NFAxfjk5/,,,,,,,,,failed,10,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-12T20:10:39.312665,2026-02-14T23:53:33.057007
+MTY5Nn5FUUd-MjE2NzU2MVQxfjk5,Kubernetes / Integration Platform Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzU2MVQxfjk5/,,,,,,,,,failed,2,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000103653328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x000000010364ab8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000103058cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010309eb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001030d4946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x00000001030cf10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x00000001030ce31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x000000010301efef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x000000010360bbe1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x000000010360ff8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x00000001035eb369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x00000001036109f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x00000001035d9a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x000000010301ca7e undetected_chromedriver + 207486
+14  dyld                                0x000000020425b2cd start + 1805
+",2026-02-12T20:10:39.329242,2026-02-12T21:29:46.496876
+MTY5Nn5KQVh-MjE2ODE4NFAxfjk5,AI Lead,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5KQVh-MjE2ODE4NFAxfjk5/,,,,,,,,,applied,11,Dry run simulation,2026-02-14T19:45:30.081509,2026-02-14T20:41:01.414443
+MTY5Nn5FUUd-MjE2ODIyMlAxfjk5,AI Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODIyMlAxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-14T19:45:30.093035,2026-02-15T01:22:23.688970
+MTY5Nn5FUUd-MjE2ODExM1Qxfjk5,AI Architect,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODExM1Qxfjk5/,,,,,,,,,applied,17,Dry run simulation,2026-02-14T19:45:30.103327,2026-02-15T01:23:18.530997
+MTY5Nn5XUUd-MjE2ODIzN1Axfjk5,Remote RAG AI Engineer - Remote,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE2ODIzN1Axfjk5/,,,,,,,,,failed,8,"Message: 
+",2026-02-14T19:45:30.181115,2026-02-14T23:35:14.118714
+MTY5Nn5BUUd-MjE2NzkxNFQxfjk5,Junior Machine Learning Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzkxNFQxfjk5/,,,,,,,,,failed,8,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-14T19:45:30.266670,2026-02-15T00:42:24.161628
+MTY5Nn5BUUd-MjE2NzkxOFQxfjk5,Senior Machine Learning Engineer,https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzkxOFQxfjk5/,,,,,,,,,failed,7,"Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+0   undetected_chromedriver             0x0000000104b21328 undetected_chromedriver + 6722344
+1   undetected_chromedriver             0x0000000104b18b8a undetected_chromedriver + 6687626
+2   undetected_chromedriver             0x0000000104526cc0 undetected_chromedriver + 453824
+3   undetected_chromedriver             0x000000010456cb64 undetected_chromedriver + 740196
+4   undetected_chromedriver             0x00000001045a2946 undetected_chromedriver + 960838
+5   undetected_chromedriver             0x000000010459d10f undetected_chromedriver + 938255
+6   undetected_chromedriver             0x000000010459c31c undetected_chromedriver + 934684
+7   undetected_chromedriver             0x00000001044ecfef undetected_chromedriver + 217071
+8   undetected_chromedriver             0x0000000104ad9be1 undetected_chromedriver + 6429665
+9   undetected_chromedriver             0x0000000104addf8e undetected_chromedriver + 6446990
+10  undetected_chromedriver             0x0000000104ab9369 undetected_chromedriver + 6296425
+11  undetected_chromedriver             0x0000000104ade9f8 undetected_chromedriver + 6449656
+12  undetected_chromedriver             0x0000000104aa7a50 undetected_chromedriver + 6224464
+13  undetected_chromedriver             0x00000001044eaa7e undetected_chromedriver + 207486
+14  dyld                                0x00000002058da2cd start + 1805
+",2026-02-14T19:51:23.048306,2026-02-15T00:42:19.088297

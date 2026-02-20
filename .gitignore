@@ -43,34 +43,6 @@ resume/parsed_resume.json
 *.duckdb
 db/jobs.duckdb
 
-# Report / debug artifacts
-db_schema_report.txt
-migration_verification_report.txt
-fixed_run.log
-ghost_fill_debug.log
-latest_run.log
-error_log.txt
-
-# Python packaging
-*.egg-info/
-*.egg
-dist/
-build/
-MANIFEST
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-resume
+# Resume files (sensitive personal data)
+resume/
+resume_json/
