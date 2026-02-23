@@ -32,9 +32,10 @@ print("CONFIGURATION DATA")
 print("=" * 70)
 
 print("\n🔧 ATS PLATFORMS:")
-platforms = conn.execute("SELECT id, name, class_handler FROM ats_platforms").fetchall()
+platforms = conn.execute("SELECT id, name, class_handler, automation_level FROM ats_platforms").fetchall()
 for p in platforms:
-    print(f"  ID {p[0]}: {p[1]} -> {p[2]}")
+    icon = "🤖" if p[3] == "full" else "👤"
+    print(f"  {icon} ID {p[0]}: {p[1]} -> {p[2]} [{p[3]}]")
 
 print("\n🏢 JOB SITES:")
 sites = conn.execute("SELECT id, company_name, domain, category, is_active FROM job_sites").fetchall()
@@ -43,7 +44,7 @@ for s in sites:
     print(f"  ID {s[0]}: {s[1]} ({s[2]}) - {s[3]} [{status}]")
 
 print("\n🎯 SITE SELECTORS:")
-selectors = conn.execute("SELECT id, job_site_id, type FROM site_selectors").fetchall()
+selectors = conn.execute('SELECT id, job_site_id, "type" FROM site_selectors').fetchall()
 for sel in selectors:
     print(f"  ID {sel[0]}: Job Site {sel[1]} - Type: {sel[2]}")
 

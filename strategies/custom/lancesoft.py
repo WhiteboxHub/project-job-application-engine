@@ -29,7 +29,8 @@ class LanceSoftStrategy(BaseStrategy):
     """
     
     def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
-        super().__init__(driver, job_site, selectors)
+        super().__init__(driver, job_site, selectors, db_session, candidate_data)
+        self.use_single_phase = True
         self.db_session = db_session
         self.job_site = job_site
         self.config_data = self._load_config()

@@ -3,9 +3,10 @@ Per-Site Test Runner
 Tests a single job site in isolation (dry-run by default)
 
 Usage:
-    python scripts/test_site.py --site infosys        # Test Infosys
-    python scripts/test_site.py --site lancesoft      # Test LanceSoft
-    python scripts/test_site.py --site insight        # Test Insight Global
+    python scripts/test_site.py --site lancesoft      # Test LanceSoft  (dry)
+    python scripts/test_site.py --site infosys        # Test Infosys     (dry)
+    python scripts/test_site.py --site wipro          # Test Wipro       (dry)
+    python scripts/test_site.py --site kforce         # Test KForce      (dry)
     python scripts/test_site.py --site lancesoft --live  # LIVE run (will submit!)
 """
 import sys
@@ -20,9 +21,11 @@ from core.logger import logger
 from sqlalchemy import text
 
 SITE_MAP = {
-    'infosys':   'Infosys',
     'lancesoft': 'LanceSoft',
-    'insight':   'Insight Global',
+    'infosys':   'Infosys',
+    'wipro':     'Wipro',
+    'kforce':    'KForce',
+    'insight':   'Insight Global',  # kept for reference
 }
 
 def get_first_candidate(session):
@@ -54,7 +57,7 @@ def get_site(session, company_name):
 def main():
     parser = argparse.ArgumentParser(description="Test a single job site")
     parser.add_argument('--site', required=True,
-                        choices=['infosys', 'lancesoft', 'insight'],
+                        choices=['lancesoft', 'infosys', 'wipro', 'kforce', 'insight'],
                         help='Which site to test')
     parser.add_argument('--live', action='store_true',
                         help='Run LIVE (actually submits). Default is dry-run.')

@@ -16,7 +16,7 @@ import pdfplumber
 # ── Paths ──────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESUME_DIR = os.path.join(BASE_DIR, "resume")
-PDF_PATH = os.path.join(RESUME_DIR, "Ghazal Sultan.pdf")
+PDF_PATH = os.path.join(RESUME_DIR, "Ghazal_Sultan.pdf")
 OUTPUT_PATH = os.path.join(RESUME_DIR, "parsed_resume.json")
 
 

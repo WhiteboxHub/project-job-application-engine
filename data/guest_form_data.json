@@ -1,7 +1,10 @@
 {
     "search": {
-        "keyword": "AIML Engineer",
-        "location": "california",
+        "keywords": [
+            "AI Engineer",
+            "Python"
+        ],
+        "location": "United States",
         "distance": "0"
     },
     "applicant": {
@@ -10,6 +13,7 @@
         "email": "ghazal.sultan1616@gmail.com",
         "gender": "Female",
         "phone": "6692133034",
+        "street_address": "440 Oceanside dr",
         "address": "440 Oceanside dr",
         "city": "Mountain House",
         "state": "California",

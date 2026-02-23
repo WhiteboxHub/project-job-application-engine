@@ -11,6 +11,7 @@ class BaseStrategy(ABC):
         self.selectors = selectors # JSON config from DB
         self.db_session = db_session
         self.candidate_data = candidate_data  # Candidate parameters from database
+        self.use_single_phase = False
         
     @abstractmethod
     def login(self):

@@ -4,14 +4,7 @@ from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Database - MySQL
-    DB_HOST: str = "127.0.0.1"
-    DB_PORT: int = 3306
-    DB_USER: str = "root"
-    DB_PASSWORD: str = ""
-    DB_NAME: str = "new_db"
-
-    # Database - DuckDB (from bavish_dev)
+    # Database - DuckDB (file-based, no server needed)
     DUCKDB_PATH: str = "data/job_engine.duckdb"
     
     # Browser
@@ -35,13 +28,9 @@ class Settings(BaseSettings):
     SUBMIT_POST_CLICK_WAIT: int = 15
 
     # Multi-platform support (backward compatible)
-    PLATFORM_FILTER: Optional[str] = None  # Filter by platform: "KForce", "InsightGlobal", etc.
-    
-    # KForce Defaults (Template support)
-    KFORCE_LOCATIONS: str = ""
-    KFORCE_DISTANCE_DEFAULT: str = ""
-    
-    # Capgemini Defaults
+    PLATFORM_FILTER: Optional[str] = None  # Filter by platform: "LanceSoft", "InsightGlobal", etc.
+
+    # Capgemini credentials (SuccessFactors login required)
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
 

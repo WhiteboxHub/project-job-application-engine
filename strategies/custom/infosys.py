@@ -97,7 +97,19 @@ class InfosysStrategy(BaseStrategy):
             return {}
         except Exception as e:
             logger.error(f"Failed to load resume JSON: {e}")
-            return {}
+            
+        # Priority 3: Synthesize from config_data (Always check if data is empty or missing sections)
+        if not data or not data.get("education") or not data.get("work"):
+            if self.config_data and "applicant" in self.config_data:
+                applicant = self.config_data["applicant"]
+                if "education" in applicant or "experience" in applicant:
+                    logger.info("Synthesizing missing sections from config_data['applicant']")
+                    synth_data = data or {}
+                    if not synth_data.get("education"): synth_data["education"] = applicant.get("education", [])
+                    if not synth_data.get("work"): synth_data["work"] = applicant.get("experience", [])
+                    return self._normalize_resume_data(synth_data)
+        
+        return data or {}
 
     def _normalize_resume_data(self, data):
         """Standardizes structure between different parser outputs"""
@@ -179,8 +191,8 @@ class InfosysStrategy(BaseStrategy):
         """
         MAIN ENTRY POINT: Single-phase workflow for Infosys.
         
-        Searches for all jobs matching keywords, then applies to each one.
-        This ensures all 24 jobs are processed instead of stopping after first keyword.
+        Searches for all jobs matching a keyword, then applies to each one,
+        then moves to the next keyword. This ensures keyword-by-keyword sequential processing.
         
         Returns:
             int: Number of successful applications
@@ -205,75 +217,67 @@ class InfosysStrategy(BaseStrategy):
         logger.info(f"📋 Keywords: {keywords}")
         logger.info(f"📍 Location: {loc}")
         
-        # Collect ALL jobs from ALL keywords
-        all_jobs = []
-        seen_urls = set()
+        total_applied = 0
         
         for kw in keywords:
-            logger.info(f"\n🔍 Searching for: '{kw}'...")
-            try:
-                urls = self._search_jobs(kw, loc, dist)
-                logger.info(f"✅ Found {len(urls)} jobs for '{kw}'")
-                
-                for u in urls:
-                    if u not in seen_urls:
-                        job_id = u.split("/")[-1] if u else None
-                        
-                        # Store discovered job
-                        if job_id:
-                            self._record_discovered_job(job_id)
-                        
-                        # Skip if already applied
-                        if job_id and self._is_already_applied(job_id):
-                            logger.debug(f"Skipping {job_id} (already applied)")
-                            continue
-                        
-                        seen_urls.add(u)
-                        all_jobs.append({
-                            "job_url": u,
-                            "job_title": f"Infosys Job ({kw})",
-                            "job_id": job_id
-                        })
-            except Exception as e:
-                logger.error(f"❌ Search for '{kw}' failed: {e}")
-                continue
-        
-        logger.info(f"\n📊 Total unique jobs found: {len(all_jobs)}")
-        
-        # Apply to each job
-        applied_count = 0
-        for idx, job in enumerate(all_jobs, 1):
             if not guards.can_apply():
-                logger.warning(f"⛔ Application limit reached after {applied_count} applications")
+                logger.warning(f"⛔ Application limit reached. Skipping remaining keywords.")
                 break
-            
+                
             logger.info(f"\n{'='*60}")
-            logger.info(f"📝 Job {idx}/{len(all_jobs)}: {job['job_id']}")
+            logger.info(f"🔍 Processing Keyword: '{kw}'")
             logger.info(f"{'='*60}")
             
             try:
-                success = self._apply_to_job(job["job_url"])
+                # 1. Search for jobs for THIS keyword
+                urls = self._search_jobs(kw, loc, dist)
+                logger.info(f"✅ Found {len(urls)} job(s) for '{kw}'")
                 
-                if success:
-                    guards.increment_counter()
-                    applied_count += 1
-                    if job["job_id"]:
-                        self._record_applied_job(job["job_id"])
-                    logger.info(f"✅ Application #{applied_count} successful")
-                else:
-                    logger.warning("⚠️ Application failed")
+                # 2. Apply to each found job immediately
+                for idx, u in enumerate(urls, 1):
+                    if not guards.can_apply():
+                        logger.warning(f"⛔ Application limit reached during processing of '{kw}'")
+                        return total_applied
+                        
+                    job_id = u.split("/")[-1] if u else None
+                    
+                    # Store discovered job
+                    if job_id:
+                        self._record_discovered_job(job_id)
+                    
+                    # Skip if already applied
+                    if job_id and self._is_already_applied(job_id):
+                        logger.debug(f"Skipping {job_id} (already applied)")
+                        continue
+                    
+                    logger.info(f"\n📝 Job {idx}/{len(urls)}: {job_id}")
+                    try:
+                        success = self._apply_to_job(u)
+                        if success:
+                            guards.increment_counter()
+                            total_applied += 1
+                            if job_id:
+                                self._record_applied_job(job_id)
+                            logger.info(f"✅ Application #{total_applied} successful")
+                        else:
+                            logger.warning("⚠️ Application failed")
+                    except Exception as apply_err:
+                        logger.error(f"❌ Error applying to job {u}: {apply_err}")
+                        continue
+                        
+                # Small delay between keywords
+                if len(keywords) > 1:
+                    time.sleep(random.uniform(3, 5))
                     
             except Exception as e:
-                logger.error(f"❌ Error applying to job: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"❌ Processing for keyword '{kw}' failed: {e}")
                 continue
         
         logger.info(f"\n{'='*60}")
-        logger.info(f"✅ Infosys workflow complete: {applied_count}/{len(all_jobs)} applications submitted")
+        logger.info(f"✅ Infosys workflow complete: {total_applied} applications submitted")
         logger.info(f"{'='*60}\n")
         
-        return applied_count
+        return total_applied
 
     def find_jobs(self):
         # Initialize keywords on first pass
@@ -1139,14 +1143,38 @@ class InfosysStrategy(BaseStrategy):
                         r_val = r.get_attribute("value") or ""
                         r_text = ""
                         try:
-                            # Check labeling text or parent text
-                            r_text = r.find_element(By.XPATH, "./..").text or ""
+                            # Check labeling text, parent text, sibling label, or attribute 'aria-label'
+                            r_text = (r.find_element(By.XPATH, "./..").text or "").strip()
+                            if not r_text:
+                                rid = r.get_attribute("id")
+                                if rid:
+                                    lbl = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{rid}']")
+                                    r_text = lbl.text.strip()
+                            if not r_text:
+                                r_text = (r.get_attribute("aria-label") or "").strip()
                         except: pass
 
-                        if value.lower() == r_val.lower() or value.lower() in r_text.lower():
+                        v_low = value.lower()
+                        rt_low = r_text.lower()
+                        rv_low = (r_val or "").lower()
+
+                        # Smart matching: exact, partial, or semantic (Yes/No)
+                        if v_low == rv_low or v_low == rt_low or v_low in rt_low or (rt_low in v_low and len(rt_low) > 2):
                             self.js_click(r)
-                            logger.info(f"Radio: Selected choice matching '{value}' for name='{name_attr}'")
+                            logger.info(f"Radio: Selected item with text='{r_text}' value='{r_val}'")
                             return True
+                
+                # Semantic fallback for Yes/No if no match found
+                if value.lower() in ["yes", "no", "y", "n"]:
+                    target = "yes" if value.lower() in ["yes", "y"] else "no"
+                    for r in radios:
+                        try:
+                            txt = (r.find_element(By.XPATH, "./..").text or "").lower()
+                            if target in txt:
+                                self.js_click(r)
+                                logger.info(f"Radio: Semantic match for '{target}' in '{txt}'")
+                                return True
+                        except: pass
                 
                 # Fallback if name-based loop fails
                 self.js_click(best_candidate)
@@ -1255,6 +1283,10 @@ class InfosysStrategy(BaseStrategy):
             "//a[contains(., 'Continue')]",
             "//button[contains(., 'Save')]",
             "//a[contains(., 'Save')]",
+            "//button[contains(., 'Proceed')]",
+            "//a[contains(., 'Proceed')]",
+            "//span[contains(text(), 'Next')]",
+            "//span[contains(text(), 'Continue')]",
         ]
 
         if self._click_any(next_selectors):
@@ -1316,34 +1348,73 @@ class InfosysStrategy(BaseStrategy):
             # We allow this to run multiple times (by not checking filled_sections) 
             # because EEO and Agreement/Other Info often appear on separate pages 
             # but share similar field types/keywords.
-            eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
+            eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "race category", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
             if self._page_has_any_field(eeo_keywords):
                 logger.info("Detected EEO / Other Info section by fields ΓåÆ filling...")
                 applicant = self.config_data.get("applicant", {})
                 full_name = f"{applicant.get('first_name', '')} {applicant.get('last_name', '')}"
                 
+                # Pre-process race/ethnicity values for better matching
+                race_val = applicant.get("race") or "Opt Out"
+                if "opt out" in race_val.lower() or "decline" in race_val.lower():
+                    race_val = "Decline to Self-Identify"
+
+                dis_val = applicant.get("disability") or "No"
+                if "no" in dis_val.lower():
+                    dis_val = "No, I do not have a disability"
+
                 eeo_data = [
-                    (self._get_keywords("ethnicity", ["ethnicity"]), self._get_value("ethnicity", "eeo", "No")),
-                    (self._get_keywords("race", ["race"]), self._get_value("race", "eeo", "Asian")), 
-                    (self._get_keywords("gender", ["gender"]), self._get_value("gender", "eeo", "Female")),
-                    (self._get_keywords("veteran", ["veteran"]), self._get_value("veteran", "eeo", "No")),
-                    (self._get_keywords("disability", ["disability", "custom[eeo][disability]"]), self._get_value("disability", "eeo", "No, I do not have a disability and have not had one in the past")),
-                    (self._get_keywords("employed", ["employed", "custom[other][employed]", "employed by infosys"]), self._get_value("employed", "other", "No")),
-                    (self._get_keywords("contractual", ["contractual", "custom[other][contract_restriction]", "contractual restrictions"]), self._get_value("contractual", "other", "No")),
-                    (self._get_keywords("arbitration", ["mutual arbitration", "custom[other][arbitration]", "arbitration"]), self._get_value("arbitration", "other", "1")),
-                    (self._get_keywords("source", ["source", "how did you hear", "hear about us", "infosys career website", "reference"]), self._get_value("source", "other", "Infosys Careers Site")),
-                    (self._get_keywords("authorized", ["authorized", "work in the united states"]), self._get_value("authorized", "other", "Yes")),
-                    (self._get_keywords("relocate", ["relocate", "custom[other][relocate]"]), self._get_value("relocate", "other", "Yes")),
-                    (self._get_keywords("travel", ["travel", "custom[other][travel]"]), self._get_value("travel", "other", "Yes")),
-                    (self._get_keywords("sponsorship", ["sponsorship", "custom[other][sponsorship]"]), self._get_value("sponsorship", "other", "No")),
-                    (self._get_keywords("minimum_qualification", ["minimum qualification", "custom[other][degree]", "degree"]), self._get_value("minimum_qualification", "other", "Yes")),
-                    (["signature", "legal name"], full_name)
+                    (self._get_keywords("ethnicity", ["ethnicity", "hispanic", "latino"]), applicant.get("ethnicity") or "No"),
+                    (self._get_keywords("gender", ["gender", "sex"]), applicant.get("gender") or "Female"),
+                    (self._get_keywords("veteran", ["veteran", "military", "protected"]), applicant.get("veteran") or "No"),
+                    (self._get_keywords("disability", ["disability", "voluntary self-identification"]), dis_val),
+                    (self._get_keywords("employed", ["employed", "previously worked", "employed by infosys"]), applicant.get("employed_before_wipro") or "No"),
+                    (self._get_keywords("authorized", ["authorized", "work in the united states", "legally"]), applicant.get("auth_country_select") or "Yes"),
+                    (self._get_keywords("sponsorship", ["sponsorship", "visa", "future"]), applicant.get("sponsorship_future") or "No"),
+                    (self._get_keywords("arbitration", ["arbitration", "agreement"]), "Yes"),
+                    (self._get_keywords("relocate", ["relocate"]), "Yes"),
+                    (self._get_keywords("travel", ["travel"]), "Yes"),
+                    (self._get_keywords("signature", ["signature", "full name", "legal name"]), full_name),
+                    # "Do you have a minimum of a Bachelor's degree or 3 years relevant work experience?"
+                    (self._get_keywords("bachelor_degree_req", [
+                        "bachelor", "minimum", "foreign equivalent", "lieu of every year",
+                        "three years of relevant", "work experience in lieu", "degree or foreign"
+                    ]), "Yes"),
+                    # "Are you subject to contractual restrictions (non-compete etc.) that could prevent you from working here?"
+                    # Default: No — answering Yes would flag/reject the application
+                    (self._get_keywords("contractual_restrictions", [
+                        "contractual", "non-competition", "non-compete", "restrictive covenant",
+                        "prevent you from working", "obligations that could prevent", "prior employer"
+                    ]), "No"),
                 ]
+
+                # Race category — use dedicated method for robust dropdown matching
+                if self._fill_race_dropdown():
+                    did_something = True
+                    logger.info("✅ Race category filled via dedicated method")
+                else:
+                    logger.warning("⚠️ Race category dropdown not found or not filled — trying enterprise_fill fallback")
+                    if self._enterprise_fill(
+                        self._get_keywords("race", ["race", "race category", "diversity", "ethni"]), race_val
+                    ):
+                        did_something = True
+
                 for keywords, val in eeo_data:
+
                     if self._enterprise_fill(keywords, val):
                         did_something = True
-                    
+
+                # Direct XPath click: form_application/div[6] label[1] → "No"
+                # This is a specific radio button the enterprise_fill cannot reliably detect
+                _div6_xpath = '//*[@id="form_application"]/div[6]/div/div/div[3]/label[1]'
+                if self._click_any([_div6_xpath]):
+                    logger.info("✅ Clicked form_application div[6] label[1] (No)")
+                    did_something = True
+                else:
+                    logger.warning("⚠️ Could not click form_application div[6] label[1] — may not be on page")
+
                 filled_sections.add("eeo")
+
 
             if did_something:
                 time.sleep(2)
@@ -1364,23 +1435,133 @@ class InfosysStrategy(BaseStrategy):
                 time.sleep(5)
 
     # -------------------------
-    # Education / Experience / Skills fill
+    # Dedicated Race Dropdown Filler
     # -------------------------
+    def _fill_race_dropdown(self):
+        """
+        Finds the Race Category dropdown on the Infosys EEO page and selects
+        the Decline/Opt-Out option. Tries all known option text variations.
+        """
+        # All known Infosys race dropdown option texts for Decline/Opt-Out
+        decline_options = [
+            "Decline to Self-Identify",
+            "Decline to self identify",
+            "Decline to self-identify",
+            "I choose not to self-identify",
+            "I do not wish to answer",
+            "Choose not to provide",
+            "Prefer not to say",
+            "Not Specified",
+            "Two or more races",  # last resort if decline not available
+        ]
+
+        try:
+            selects = self.driver.find_elements(By.CSS_SELECTOR, "select")
+            for sel_elem in selects:
+                if not sel_elem.is_displayed():
+                    continue
+                try:
+                    # Check if this select is label-associated with "race"
+                    sel_id = sel_elem.get_attribute("id") or ""
+                    sel_name = sel_elem.get_attribute("name") or ""
+                    sel_class = sel_elem.get_attribute("class") or ""
+                    attr_hay = (sel_id + " " + sel_name + " " + sel_class).lower()
+
+                    # Also check parent/label text
+                    parent_text = ""
+                    try:
+                        parent_text = sel_elem.find_element(By.XPATH, "./ancestor::*[self::div or self::td or self::li][1]").text.lower()
+                    except Exception:
+                        pass
+                    if not parent_text:
+                        try:
+                            parent_text = sel_elem.find_element(By.XPATH, "./..").text.lower()
+                        except Exception:
+                            pass
+
+                    # Check associated label
+                    label_text = ""
+                    if sel_id:
+                        try:
+                            lbl = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{sel_id}']")
+                            label_text = lbl.text.lower()
+                        except Exception:
+                            pass
+
+                    combined = attr_hay + " " + parent_text + " " + label_text
+                    if "race" not in combined:
+                        continue
+
+                    logger.info(f"Found race dropdown (id={sel_id}, label='{label_text.strip()}')")
+                    from selenium.webdriver.support.ui import Select
+                    select_obj = Select(sel_elem)
+                    available = [o.text.strip() for o in select_obj.options]
+                    logger.info(f"Race dropdown options: {available}")
+
+                    for opt_text in decline_options:
+                        for avail in available:
+                            if opt_text.lower() in avail.lower() or avail.lower() in opt_text.lower():
+                                select_obj.select_by_visible_text(avail)
+                                logger.info(f"✅ Race selected: '{avail}'")
+                                return True
+
+                    # Last resort: select first non-empty option
+                    for avail in available:
+                        if avail.strip() and avail.strip() not in ["-", "--", "Select", "Select One"]:
+                            select_obj.select_by_visible_text(avail)
+                            logger.info(f"Race: fallback selected first available option: '{avail}'")
+                            return True
+
+                except Exception as e:
+                    logger.warning(f"Error processing race select: {e}")
+                    continue
+        except Exception as e:
+            logger.error(f"_fill_race_dropdown error: {e}")
+
+        return False
+
     def _fill_education_parsed(self):
         logger.info("Parsing and filling Education via Enterprise Logic...")
         edu_list = self.resume_data.get("education", [])
+        
+        # Fallback: synthesize from guest_form_data.json if resume_data is missing education
         if not edu_list:
-            logger.info("No education in resume.json")
-            return
+            cfg_edu = self.config_data.get("applicant", {}).get("education", [])
+            if cfg_edu:
+                logger.info("Education not in resume_data — falling back to guest_form_data.json")
+                # Normalize guest_form_data keys to standard keys
+                edu_list = []
+                for e in cfg_edu:
+                    edu_list.append({
+                        "institution": e.get("University", e.get("institution", "")),
+                        "studyType": e.get("degree", ""),
+                        "area": e.get("major", e.get("area", "")),
+                        "endDate": e.get("year_of_passing", e.get("end_date", e.get("endDate", ""))),
+                        "startDate": e.get("start_date", e.get("startDate", "")),
+                        "gpa": e.get("gpa", ""),
+                    })
+            else:
+                logger.info("No education data available anywhere — skipping education fill")
+                return
 
         edu = edu_list[0]
+        
+        # Area of study: use resume_data.area; if blank, fall back to guest_form_data major
+        area_val = edu.get("area", "") or edu.get("field_of_study", "")
+        if not area_val:
+            cfg_edu_list = self.config_data.get("applicant", {}).get("education", [])
+            if cfg_edu_list:
+                area_val = cfg_edu_list[0].get("major", "")
+            if area_val:
+                logger.info(f"Area of study from guest_form_data fallback: {area_val}")
+
         self._enterprise_fill(
             ["school", "institution", "university", "college", "education][0][school", "education][0][institution"],
             edu.get("institution", ""),
         )
         self._enterprise_fill(
-            ["major", "area", "study", "program", "education][0][major", "education][0][program"],
-            edu.get("area", ""),
+            ["major", "area", "study", "program", "field", "education][0][major", "education][0][program"],
+            area_val,
         )
         self._enterprise_fill(
             ["degree", "qualification", "education][0][degree", "level"],
@@ -1388,12 +1569,28 @@ class InfosysStrategy(BaseStrategy):
         )
 
         if edu.get("endDate"):
-            match = re.search(r"(\d{4})", edu.get("endDate"))
+            match = re.search(r"(\d{4})", str(edu.get("endDate")))
             if match:
                 self._enterprise_fill(
                     ["graduation", "year", "end_date", "education][0][year", "education][0][end_date"],
                     match.group(1),
                 )
+
+        if edu.get("startDate"):
+            match = re.search(r"(\d{4})", str(edu.get("startDate")))
+            if match:
+                self._enterprise_fill(
+                    ["start_year", "from_year", "education][0][start_year", "education][0][from"],
+                    match.group(1),
+                )
+
+        # GPA fill (best effort — many forms don't have it)
+        gpa_val = edu.get("gpa", "")
+        if gpa_val:
+            self._enterprise_fill(
+                ["gpa", "grade", "grade_point", "education][0][gpa"],
+                str(gpa_val),
+            )
 
     def _fill_experience_parsed(self):
         logger.info("Parsing and filling Experience via Enterprise Logic...")
@@ -1658,10 +1855,8 @@ class InfosysStrategy(BaseStrategy):
             except Exception as e:
                 logger.warning(f"{method.__name__} failed: {e}")
 
-        logger.error("Γ¥î All resume upload methods failed or could not be verified.")
-        return False
 
-        logger.error("Γ¥î All resume upload methods failed or could not be verified.")
+        logger.error("❌ All resume upload methods failed or could not be verified.")
         return False
 
     def _verify_upload_success(self):

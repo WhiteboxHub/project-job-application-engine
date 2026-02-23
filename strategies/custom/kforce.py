@@ -194,111 +194,121 @@ class KForceStrategy(BaseStrategy):
         return all_listings
 
     def _perform_search(self, keyword, location=None):
-        """Internal method for a single search iteration."""
-        sel_input = self.get_sel('listing', 'search_input')
-        sel_button = self.get_sel('listing', 'search_button')
-        sel_link = self.get_sel('listing', 'container')
-        
-        try:
-            # Navigate to search page
-            self.driver.get("https://www.kforce.com/find-work/search-jobs/")
-            time.sleep(3)
-            
-            # Wait for search input
-            search_input = WebDriverWait(self.driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, sel_input))
-            )
-            
-            # Type keyword
-            logger.info(f"KForce [Keyword]: Entering '{keyword}'")
-            # Explicitly click to focus
-            self.human.human_click(search_input)
-            time.sleep(1)
-            
-            success = self.human.fill_text_field(search_input, keyword)
-            
-            if success:
-                # Double-check the value via JS to be sure React caught it
-                current_val = self.driver.execute_script("return arguments[0].value;", search_input)
-                if current_val != keyword:
-                    logger.warning(f"  ⚠️ React value mismatch (JS: '{current_val}'). Forcing value via JS.")
-                    self.driver.execute_script(f"arguments[0].value = '{keyword}';", search_input)
-                    # Trigger input event for React
-                    self.driver.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", search_input)
-                
-                logger.info("  ✓ Keyword verified")
-                time.sleep(2)
-            else:
-                logger.warning("  ⚠️ Failed to fill keyword via human behavior")
-            
-            # Click search button
-            search_btn = self.driver.find_element(By.CSS_SELECTOR, sel_button)
-            self.human.human_click(search_btn)
-            
-            # Wait for results to load
-            time.sleep(5)
-            
-            # Extract job listings
-            job_links = self.driver.find_elements(By.CSS_SELECTOR, sel_link)
-            listings = []
-            
-            for link in job_links:
-                try:
-                    title = link.text.strip()
-                    url = link.get_attribute('href')
-                    
-                    if not url or not title:
-                        continue
-                        
-                    # KForce URLs usually have the ID in them
-                    external_id = url.split('/')[-2] if '/' in url else 'unknown'
-                    
-                    job_data = {
-                        'job_title': title,
-                        'job_url': url,
-                        'external_id': external_id
-                    }
-                    
-                    # Save to database and check for previous applications
-                    if self.db_session and self.job_site:
-                        existing = self.db_session.query(JobListing).filter(
-                            JobListing.job_site_id == self.job_site.id,
-                            JobListing.job_url == url
-                        ).first()
-                        
-                        if existing:
-                            if existing.status in ['applied', 'success']:
-                                logger.info(f"  ⏭️ Skipping job already applied: {title}")
-                                continue
-                            logger.debug(f"  Found existing listing: {title} (status: {existing.status})")
-                        else:
-                            job_listing = JobListing(
-                                job_site_id=self.job_site.id,
-                                external_job_id=external_id,
-                                job_title=title,
-                                job_url=url,
-                                status='discovered'
-                            )
-                            self.db_session.add(job_listing)
-                            self.db_session.commit()
-                            logger.info(f"  💾 Saved to DB: {title}")
-                            
-                    listings.append(job_data)
-                    
-                    # Track in CSV
-                    csv_tracker.add_discovered_jobs('kforce', [job_data])
+        """Internal method for a single search iteration — uses multi-fallback selectors."""
 
-                except Exception as e:
-                    logger.warning(f"Error parsing job link: {e}")
-            
-            logger.info(f"KForce: Found {len(listings)} jobs for this search")
+        # ------------------------------------------------------------------ #
+        # Candidate input selectors (try them in order until one works)       #
+        # ------------------------------------------------------------------ #
+        INPUT_SELECTORS = [
+            "input[id*='keyword' i]",
+            "input[name*='keyword' i]",
+            "input[placeholder*='keyword' i]",
+            "input[placeholder*='title' i]",
+            "input[placeholder*='search' i]",
+            "input[aria-label*='keyword' i]",
+            "input[type='search']",
+            "input[type='text']:first-of-type",
+        ]
+        BUTTON_SELECTORS = [
+            "button[type='submit']",
+            "button[class*='search' i]",
+            "input[type='submit']",
+            "button[id*='search' i]",
+        ]
+        LINK_SELECTORS = [
+            "a[href*='/candidate/jobs/'],",
+            "a[href*='/find-work/'][href*='job']",
+            "a[class*='job-title' i]",
+            "a[class*='title' i][href*='job']",
+            "h4 > a, h3 > a, h2 > a",
+        ]
+
+        def _find_first(selectors, timeout=4):
+            """Return the first element found from a list of CSS selectors."""
+            for sel in selectors:
+                try:
+                    el = WebDriverWait(self.driver, timeout).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+                    )
+                    return el, sel
+                except Exception:
+                    continue
+            return None, None
+
+        try:
+            search_url = "https://www.kforce.com/find-work/search-jobs/"
+            logger.info(f"KForce: Navigating to {search_url}")
+            self.driver.get(search_url)
+            time.sleep(4)
+
+            # Try to find and fill the search input
+            input_el, used_sel = _find_first(INPUT_SELECTORS, timeout=5)
+            if input_el:
+                logger.info(f"KForce: Found search input via '{used_sel}'")
+                self.human.human_click(input_el)
+                time.sleep(0.5)
+                success = self.human.fill_text_field(input_el, keyword)
+                if success:
+                    logger.info(f"  ✓ Entered keyword: {keyword}")
+            else:
+                # Fallback: navigate directly to search URL with query param
+                encoded = keyword.replace(' ', '+')
+                fallback_url = f"https://www.kforce.com/find-work/search-jobs/?keyword={encoded}&location=United+States"
+                logger.warning(f"  ⚠️ Could not find search input — navigating to URL: {fallback_url}")
+                self.driver.get(fallback_url)
+                time.sleep(4)
+
+            # Try to click search button (optional — some React sites search live)
+            btn_el, _ = _find_first(BUTTON_SELECTORS, timeout=3)
+            if btn_el:
+                try:
+                    self.human.human_click(btn_el)
+                    logger.info("  ✓ Clicked search button")
+                    time.sleep(5)
+                except Exception as be:
+                    logger.debug(f"KForce: Button click failed (OK): {be}")
+            else:
+                # Try pressing Enter on the input
+                try:
+                    from selenium.webdriver.common.keys import Keys
+                    if input_el:
+                        input_el.send_keys(Keys.RETURN)
+                        logger.info("  ✓ Pressed ENTER to search")
+                        time.sleep(5)
+                except Exception:
+                    time.sleep(3)
+
+            # Extract job links from results
+            listings = []
+            seen_urls = set()
+            for sel in LINK_SELECTORS:
+                try:
+                    links = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                    for link in links:
+                        url = link.get_attribute('href') or ''
+                        title = link.text.strip()
+                        if not url or not title or url in seen_urls:
+                            continue
+                        if 'kforce.com' not in url and not url.startswith('/'):
+                            continue
+                        seen_urls.add(url)
+                        external_id = url.rstrip('/').split('/')[-1] or 'unknown'
+                        listings.append({'job_title': title, 'job_url': url, 'external_id': external_id})
+                except Exception:
+                    continue
+
+            if listings:
+                logger.info(f"KForce: Found {len(listings)} job(s) for keyword '{keyword}'")
+                csv_tracker.add_discovered_jobs('kforce', listings)
+            else:
+                logger.warning(f"KForce: No jobs found for '{keyword}' — selectors may need updating for current site layout")
+
             return listings
-            
+
         except Exception as e:
             logger.error(f"KForce: Error during search for {keyword}: {e}")
-            if self.db_session:
-                self.db_session.rollback()
             return []
+
 
     def apply(self, listing):
         """
