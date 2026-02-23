@@ -213,7 +213,7 @@ class HiringCafeStrategy(BaseStrategy):
     - Can be run standalone for scraping only
     """
     
-    def __init__(self, driver, job_site=None, selectors=None, db_session=None, candidate_data=None, date_filter_override=None):
+    def __init__(self, driver, job_site=None, selectors=None, db_session=None, date_filter_override=None):
         config = _load_hiring_cafe_config()
         # Keywords: prefer config/hiring_cafe.json (search_keywords list, then search_keyword), then env, then default
         if config.get("search_keywords"):
@@ -244,7 +244,7 @@ class HiringCafeStrategy(BaseStrategy):
                     self.search_url_template = url_template
             job_site = MinimalJobSite(search_url)
 
-        super().__init__(driver, job_site, selectors or {}, db_session, candidate_data)
+        super().__init__(driver, job_site, selectors or {})
         self.db_session = db_session
         self.human = HumanBehavior(driver)
         self.base_url = base_url
