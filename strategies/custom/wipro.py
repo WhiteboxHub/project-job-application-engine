@@ -136,183 +136,224 @@ class WiproStrategy(BaseStrategy):
         seen_urls = set()
         
         try:
-            # Navigate to portal
-            self.driver.get(self.portal_url)
-            WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            # Navigate directly to search results URL
+            import urllib.parse
+            encoded_keyword = urllib.parse.quote_plus(keyword)
+            encoded_location = urllib.parse.quote_plus(location) if location else ''
+            search_results_url = (
+                f"https://careers.wipro.com/search/?q={encoded_keyword}"
+                + (f"&locationsearch={encoded_location}" if encoded_location else "")
             )
-            time.sleep(2)
+            logger.info(f"  [+] Entering keyword: {keyword}  |  Location: {location}")
+            logger.info(f"  [+] Navigating directly to: {search_results_url}")
+            self.driver.get(search_results_url)
+
+            # ------------------------------------------------------------------ #
+            # Wipro uses SAP UI5 Horizon custom elements like:                    #
+            #   <ui5-li-xweb-rmk-jobs-search>                                    #
+            # Standard CSS selectors won't easily find them because they are      #
+            # in Shadow DOM. We use JS execute_script + querySelectorAll instead. #
+            # ------------------------------------------------------------------ #
             
-            # Fill search form
-            try:
-                # Enter keyword
-                keyword_selectors = self.selectors_config['keyword_input'].split(', ')
-                keyword_input = None
+            # JS that extracts all job data from the Wipro SAP UI5 results page
+            EXTRACT_JOBS_JS = """
+            (function() {
+                var results = [];
                 
-                for selector in keyword_selectors:
-                    try:
-                        keyword_input = self.driver.find_element(By.CSS_SELECTOR, selector)
-                        break
-                    except:
-                        continue
+                // Strategy 1: Look for anchor tags inside the document (light DOM)
+                // SAP SF j2w pages render <a class="jobTitle"> in the LIGHT DOM
+                var anchors = document.querySelectorAll('a.jobTitle, a[class*="jobTitle"]');
+                if (anchors.length > 0) {
+                    anchors.forEach(function(a) {
+                        results.push({
+                            title: a.textContent.trim() || a.getAttribute('title') || '',
+                            href: a.href || a.getAttribute('href') || ''
+                        });
+                    });
+                    return {strategy: 'a.jobTitle', jobs: results};
+                }
                 
-                if keyword_input:
-                    keyword_input.clear()
-                    self.human.fill_text_field(keyword_input, keyword)
-                    logger.info(f"  [+] Entered keyword: {keyword}")
-                else:
-                    logger.warning("  [!] Could not find keyword input field")
+                // Strategy 2: SAP UI5 custom elements - look for job card headers
+                // Custom tags: ui5-*-xweb-rmk-jobs-search
+                // These have innerText with the job title and data-testid attrs
+                var allElements = document.querySelectorAll('[data-testid]');
+                var jobTitleEls = [];
+                allElements.forEach(function(el) {
+                    var tid = el.getAttribute('data-testid') || '';
+                    if (tid.toLowerCase().includes('job') || tid.toLowerCase().includes('title')) {
+                        jobTitleEls.push(el);
+                    }
+                });
+                if (jobTitleEls.length > 0) {
+                    jobTitleEls.forEach(function(el) {
+                        var link = el.closest('a') || el.querySelector('a') || el;
+                        results.push({
+                            title: (el.textContent || '').trim(),
+                            href: link.href || link.getAttribute('href') || ''
+                        });
+                    });
+                    return {strategy: 'data-testid[job]', jobs: results};
+                }
                 
-                # Enter location (if provided)
-                if location:
-                    location_selectors = self.selectors_config['location_input'].split(', ')
-                    location_input = None
-                    
-                    for selector in location_selectors:
-                        try:
-                            location_input = self.driver.find_element(By.CSS_SELECTOR, selector)
-                            break
-                        except:
-                            continue
-                    
-                    if location_input:
-                        location_input.clear()
-                        self.human.fill_text_field(location_input, location)
-                        logger.info(f"  [+] Entered location: {location}")
+                // Strategy 3: Find all anchor tags that link to /job/ paths
+                var jobLinks = document.querySelectorAll('a[href*="/job/"]');
+                if (jobLinks.length > 0) {
+                    jobLinks.forEach(function(a) {
+                        var title = a.textContent.trim() || a.getAttribute('title') || '';
+                        if (title && a.href && a.href.includes('careers.wipro.com')) {
+                            results.push({title: title, href: a.href});
+                        }
+                    });
+                    if (results.length > 0) return {strategy: 'a[href*="/job/"]', jobs: results};
+                }
                 
-                # Click search button
-                search_btn_selectors = self.selectors_config['search_button'].split(', ')
-                search_btn = None
-                
-                for selector in search_btn_selectors:
-                    try:
-                        search_btn = self.driver.find_element(By.CSS_SELECTOR, selector)
-                        break
-                    except:
-                        continue
-                
-                if search_btn:
-                    try:
-                        search_btn.click()
-                    except:
-                        self.driver.execute_script("arguments[0].click();", search_btn)
-                    logger.info("  [+] Clicked search button")
-                    time.sleep(6)  # Wait for results to load
-                
-            except Exception as e:
-                logger.error(f"Error filling search form: {e}")
-                return []
-            
-            # Extract job listings (with pagination support)
-            page_num = 1
-            MAX_PAGES = 20
-            
-            while page_num <= MAX_PAGES:
-                logger.info(f"\n[PAGE] Processing page {page_num}...")
-                
-                # Find all job containers
-                # Find all job containers on current page
-                job_containers = self.driver.find_elements(
-                    By.CSS_SELECTOR, 
-                    self.selectors_config['job_container'].split(',')[0].strip()
-                )
-                
-                if not job_containers:
-                    logger.warning(f"  No job containers found on page {page_num}")
-                    # Debug: Save screenshot and page source
-                    try:
-                        self.save_screenshot("debug_wipro_no_jobs")
-                        with open("debug_wipro_source.html", "w", encoding="utf-8") as f:
-                            f.write(self.driver.page_source)
-                        logger.info("  [INFO] Saved debug_wipro_no_jobs.png and debug_wipro_source.html")
-                    except Exception as e:
-                        logger.error(f"  Failed to save debug info: {e}")
-                    break
-                    
-                logger.info(f"  Found {len(job_containers)} jobs on page {page_num}")
-                
-                # Extract job details
-                # Extract job details from each container
-                for idx, job_elem in enumerate(job_containers):
-                    try:
-                        # Get job title from anchor element
-                        title_elem = self._find_element_within_parent(
-                            job_elem, self.selectors_config['job_title']
-                        )
-                        title = title_elem.text.strip() if title_elem else None
-                        
-                        # Get job URL (same element as title, it's an anchor)
-                        link_elem = self._find_element_within_parent(
-                            job_elem, self.selectors_config['job_link']
-                        )
-                        job_url = link_elem.get_attribute('href') if link_elem else None
-                        
-                        # Build full URL if it's relative
-                        if job_url and job_url.startswith('/'):
-                            # Wipro URLs are relative: /job/TITLE/ID-en_US
-                            base_url = self.portal_url.split('/careers-home')[0]
-                            job_url = base_url + job_url
-                        
-                        # Get job ID from first footer value span
-                        job_id = None
-                        id_elem = self._find_element_within_parent(
-                            job_elem, self.selectors_config['job_id']
-                        )
-                        job_id = id_elem.text.strip() if id_elem else None
-                        
-                        # Fallback: extract ID from URL if footer value not found
-                        if not job_id and job_url:
-                            # URL format: /job/TITLE/125816-en_US
-                            try:
-                                url_parts = job_url.split('/')
-                                id_part = url_parts[-1]  # "125816-en_US"
-                                job_id = id_part.split('-')[0]  # "125816"
-                            except:
-                                job_id = str(hash(job_url))[:8]
-                        
-                        if title and job_url and job_id:
-                            if job_url in seen_urls:
-                                continue
-                            
-                            seen_urls.add(job_url)
-                            job_data = {
-                                'job_title': title,
-                                'external_id': job_id,
-                                'job_url': job_url
+                // Strategy 4: Shadow DOM traversal - pierce into SAP UI5 shadow roots
+                function queryShadow(root, selector) {
+                    var found = [];
+                    try {
+                        var direct = root.querySelectorAll(selector);
+                        direct.forEach(function(el) { found.push(el); });
+                        var allEls = root.querySelectorAll('*');
+                        allEls.forEach(function(el) {
+                            if (el.shadowRoot) {
+                                var inner = queryShadow(el.shadowRoot, selector);
+                                inner.forEach(function(x) { found.push(x); });
                             }
-                            all_jobs.append(job_data)
-                            logger.info(f"  [+] [{idx+1}] {title} (ID: {job_id})")
-                            
-                            # Save to database and CSV
-                            csv_tracker.add_discovered_jobs('wipro', [job_data])
-                            
-                            if self.db_session and self.job_site:
-                                self._save_job_to_db(job_data)
-                        
-                    except Exception as e:
-                        logger.debug(f"  Error extracting job: {e}")
-                        continue
+                        });
+                    } catch(e) {}
+                    return found;
+                }
+                var shadowAnchors = queryShadow(document, 'a[href*="/job/"]');
+                if (shadowAnchors.length > 0) {
+                    shadowAnchors.forEach(function(a) {
+                        results.push({
+                            title: a.textContent.trim() || a.getAttribute('title') || '',
+                            href: a.href || ''
+                        });
+                    });
+                    return {strategy: 'shadow-dom-a[href*="/job/"]', jobs: results};
+                }
                 
-                # Try to go to next page
-                try:
-                    next_btn = self._find_element_by_selectors(
-                        self.selectors_config['next_page'],
-                        timeout=3
-                    )
-                    
-                    if next_btn and next_btn.is_displayed() and next_btn.is_enabled():
-                        self.human.human_click(next_btn)
-                        logger.info(f"  > Navigating to page {page_num + 1}...")
-                        time.sleep(3)  # Wait for new results to load
-                        page_num += 1
-                    else:
-                        logger.info("  - No more pages")
-                        break
-                        
-                except Exception:
-                    logger.info("  - Pagination complete")
-                    break
+                // Strategy 5: Look for SAP UI5 custom list items 
+                var ui5Items = document.querySelectorAll(
+                    'ui5-li-xweb-rmk-jobs-search, ' +
+                    '[ui5-li], ui5-li-custom-xweb-rmk-jobs-search'
+                );
+                if (ui5Items.length > 0) {
+                    ui5Items.forEach(function(item) {
+                        var a = item.querySelector('a') || item.closest('a');
+                        results.push({
+                            title: (item.textContent || item.innerText || '').trim().split('\\n')[0],
+                            href: a ? (a.href || a.getAttribute('href') || '') : ''
+                        });
+                    });
+                    return {strategy: 'ui5-li-xweb-rmk-jobs-search', jobs: results};
+                }
+                
+                return {strategy: 'none', jobs: []};
+            })()
+            """
             
+            # Poll with JS until jobs appear or timeout (max 40s)
+            logger.info("  [+] Waiting up to 40s for SAP UI5 job results to render…")
+            job_data_raw = []
+            strategy_used = 'none'
+            POLL_INTERVAL = 3
+            MAX_WAIT = 40
+            
+            for elapsed in range(0, MAX_WAIT, POLL_INTERVAL):
+                try:
+                    result = self.driver.execute_script(EXTRACT_JOBS_JS)
+                    if result and result.get('jobs'):
+                        job_data_raw = result['jobs']
+                        strategy_used = result.get('strategy', '?')
+                        logger.info(f"  [+] Found {len(job_data_raw)} jobs via JS strategy: {strategy_used} (after ~{elapsed}s)")
+                        break
+                except Exception as js_err:
+                    logger.debug(f"  JS poll error at {elapsed}s: {js_err}")
+                time.sleep(POLL_INTERVAL)
+            
+            if not job_data_raw:
+                logger.warning("  [!] No jobs found via JS after 40s. Saving debug files...")
+                try:
+                    self.save_screenshot("debug_wipro_no_jobs")
+                    with open("debug_wipro_source.html", "w", encoding="utf-8") as f:
+                        f.write(self.driver.page_source)
+                    logger.info("  [INFO] Saved debug_wipro_no_jobs.png and debug_wipro_source.html")
+                except Exception as de:
+                    logger.error(f"  Failed to save debug info: {de}")
+                return all_jobs
+
+            # ------------------------------------------------------------------ #
+            # Process extracted job data                                          #
+            # ------------------------------------------------------------------ #
+            for idx, job_raw in enumerate(job_data_raw):
+                try:
+                    title = (job_raw.get('title') or '').strip()
+                    job_url = job_raw.get('href') or ''
+                    
+                    if not title or not job_url:
+                        continue
+                    
+                    # Build full URL if relative
+                    if job_url.startswith('/'):
+                        job_url = 'https://careers.wipro.com' + job_url
+                    
+                    if job_url in seen_urls:
+                        continue
+                    
+                    # Extract job ID from URL: /job/TITLE/125816-en_US
+                    job_id = None
+                    try:
+                        url_parts = job_url.split('/')
+                        id_part = url_parts[-1]         # "125816-en_US"
+                        job_id = id_part.split('-')[0]  # "125816"
+                        if not job_id.isdigit():
+                            job_id = str(abs(hash(job_url)))[:8]
+                    except Exception:
+                        job_id = str(abs(hash(job_url)))[:8]
+                    
+                    seen_urls.add(job_url)
+                    job_data = {
+                        'job_title': title,
+                        'external_id': job_id,
+                        'job_url': job_url
+                    }
+                    all_jobs.append(job_data)
+                    logger.info(f"  [+] [{idx+1}] {title} (ID: {job_id})")
+                    
+                    # Save to CSV
+                    csv_tracker.add_discovered_jobs('wipro', [job_data])
+                    
+                    if self.db_session and self.job_site:
+                        self._save_job_to_db(job_data)
+
+                except Exception as e:
+                    logger.debug(f"  Error processing job entry: {e}")
+                    continue
+
+            # Pagination: look for a "next page" anchor/button via JS
+            try:
+                next_url = self.driver.execute_script("""
+                    var btns = document.querySelectorAll('[data-testid="next"], ' +
+                        'a[aria-label*="Next"], button[aria-label*="Next"], ' +
+                        '.pagination-next:not([disabled]), a[rel="next"]');
+                    for (var i = 0; i < btns.length; i++) {
+                        if (btns[i].href) return btns[i].href;
+                        if (btns[i].offsetParent !== null) { btns[i].click(); return '__clicked__'; }
+                    }
+                    return null;
+                """)
+                if next_url and next_url != '__clicked__':
+                    logger.info(f"  > Next page URL: {next_url}")
+                elif next_url == '__clicked__':
+                    logger.info("  > Clicked next page button")
+                    time.sleep(3)
+                else:
+                    logger.info("  - No more pages (no next button found)")
+            except Exception:
+                pass
+
             logger.info(f"\n{'='*60}")
             logger.info(f"[OK] Job Discovery Complete: {len(all_jobs)} jobs found")
             logger.info(f"{'='*60}\n")
@@ -323,7 +364,7 @@ class WiproStrategy(BaseStrategy):
             traceback.print_exc()
         
         return all_jobs
-    
+
     def apply(self, listing):
         """
         Apply to a single job listing.
@@ -332,6 +373,7 @@ class WiproStrategy(BaseStrategy):
             listing: JobListing object or dictionary
         
         Returns:
+
             True if application successful, False otherwise
         """
         from engine.guards import guards

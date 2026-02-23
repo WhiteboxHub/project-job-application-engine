@@ -243,7 +243,7 @@ class EngineRunner:
 
                 logger.info(f"\n[OK] Completed {site.company_name}: {applied_count} applications")
             else:
-                logger.info("ℹ️ No jobs found to apply to")
+                logger.info("[INFO] No jobs found to apply to")
 
         except Exception as e:
             logger.error(f"[ERROR] Error processing {site.company_name}: {e}")

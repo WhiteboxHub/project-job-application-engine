@@ -38,11 +38,14 @@ class InsightGlobalStrategy(BaseStrategy):
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=120)  # 120-second wait for CAPTCHA
 
-        # Debug logging
-        if self.db_session:
-            logger.info("✅ Database session available - will save to MySQL")
-        else:
-            logger.warning("⚠️ No database session - will only use CSV tracking")
+        # DuckDB connection for deduplication
+        try:
+            from data.db_connection import DuckDBConnection
+            self._duckdb = DuckDBConnection().get_connection()
+            logger.info("✅ DuckDB connection available - deduplication active")
+        except Exception as _e:
+            self._duckdb = None
+            logger.warning(f"⚠️ DuckDB not available - will only use CSV tracking ({_e})")
     
     def _load_config(self):
         """Load configuration from JSON file (optional - candidate_data from DB takes priority)"""
@@ -406,31 +409,19 @@ class InsightGlobalStrategy(BaseStrategy):
                                 'job_url': href
                             }])
                             
-                            # Save to database if session available
-                            if self.db_session and self.job_site:
+                            # Deduplication check via DuckDB applied_jobs table
+                            if self._duckdb:
                                 try:
-                                    # Check if already exists
-                                    existing = self.db_session.query(JobListing).filter(
-                                        JobListing.job_site_id == self.job_site.id,
-                                        JobListing.job_url == href
-                                    ).first()
-                                    
-                                    if not existing:
-                                        job_listing = JobListing(
-                                            job_site_id=self.job_site.id,
-                                            external_job_id=job_id,
-                                            job_title=title,
-                                            job_url=href,
-                                            status='discovered'
-                                        )
-                                        self.db_session.add(job_listing)
-                                        self.db_session.commit()
-                                        logger.info(f"  💾 Saved to database: {title}")
-                                except Exception as e:
-                                    logger.warning(f"  ⚠️ Database save failed: {e}")
-                                    self.db_session.rollback()
-                            else:
-                                logger.warning(f"  ⚠️ No DB session - skipping database save for: {title}")
+                                    already = self._duckdb.execute(
+                                        "SELECT 1 FROM applied_jobs WHERE job_id=? AND site='insight_global'",
+                                        [job_id]
+                                    ).fetchone()
+                                    if already:
+                                        logger.info(f"  ⏭️ Already applied — skipping: {title}")
+                                        if href in job_urls:
+                                            job_urls.remove(href)
+                                except Exception as _de:
+                                    logger.debug(f"  DuckDB dedup check failed: {_de}")
 
                     except Exception as e:
                         logger.debug(f"Error extracting job from result row: {e}")
