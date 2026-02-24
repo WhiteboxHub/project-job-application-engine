@@ -1,3 +1,10 @@
+"""
+Lever ATS Strategy
+Reads job listings from hiring_cafe_output.json,
+filters only jobs with 'jobs.lever.co' in the ats_url,
+and applies to each one using Lever's standard apply form.
+"""
+
 from strategies.base import BaseStrategy
 from core.logger import logger
 from core.human_behavior import HumanBehavior
@@ -6,100 +13,91 @@ import time
 import os
 import json
 import random
-from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from data.csv_tracker import tracker as csv_tracker
-from models.config_models import JobListing
+
+
+# URL pattern that identifies Lever job apply pages
+LEVER_URL_PATTERN = "jobs.lever.co"
 
 
 class LeverStrategy(BaseStrategy):
     """
     Lever ATS automation strategy.
 
-    Lever (jobs.lever.co) is a modern ATS with a standardized application form:
-    - Full Name, Email, Phone, Current Company
-    - Resume upload
-    - Optional links (LinkedIn, GitHub, Portfolio)
-    - Custom questions per job
+    Lever (jobs.lever.co) has a standardized apply form:
+      - Full Name, Email, Phone, Current Company
+      - Resume upload
+      - Optional links (LinkedIn, GitHub, Portfolio)
+      - Custom text/dropdown questions
+      - Submit button
 
-    This strategy:
-    1. Reads job listings from hiring_cafe_output.json
-    2. Filters only jobs where ats_url contains 'lever' or ats_platform == 'lever'
-    3. Navigates to each Lever job apply URL and fills + submits the form
+    Workflow:
+      1. Read hiring_cafe_output.json
+      2. Keep only jobs whose ats_url contains 'jobs.lever.co'
+      3. For each job, navigate to the /apply URL and fill + submit the form
     """
 
-    def __init__(self, driver, job_site=None, selectors=None, db_session=None):
-        # Create a minimal job_site stub if none provided
-        if job_site is None:
-            class MinimalJobSite:
-                def __init__(self):
-                    self.company_name = "Lever"
-                    self.search_url_template = "https://jobs.lever.co"
-            job_site = MinimalJobSite()
+    # Tells EngineRunner to call find_and_apply_jobs() directly
+    use_single_phase = True
 
-        super().__init__(driver, job_site, selectors or {})
-        self.db_session = db_session
-        self.config_data = self._load_config()
+    def __init__(self, driver, job_site=None, selectors=None, db_session=None, candidate_data=None):
+        # Minimal job_site stub so BaseStrategy.__init__ won't fail
+        if job_site is None:
+            class _StubSite:
+                company_name = "Lever"
+                search_url_template = "https://jobs.lever.co"
+            job_site = _StubSite()
+
+        super().__init__(driver, job_site, selectors or {}, db_session, candidate_data)
+        self.use_single_phase = True          # redundant but explicit
         self.human = HumanBehavior(driver)
         self.safe_actions = SafeActions(driver)
 
-        if self.db_session:
-            logger.info("Database session available - will save to DuckDB")
+        # Load applicant data: candidate_data (from runner) takes priority,
+        # otherwise fall back to guest_form_data.json
+        if candidate_data:
+            self.config_data = candidate_data
+            logger.info("Lever: Using candidate_data supplied by runner")
         else:
-            logger.warning("No database session - will only use CSV tracking")
+            self.config_data = self._load_guest_form_data()
 
     # ------------------------------------------------------------------ #
-    #  Config Loading
+    #  Config Helpers
     # ------------------------------------------------------------------ #
 
-    def _load_config(self):
-        """Load applicant configuration from guest_form_data.json."""
+    def _load_guest_form_data(self):
+        """Fallback: load applicant info from data/guest_form_data.json."""
         try:
-            config_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                'data',
-                'guest_form_data.json'
+            path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                'data', 'guest_form_data.json'
             )
-            with open(config_path, 'r') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            logger.info(f"Loaded applicant config from {config_path}")
+            logger.info(f"Lever: Loaded guest_form_data.json from {path}")
             return data
         except Exception as e:
-            logger.error(f"Failed to load guest_form_data.json: {e}")
-            return None
-
-    def _load_lever_config(self):
-        """Load Lever-specific config from config/lever.json."""
-        try:
-            config_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                'config',
-                'lever.json'
-            )
-            with open(config_path, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Could not load lever.json config: {e}")
-            return {"input_file": "hiring_cafe_output.json", "filter_platform": "lever"}
+            logger.error(f"Lever: Failed to load guest_form_data.json: {e}")
+            return {}
 
     def _load_hiring_cafe_output(self):
-        """Load hiring_cafe_output.json from the project root."""
-        lever_cfg = self._load_lever_config()
-        input_file = lever_cfg.get("input_file", "hiring_cafe_output.json")
+        """Load all jobs from hiring_cafe_output.json (project root)."""
         try:
-            file_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                input_file
+            path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                'hiring_cafe_output.json'
             )
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            logger.info(f"Loaded {input_file}: {data.get('count', 0)} total jobs")
-            return data.get('jobs', [])
+            jobs = data.get('jobs', [])
+            logger.info(f"Lever: Loaded hiring_cafe_output.json — {len(jobs)} total jobs")
+            return jobs
         except Exception as e:
-            logger.error(f"Failed to load {input_file}: {e}")
+            logger.error(f"Lever: Failed to load hiring_cafe_output.json: {e}")
             return []
 
     # ------------------------------------------------------------------ #
@@ -107,238 +105,248 @@ class LeverStrategy(BaseStrategy):
     # ------------------------------------------------------------------ #
 
     def login(self):
-        """
-        Lever jobs don't require login - publicly accessible apply pages.
-        Returns True immediately.
-        """
+        """Lever apply pages are public — no login required."""
         logger.info("Lever: No login required (public apply pages)")
         return True
 
     def find_jobs(self):
         """
-        Load hiring_cafe_output.json and filter for Lever jobs only.
+        Filter hiring_cafe_output.json for Lever jobs only.
 
-        A job is considered a Lever job if:
-        - ats_platform == 'lever', OR
-        - 'lever' appears in the ats_url
+        A job qualifies if its ats_url contains 'jobs.lever.co'.
+        It is skipped if it has already been applied to (checked via DuckDB).
 
         Returns:
-            List of job dicts: [{'job_id', 'title', 'ats_url', 'hiring_cafe_url'}, ...]
+            list[dict]: Each dict has keys: job_id, title, ats_url, hiring_cafe_url
         """
         all_jobs = self._load_hiring_cafe_output()
+        from data.db_duckdb import db_duckdb
 
         lever_jobs = []
+        skipped_count = 0
         for job in all_jobs:
-            ats_url = job.get('ats_url') or ''
-            ats_platform = (job.get('ats_platform') or '').lower()
-            if ats_platform == 'lever' or 'lever' in ats_url.lower():
-                if ats_url and ats_url.startswith('http'):
-                    lever_jobs.append({
-                        'job_id': job.get('job_id'),
-                        'title': job.get('title', 'Unknown Title'),
-                        'ats_url': ats_url,
-                        'hiring_cafe_url': job.get('hiring_cafe_url'),
-                        'ats_platform': 'lever',
-                    })
+            ats_url = (job.get('ats_url') or '').strip()
+            if LEVER_URL_PATTERN in ats_url:
+                job_id = job.get('job_id', 'unknown')
+                
+                # Check if already applied
+                if db_duckdb.is_already_applied(job_id, 'lever'):
+                    skipped_count += 1
+                    continue
 
-        logger.info(f"Found {len(lever_jobs)} Lever jobs out of {len(all_jobs)} total jobs")
+                lever_jobs.append({
+                    'job_id':          job_id,
+                    'title':           job.get('title', 'Unknown Title'),
+                    'ats_url':         ats_url,
+                    'hiring_cafe_url': job.get('hiring_cafe_url', ''),
+                    'ats_platform':    'lever',
+                })
+
+        logger.info(f"Lever: {len(lever_jobs)} new Lever job(s) found (skipped {skipped_count} already applied)")
         for j in lever_jobs:
-            logger.info(f"  - {j['title'][:80]} -> {j['ats_url']}")
+            logger.info(f"  [{j['job_id']}] {j['title'][:70]} -> {j['ats_url']}")
         return lever_jobs
 
-    def apply(self, listing: JobListing):
-        """
-        Apply to a single job listing (BaseStrategy interface).
-        Delegates to _apply_to_lever_job().
-        """
-        job_data = {
-            'job_id': getattr(listing, 'external_id', None) or getattr(listing, 'job_id', None),
-            'title': getattr(listing, 'title', 'Unknown'),
-            'ats_url': getattr(listing, 'job_url', None),
-        }
-        return self._apply_to_lever_job(job_data)
+    def apply(self, listing):
+        """BaseStrategy interface — delegates to _apply_to_lever_job()."""
+        if isinstance(listing, dict):
+            job = listing
+        else:
+            job = {
+                'job_id': getattr(listing, 'external_job_id', None) or getattr(listing, 'job_id', 'unknown'),
+                'title':  getattr(listing, 'job_title', 'Unknown'),
+                'ats_url': getattr(listing, 'job_url', ''),
+            }
+        return self._apply_to_lever_job(job)
 
     # ------------------------------------------------------------------ #
-    #  Main Workflow
+    #  Main Workflow (Single-Phase)
     # ------------------------------------------------------------------ #
 
     def find_and_apply_jobs(self):
         """
-        Main entry point: Find all Lever jobs and apply to each one.
+        Called by EngineRunner when use_single_phase=True.
+        Finds all Lever jobs and applies to each one.
 
         Returns:
-            int: Number of successful applications submitted
+            int: Number of successfully submitted applications
         """
         logger.info("=" * 60)
-        logger.info("LeverStrategy: Starting find_and_apply_jobs workflow")
+        logger.info("LeverStrategy: Starting find_and_apply_jobs")
         logger.info("=" * 60)
 
         if not self.config_data:
-            logger.error("No applicant config data available - aborting")
+            logger.error("Lever: No applicant config available — aborting")
             return 0
 
         lever_jobs = self.find_jobs()
-
         if not lever_jobs:
-            logger.warning("No Lever jobs found in hiring_cafe_output.json")
+            logger.warning("Lever: No jobs.lever.co URLs found in hiring_cafe_output.json")
             return 0
 
-        logger.info(f"\nProcessing {len(lever_jobs)} Lever jobs...")
+        logger.info(f"\nLever: Processing {len(lever_jobs)} job(s)...")
         total_applied = 0
 
         for idx, job in enumerate(lever_jobs, 1):
             logger.info(f"\n{'=' * 60}")
-            logger.info(f"Job {idx}/{len(lever_jobs)}: {job['title'][:80]}")
-            logger.info(f"Apply URL: {job['ats_url']}")
+            logger.info(f"[{idx}/{len(lever_jobs)}] {job['title'][:70]}")
+            logger.info(f"URL: {job['ats_url']}")
             logger.info(f"{'=' * 60}")
 
             try:
                 success = self._apply_to_lever_job(job)
                 if success:
                     total_applied += 1
-                    logger.info(f"Application #{total_applied} submitted successfully")
+                    logger.info(f"Lever: Application #{total_applied} submitted successfully")
                 else:
-                    logger.warning(f"Application failed for job {job.get('job_id')}")
+                    logger.warning(f"Lever: Application failed for job_id={job['job_id']}")
             except Exception as e:
-                logger.error(f"Error applying to job {job.get('job_id')}: {e}")
+                logger.error(f"Lever: Unexpected error for job_id={job['job_id']}: {e}")
                 import traceback
                 traceback.print_exc()
 
             # Polite delay between applications
             if idx < len(lever_jobs):
                 delay = random.uniform(3, 6)
-                logger.info(f"Waiting {delay:.1f}s before next application...")
+                logger.info(f"Lever: Waiting {delay:.1f}s before next job...")
                 time.sleep(delay)
 
         logger.info(f"\n{'=' * 60}")
-        logger.info(f"Lever workflow complete: {total_applied}/{len(lever_jobs)} applications submitted")
+        logger.info(f"Lever: Done — {total_applied}/{len(lever_jobs)} applications submitted")
         logger.info(f"{'=' * 60}")
         return total_applied
 
     # ------------------------------------------------------------------ #
-    #  Lever Form Application Logic
+    #  Lever Form Application
     # ------------------------------------------------------------------ #
 
     def _apply_to_lever_job(self, job):
         """
-        Navigate to the Lever apply URL and fill/submit the application form.
+        Navigate to the Lever /apply URL and fill + submit the form.
 
-        Lever's standard apply page (jobs.lever.co/.../apply) has:
-        - Full name input
-        - Email input
-        - Phone input
-        - Current company input
-        - Resume file upload
-        - Optional link fields (LinkedIn, GitHub, Portfolio)
-        - Custom questions (text areas / dropdowns)
-        - Submit button
+        Lever's standard form fields:
+          - name        (full name)
+          - email       (email address)
+          - phone       (phone number)
+          - org         (current company)
+          - resume      (file upload — hidden input)
+          - urls        (LinkedIn, GitHub, Portfolio — optional)
+          - custom Q&A  (textareas / dropdowns — best-effort)
+          - submit btn
 
         Args:
-            job: dict with 'job_id', 'title', 'ats_url'
+            job (dict): Must contain 'ats_url', 'job_id', 'title'
 
         Returns:
-            bool: True if application submitted successfully
+            bool: True if form was submitted (or dry-run simulated)
         """
+        from engine.guards import guards
+
         ats_url = job.get('ats_url', '')
-        job_id = job.get('job_id', 'unknown')
-        title = job.get('title', 'Unknown')
+        job_id  = job.get('job_id', 'unknown')
+        title   = job.get('title', 'Unknown')
 
-        # Ensure we go directly to the /apply page
-        apply_url = ats_url
-        if '/apply' not in apply_url:
-            apply_url = apply_url.rstrip('/') + '/apply'
+        # Ensure the URL ends with /apply
+        apply_url = ats_url if '/apply' in ats_url else ats_url.rstrip('/') + '/apply'
 
-        applicant = self.config_data.get('applicant', {})
-        resume_path = self.config_data.get('resume_path', '')
-        resume_full_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            resume_path
+        # Resolve applicant details
+        # Support both raw guest_form_data.json structure and CandidateLoader structure
+        applicant = (
+            self.config_data.get('applicant')          # guest_form_data.json
+            or self.config_data                        # CandidateLoader flat dict
+            or {}
         )
+        first_name = applicant.get('first_name', '') or self.config_data.get('first_name', '')
+        last_name  = applicant.get('last_name', '')  or self.config_data.get('last_name', '')
+        email      = applicant.get('email', '')      or self.config_data.get('email', '')
+        phone      = applicant.get('phone', '')      or self.config_data.get('phone', '')
+        experience = applicant.get('experience', []) or self.config_data.get('work', [])
+        company    = experience[0].get('company', '') if experience else ''
+
+        full_name  = f"{first_name} {last_name}".strip()
+
+        # Resolve resume path using the BaseStrategy helper
+        resume_path = self.get_resume_path()
 
         try:
-            # Step 1: Navigate to the apply page
+            # ── Step 1: Navigate ──────────────────────────────────────────
             logger.info(f"  Navigating to: {apply_url}")
             self.driver.get(apply_url)
-            WebDriverWait(self.driver, 15).until(
+            WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
             time.sleep(2)
             logger.info("  Page loaded")
 
-            # Step 2: Fill Full Name
+            # ── Step 2: Fill standard Lever fields ────────────────────────
             self._fill_field(
                 ['input[name="name"]', 'input[placeholder*="name" i]', '#name'],
-                f"{applicant.get('first_name', '')} {applicant.get('last_name', '')}".strip(),
-                label="Full Name"
+                full_name, label="Full Name"
             )
-
-            # Step 3: Fill Email
             self._fill_field(
-                ['input[name="email"]', 'input[type="email"]', 'input[placeholder*="email" i]', '#email'],
-                applicant.get('email', ''),
-                label="Email"
+                ['input[name="email"]', 'input[type="email"]', '#email'],
+                email, label="Email"
             )
-
-            # Step 4: Fill Phone
             self._fill_field(
                 ['input[name="phone"]', 'input[type="tel"]', 'input[placeholder*="phone" i]', '#phone'],
-                applicant.get('phone', ''),
-                label="Phone"
+                phone, label="Phone"
             )
-
-            # Step 5: Fill Current Company (optional)
-            experience = applicant.get('experience', [])
-            current_company = experience[0].get('company', '') if experience else ''
-            if current_company:
+            if company:
                 self._fill_field(
-                    ['input[name="org"]', 'input[placeholder*="company" i]', 'input[placeholder*="organization" i]', '#org'],
-                    current_company,
-                    label="Current Company",
-                    required=False
+                    ['input[name="org"]', 'input[placeholder*="company" i]',
+                     'input[placeholder*="organization" i]', '#org'],
+                    company, label="Current Company", required=False
                 )
 
-            # Step 6: Upload Resume
-            if resume_path and os.path.exists(resume_full_path):
-                self._upload_resume(resume_full_path)
+            # ── Step 3: Upload resume ─────────────────────────────────────
+            if resume_path:
+                self._upload_resume(resume_path)
             else:
-                logger.warning(f"  Resume file not found: {resume_full_path}")
+                logger.warning("  Resume not found — skipping upload")
 
-            # Step 7: Fill LinkedIn URL (optional - leave blank)
-            # Step 8: Skip optional links (GitHub, Portfolio)
-
-            # Step 9: Handle custom questions (best-effort)
+            # ── Step 4: Handle specific sections (USA Forms) ──────────────
+            self._handle_usa_form_section()
+            self._handle_general_usa_form_section()
+            
+            # ── Step 5: Handle other custom questions (best-effort) ────────
             self._handle_custom_questions()
 
-            # Step 10: Submit application
+            # ── Step 5: Dry run guard ─────────────────────────────────────
+            if guards.is_dry_run():
+                logger.info("\n" + "!" * 60)
+                logger.info("! DRY RUN: Would submit Lever application now")
+                logger.info(f"! Job: {title[:70]}")
+                logger.info(f"! URL: {apply_url}")
+                logger.info("!" * 60 + "\n")
+                self._track_application(job, status='dry_run')
+                return True  # Counts as success in dry-run
+
+            # ── Step 6: Submit form ────────────────────────────────────────
             submitted = self._submit_form()
 
-            # Step 11: Track result
-            if submitted:
-                self._track_application(job, status='applied')
-            else:
-                self._track_application(job, status='failed')
-
+            # ── Step 7: Record result ──────────────────────────────────────
+            status = 'applied' if submitted else 'failed'
+            self._track_application(job, status=status)
             return submitted
 
         except Exception as e:
-            logger.error(f"  Error during application: {e}")
+            logger.error(f"  Lever: Error during application for job_id={job_id}: {e}")
             import traceback
             traceback.print_exc()
             self._track_application(job, status='error')
             return False
 
+    # ------------------------------------------------------------------ #
+    #  Form Helpers
+    # ------------------------------------------------------------------ #
+
     def _fill_field(self, selectors, value, label="Field", required=True):
         """
-        Try multiple CSS selectors to find and fill a form field.
-
-        Args:
-            selectors: List of CSS selectors to try
-            value: Value to type into the field
-            label: Human-readable label for logging
-            required: Whether to warn if field not found
+        Try selectors in order until one matches a visible, enabled input,
+        then type `value` into it using human-like behavior.
         """
         if not value:
-            logger.debug(f"  Skipping {label}: no value to fill")
+            logger.debug(f"  Skipping {label}: empty value")
             return False
 
         for selector in selectors:
@@ -347,7 +355,9 @@ class LeverStrategy(BaseStrategy):
                     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                 )
                 if elem.is_displayed() and elem.is_enabled():
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView({block:'center'});", elem
+                    )
                     time.sleep(0.3)
                     elem.clear()
                     self.human.fill_text_field(elem, value)
@@ -356,7 +366,7 @@ class LeverStrategy(BaseStrategy):
             except (TimeoutException, NoSuchElementException):
                 continue
             except Exception as e:
-                logger.debug(f"  Selector {selector} failed for {label}: {e}")
+                logger.debug(f"  Selector '{selector}' failed for {label}: {e}")
                 continue
 
         if required:
@@ -365,105 +375,323 @@ class LeverStrategy(BaseStrategy):
 
     def _upload_resume(self, resume_full_path):
         """
-        Upload resume file to the Lever form.
-        Lever uses a hidden file input that we can send_keys to directly.
+        Lever uses a hidden <input type="file"> — use send_keys directly
+        (after making it visible via JS).
         """
-        upload_selectors = [
+        selectors = [
             'input[type="file"]',
             'input[name="resume"]',
             'input[accept*="pdf"]',
+            'input[accept*="doc"]',
         ]
-        for selector in upload_selectors:
+        for selector in selectors:
             try:
                 file_input = self.driver.find_element(By.CSS_SELECTOR, selector)
-                # Use JS to make hidden inputs visible if needed
-                self.driver.execute_script("arguments[0].style.display = 'block';", file_input)
+                self.driver.execute_script(
+                    "arguments[0].style.display='block'; arguments[0].style.visibility='visible';",
+                    file_input
+                )
                 time.sleep(0.3)
                 file_input.send_keys(resume_full_path)
                 logger.info(f"  Resume uploaded: {os.path.basename(resume_full_path)}")
-                time.sleep(2)  # Wait for upload to complete
+                time.sleep(2)  # Let upload complete
                 return True
-            except (NoSuchElementException, Exception) as e:
-                logger.debug(f"  Upload selector {selector} failed: {e}")
+            except NoSuchElementException:
+                continue
+            except Exception as e:
+                logger.debug(f"  Upload selector '{selector}' failed: {e}")
                 continue
 
-        logger.warning("  Could not find file upload input for resume")
+        logger.warning("  Could not find resume file input")
         return False
+
+    def _handle_usa_form_section(self):
+        """
+        Specific handler for 'Application Form (USA)' section found on Lever.
+        Fills out 6 questions in order based on the user-provided HTML structure.
+        """
+        logger.info("  Processing 'Application Form (USA)' section...")
+        
+        # Load values from config (e.g. within applicant.custom_questions or flat usa_form key)
+        applicant = (
+            self.config_data.get('applicant') 
+            or self.config_data 
+            if isinstance(self.config_data, dict) else {}
+        )
+        details = applicant.get('usa_form', {})
+        
+        # Mapping labels to default values or config keys
+        questions = [
+            ("Where do you currently reside", details.get('residence', "Piscataway, NJ")),
+            ("travel are you open to", details.get('travel', "25%")),
+            ("willing to relocate", details.get('relocate', "Yes")),
+            ("where would you be open to relocating", details.get('relocation_destinations', "Open to all major US hubs")),
+            ("industry related certifications", details.get('certifications', "None")),
+            ("Expected Salary", details.get('expected_salary', "$120,000 - $150,000")),
+        ]
+
+        for label_text, value in questions:
+            try:
+                # Find the label that contains the text (case-insensitive-ish)
+                xpath = f"//div[contains(@class, 'application-label')]//div[contains(text(), '{label_text}')]"
+                label_elems = self.driver.find_elements(By.XPATH, xpath)
+                if not label_elems:
+                    # Try a broader search if specific div structure fails
+                    xpath = f"//li[contains(@class, 'application-question')]//div[contains(text(), '{label_text}')]"
+                    label_elems = self.driver.find_elements(By.XPATH, xpath)
+                
+                if not label_elems:
+                    continue
+
+                label_elem = label_elems[0]
+                
+                # Find the parent question container
+                question_container = label_elem.find_element(By.XPATH, "./ancestor::li[contains(@class, 'application-question')]")
+                
+                # Scroll into view
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", question_container)
+                time.sleep(0.3)
+
+                # Check if it's a radio or text input
+                inputs = question_container.find_elements(By.TAG_NAME, "input")
+                textareas = question_container.find_elements(By.TAG_NAME, "textarea")
+                
+                if inputs and inputs[0].get_attribute("type") == "radio":
+                    # Handle multiple choice (radio)
+                    radio_found = False
+                    for radio in inputs:
+                        parent_label = radio.find_element(By.XPATH, "./parent::label")
+                        if str(value).lower() == parent_label.text.strip().lower():
+                            radio.click()
+                            logger.info(f"    Selected radio '{value}' for: '{label_text}'")
+                            radio_found = True
+                            break
+                    
+                    if not radio_found:
+                        # Best effort: if "Yes" is requested but not found exactly, try contains
+                        for radio in inputs:
+                            parent_label = radio.find_element(By.XPATH, "./parent::label")
+                            if str(value).lower() in parent_label.text.strip().lower():
+                                radio.click()
+                                logger.info(f"    Selected radio containing '{value}' for: '{label_text}'")
+                                radio_found = True
+                                break
+                                
+                elif inputs:
+                    # Handle text input
+                    text_input = inputs[0]
+                    text_input.clear()
+                    self.human.fill_text_field(text_input, str(value))
+                    logger.info(f"    Filled: '{label_text}' -> '{value}'")
+                
+                elif textareas:
+                    # Handle textarea
+                    textarea = textareas[0]
+                    textarea.clear()
+                    self.human.fill_text_field(textarea, str(value))
+                    logger.info(f"    Filled Textarea: '{label_text}' -> '{value}'")
+                
+                self.human.random_delay(0.5, 1.0)
+                
+            except Exception as e:
+                logger.debug(f"    Could not handle USA Form question '{label_text}': {e}")
+
+    def _handle_general_usa_form_section(self):
+        """
+        Handler for 'General Application Form (USA)' section.
+        Fills out 5 questions including education formatting and acknowledgments.
+        """
+        logger.info("  Processing 'General Application Form (USA)' section...")
+        
+        applicant = (
+            self.config_data.get('applicant') 
+            or self.config_data 
+            if isinstance(self.config_data, dict) else {}
+        )
+        gen_details = applicant.get('general_usa_form', {})
+        
+        # Construct education string: "University of Sindh; BA"
+        edu_list = applicant.get('education', [])
+        edu_str = ""
+        if edu_list:
+            edu_items = [f"{e.get('University', e.get('school', 'Unknown'))}; {e.get('degree', 'BA')}" for e in edu_list]
+            edu_str = " | ".join(edu_items) # or just first? Let's join or pick first.
+            # User example: University of Somewhere; Bachelor of Science
+            if len(edu_list) > 1:
+                edu_str = "; ".join(edu_items) # Better formatting
+            else:
+                e = edu_list[0]
+                edu_str = f"{e.get('University', e.get('school', 'Unknown'))}; {e.get('degree', 'BA')}"
+
+        questions = [
+            ("Primary Residence Address", gen_details.get('address', applicant.get('street_address', ''))),
+            ("Post-Secondary Education", gen_details.get('education_formatted', edu_str)),
+            ("reasonable accommodations", gen_details.get('ability_to_perform', 'Yes')),
+            ("Work Authorization status", gen_details.get('authorization', applicant.get('visa_status', 'US Citizen'))),
+            ("AHEAD will consider", gen_details.get('acknowledge', True)),
+        ]
+
+        for label_text, value in questions:
+            try:
+                xpath = f"//div[contains(@class, 'application-label')]//div[contains(text(), '{label_text}')]"
+                label_elems = self.driver.find_elements(By.XPATH, xpath)
+                if not label_elems:
+                    xpath = f"//li[contains(@class, 'application-question')]//div[contains(text(), '{label_text}')]"
+                    label_elems = self.driver.find_elements(By.XPATH, xpath)
+                
+                if not label_elems:
+                    continue
+
+                label_elem = label_elems[0]
+                question_container = label_elem.find_element(By.XPATH, "./ancestor::li[contains(@class, 'application-question')]")
+                
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", question_container)
+                time.sleep(0.3)
+
+                inputs = question_container.find_elements(By.TAG_NAME, "input")
+                textareas = question_container.find_elements(By.TAG_NAME, "textarea")
+                selects = question_container.find_elements(By.TAG_NAME, "select")
+                
+                if selects:
+                    from selenium.webdriver.support.ui import Select
+                    sel = Select(selects[0])
+                    # Try to select by text
+                    try:
+                        sel.select_by_visible_text(str(value))
+                    except:
+                        # Fallback to index 1 if text fails
+                        if len(sel.options) > 1: sel.select_by_index(1)
+                    logger.info(f"    Selected dropdown '{value}' for: '{label_text}'")
+
+                elif inputs and inputs[0].get_attribute("type") == "checkbox":
+                    # Handle checkbox
+                    if value:
+                        if not inputs[0].is_selected():
+                            inputs[0].click()
+                            logger.info(f"    Checked checkbox for: '{label_text}'")
+
+                elif inputs and inputs[0].get_attribute("type") == "radio":
+                    radio_found = False
+                    for radio in inputs:
+                        parent_label = radio.find_element(By.XPATH, "./parent::label")
+                        if str(value).lower() == parent_label.text.strip().lower():
+                            radio.click()
+                            logger.info(f"    Selected radio '{value}' for: '{label_text}'")
+                            radio_found = True
+                            break
+                    if not radio_found:
+                        for radio in inputs:
+                            parent_label = radio.find_element(By.XPATH, "./parent::label")
+                            if str(value).lower() in parent_label.text.strip().lower():
+                                radio.click()
+                                logger.info(f"    Selected radio containing '{value}' for: '{label_text}'")
+                                radio_found = True
+                                break
+                                
+                elif inputs:
+                    text_input = inputs[0]
+                    text_input.clear()
+                    self.human.fill_text_field(text_input, str(value))
+                    logger.info(f"    Filled: '{label_text}' -> '{value[:30]}...'")
+                
+                elif textareas:
+                    textarea = textareas[0]
+                    textarea.clear()
+                    self.human.fill_text_field(textarea, str(value))
+                    logger.info(f"    Filled Textarea: '{label_text}' -> '{value[:30]}...'")
+                
+                self.human.random_delay(0.5, 1.0)
+                
+            except Exception as e:
+                logger.debug(f"    Could not handle question '{label_text}': {e}")
 
     def _handle_custom_questions(self):
         """
-        Handle custom questions on Lever forms (best-effort).
-        Lever forms may have text areas or dropdowns for custom questions.
-        We skip optional questions and fill mandatory text areas with a generic response.
+        Best-effort handler for Lever custom questions:
+        - Fills visible textareas with a generic cover sentence
+        - Picks the first real option in visible <select> dropdowns
         """
         try:
-            # Find all visible textareas (custom questions)
-            textareas = self.driver.find_elements(By.CSS_SELECTOR, 'textarea')
-            visible_textareas = [t for t in textareas if t.is_displayed() and t.is_enabled()]
-
-            if visible_textareas:
-                logger.info(f"  Found {len(visible_textareas)} custom text question(s)")
-                generic_response = "I am excited about this opportunity and believe my skills and experience make me a strong candidate. I look forward to discussing further."
-                for i, textarea in enumerate(visible_textareas):
+            # Text questions
+            textareas = [
+                t for t in self.driver.find_elements(By.CSS_SELECTOR, 'textarea')
+                if t.is_displayed() and t.is_enabled()
+            ]
+            if textareas:
+                generic = (
+                    "I am excited about this opportunity and believe my background "
+                    "in AI/ML makes me a strong fit. I look forward to discussing further."
+                )
+                logger.info(f"  Handling {len(textareas)} custom textarea(s)")
+                for i, ta in enumerate(textareas):
                     try:
-                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", textarea)
-                        time.sleep(0.3)
-                        textarea.clear()
-                        self.human.fill_text_field(textarea, generic_response)
-                        logger.info(f"  Filled custom textarea {i + 1}")
+                        self.driver.execute_script(
+                            "arguments[0].scrollIntoView({block:'center'});", ta
+                        )
+                        time.sleep(0.2)
+                        ta.clear()
+                        self.human.fill_text_field(ta, generic)
+                        logger.info(f"  Filled textarea {i + 1}")
                     except Exception as e:
-                        logger.debug(f"  Failed to fill textarea {i + 1}: {e}")
+                        logger.debug(f"  Textarea {i + 1} failed: {e}")
 
-            # Handle select/dropdown questions (choose first non-empty option)
-            selects = self.driver.find_elements(By.CSS_SELECTOR, 'select')
-            visible_selects = [s for s in selects if s.is_displayed() and s.is_enabled()]
-            if visible_selects:
-                logger.info(f"  Found {len(visible_selects)} dropdown question(s)")
+            # Dropdown questions
+            selects = [
+                s for s in self.driver.find_elements(By.CSS_SELECTOR, 'select')
+                if s.is_displayed() and s.is_enabled()
+            ]
+            if selects:
                 from selenium.webdriver.support.ui import Select
-                for i, select_elem in enumerate(visible_selects):
+                logger.info(f"  Handling {len(selects)} custom dropdown(s)")
+                for i, sel_elem in enumerate(selects):
                     try:
-                        sel = Select(select_elem)
-                        options = [o for o in sel.options if o.get_attribute('value')]
-                        if options:
-                            sel.select_by_index(1)  # Select first real option (skip blank)
+                        sel = Select(sel_elem)
+                        # Skip the blank placeholder (index 0) and pick index 1
+                        if len(sel.options) > 1:
+                            sel.select_by_index(1)
                             logger.info(f"  Selected option for dropdown {i + 1}")
                     except Exception as e:
-                        logger.debug(f"  Failed to handle dropdown {i + 1}: {e}")
+                        logger.debug(f"  Dropdown {i + 1} failed: {e}")
 
         except Exception as e:
-            logger.debug(f"  Error handling custom questions: {e}")
+            logger.debug(f"  Custom questions handler error: {e}")
 
     def _submit_form(self):
         """
-        Click the Submit application button on the Lever form.
+        Click the Lever submit button.
+        Checks for a thank-you / confirmation page to confirm success.
 
         Returns:
-            bool: True if submission button clicked and page changed
+            bool: True if submission likely succeeded
         """
-        submit_selectors = [
+        submit_selectors_css = [
             'button[type="submit"]',
             'button.postings-btn',
             'button[data-qa="btn-submit"]',
-            '//button[contains(., "Submit application")]',
-            '//button[contains(., "Submit")]',
-            '//input[@type="submit"]',
+            'input[type="submit"]',
+        ]
+        submit_selectors_xpath = [
+            '//button[contains(normalize-space(.), "Submit application")]',
+            '//button[contains(normalize-space(.), "Submit")]',
         ]
 
-        for selector in submit_selectors:
+        all_selectors = [
+            ('css',   s) for s in submit_selectors_css
+        ] + [
+            ('xpath', s) for s in submit_selectors_xpath
+        ]
+
+        for (by_type, selector) in all_selectors:
+            by = By.CSS_SELECTOR if by_type == 'css' else By.XPATH
             try:
-                if selector.startswith('//'):
-                    elem = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.XPATH, selector))
-                    )
-                else:
-                    elem = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elem)
+                elem = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((by, selector))
+                )
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", elem
+                )
                 time.sleep(0.5)
-
-                logger.info(f"  Clicking submit button...")
+                logger.info("  Clicking submit button...")
                 try:
                     elem.click()
                 except Exception:
@@ -471,67 +699,68 @@ class LeverStrategy(BaseStrategy):
 
                 time.sleep(3)
 
-                # Check for confirmation (Lever shows a thank-you page)
-                current_url = self.driver.current_url
-                page_source = self.driver.page_source.lower()
-
-                confirmation_signals = [
-                    'thank you',
-                    'application submitted',
-                    'your application',
-                    'successfully submitted',
-                    'we\'ve received',
-                    '/confirmation',
-                ]
-                for signal in confirmation_signals:
-                    if signal in page_source or signal in current_url.lower():
-                        logger.info(f"  Application confirmed (detected: '{signal}')")
+                # Detect confirmation
+                page_text = self.driver.page_source.lower()
+                current_url = self.driver.current_url.lower()
+                for signal in ['thank you', 'application submitted', 'successfully submitted',
+                               "we've received", '/confirmation', 'your application']:
+                    if signal in page_text or signal in current_url:
+                        logger.info(f"  Submission confirmed (signal: '{signal}')")
                         return True
 
-                # If URL changed (redirect after submit), treat as success
-                logger.info("  Form submitted (URL may have changed)")
+                logger.info("  Submit clicked — treating as success")
                 return True
 
             except (TimeoutException, NoSuchElementException):
                 continue
             except Exception as e:
-                logger.debug(f"  Submit selector failed: {e}")
+                logger.debug(f"  Submit selector '{selector}' error: {e}")
                 continue
 
-        logger.warning("  Could not find Submit button")
+        logger.warning("  Could not find a Submit button on this page")
         return False
 
-    def _track_application(self, job, status='applied'):
-        """
-        Log application result to CSV tracker.
+    # ------------------------------------------------------------------ #
+    #  Tracking
+    # ------------------------------------------------------------------ #
 
-        Args:
-            job: dict with job details
-            status: 'applied', 'failed', or 'error'
-        """
+    def _track_application(self, job, status='applied'):
+        """Log result to CSV tracker and DuckDB."""
         try:
+            from data.db_duckdb import db_duckdb
+            job_id = job.get('job_id', 'unknown')
+            job_title = job.get('title', 'Unknown')
+            job_url = job.get('ats_url', '')
+            
+            # 1. Update CSV
+            company = self._company_from_url(job_url)
             csv_tracker.log_application(
-                company=self._extract_company_from_title(job.get('title', '')),
-                job_title=job.get('title', 'Unknown')[:100],
-                job_url=job.get('ats_url', ''),
+                company=company,
+                job_title=job_title[:100],
+                job_url=job_url,
                 status=status,
                 platform='lever',
-                notes=f"job_id={job.get('job_id', '')}"
+                notes=f"job_id={job_id}"
             )
-            logger.info(f"  Tracked application status: {status}")
+            
+            # 2. Update DuckDB (for dedup)
+            if status in ['applied', 'dry_run']:
+                db_duckdb.mark_applied(job_id, 'lever', job_title)
+                
+            logger.info(f"  Tracked: {status}")
         except Exception as e:
-            logger.debug(f"  CSV tracking failed: {e}")
+            logger.debug(f"  Tracking failed: {e}")
 
-    def _extract_company_from_title(self, title):
+    @staticmethod
+    def _company_from_url(url):
         """
-        Try to extract company name from the hiring_cafe title string.
-        Titles often contain company names embedded in the text.
+        Extract company name from a jobs.lever.co URL.
+        e.g. 'https://jobs.lever.co/dnb/...' => 'dnb'
         """
-        if not title:
-            return 'Unknown'
-        # hiring_cafe titles contain company name after job title
-        # e.g. "Senior Gen AI Engineer (R-18859)\nChennai, Tamil Nadu, India\n...Dun & Bradstreet:..."
-        lines = title.split('\n')
-        if len(lines) >= 5:
-            return lines[4].split(':')[0].strip()[:100]
-        return lines[0][:100] if lines else 'Unknown'
+        try:
+            parts = url.split('jobs.lever.co/')
+            if len(parts) > 1:
+                return parts[1].split('/')[0]
+        except Exception:
+            pass
+        return 'Unknown'

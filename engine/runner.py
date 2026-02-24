@@ -236,8 +236,8 @@ class EngineRunner:
                             logger.warning("Application failed")
                     except Exception as e:
                         logger.error(f"[ERROR] Error applying to job: {e}")
-                        if "no such window" in str(e).lower() or "disconnected" in str(e).lower():
-                            logger.error("[FATAL] Browser window was closed. Stopping.")
+                        if any(msg in str(e).lower() for msg in ["no such window", "disconnected", "invalid session id"]):
+                            logger.error("[FATAL] Browser session lost. Stopping.")
                             break
                         continue
 

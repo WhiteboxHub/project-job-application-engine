@@ -247,6 +247,7 @@ class HiringCafeStrategy(BaseStrategy):
         super().__init__(driver, job_site, selectors or {}, db_session, candidate_data)
         self.db_session = db_session
         self.human = HumanBehavior(driver)
+        self.safe_actions = SafeActions(driver)
         self.base_url = base_url
         self.search_url = search_url
 
@@ -557,7 +558,7 @@ class HiringCafeStrategy(BaseStrategy):
                 btn = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, APPLY_NOW_BUTTON_XPATH))
                 )
-                self.actions.safe_click_element(btn)
+                self.safe_actions.safe_click_element(btn)
             except (TimeoutException, NoSuchElementException) as e:
                 logger.warning(f"Apply now button not found on {job_id}: {e}")
                 logger.info(f"hiring_cafe_url: {job_url} -> ats_url: null")
