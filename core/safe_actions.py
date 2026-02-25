@@ -113,6 +113,17 @@ class SafeActions:
                 return False
         return False
 
+    def wait_for_element(self, selector, by=By.CSS_SELECTOR, timeout=10):
+        """Waits for an element to be present and visible"""
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        try:
+            wait = WebDriverWait(self.driver, timeout)
+            element = wait.until(EC.visibility_of_element_with_locator((by, selector)))
+            return element
+        except Exception:
+            return None
+
     def check_exists(self, selector, by=By.CSS_SELECTOR):
         try:
             self.driver.find_element(by, selector)

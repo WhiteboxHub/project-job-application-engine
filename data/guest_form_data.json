@@ -1,15 +1,19 @@
 {
     "search": {
-        "keyword": "AI Engineer",
-        "location": "california",
+        "keyword": "Python",
+        "location": "USA",
         "distance": "0"
     },
     "applicant": {
-        "first_name": "Ali Azeem",
-        "last_name": "Muhammad",
-        "email": "test84@gmail.com",
-        "phone": "+1 (415) 818-xxxx"
+        "first_name": "Ghazal",
+        "last_name": "Sultan",
+        "email": "ghazal.sultan1616@gmail.com",
+        "phone": "6692133034",
+        "city": "Mountain house",
+        "state": "California",
+        "country": "USA",
+        "zipcode": "95391",
+        "password": "MayuriP@1984"
     },
-    "resume_path": "resume/ali_resume.pdf"
+    "resume_path": "C:\\Users\\mayur\\Downloads\\Ghazal Sultan (1).pdf"
 }
-

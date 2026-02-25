@@ -6,10 +6,12 @@ Coordinates the entire automation workflow
 import time
 from data.db_connection import db
 from models.config_models import JobSite, SiteSelector
+from models.history_models import Application
 from engine.factory import strategy_factory
 from engine.guards import guards
 from core.browser import browser_service
 from core.logger import logger
+from config.settings import settings
 
 class EngineRunner:
     """Main orchestrator for the job application engine"""
@@ -95,7 +97,6 @@ class EngineRunner:
             if self.browser:
                 # Respect KEEP_BROWSER_OPEN setting for debugging
                 try:
-                    from config.settings import settings
                     if getattr(settings, 'KEEP_BROWSER_OPEN', False):
                         logger.info("\nKEEP_BROWSER_OPEN is True - leaving browser open for inspection")
                     else:
@@ -176,13 +177,44 @@ class EngineRunner:
                         break
                     
                     try:
-                        logger.info(f"\nApplying to: {job.get('job_title', 'Unknown Title')}")
+                        job_title = job.get('title') or job.get('job_title', 'Unknown Title')
+                        job_url = job.get('job_url')
+                        
+                        # Check if already applied (live runs only)
+                        existing = session.query(Application).filter(
+                            Application.job_url == job_url,
+                            Application.status == 'success'
+                        ).first()
+                        
+                        if existing:
+                            logger.info(f"⏭️ Skipping: Already successfully applied to: {job_title}")
+                            continue
+
+                        logger.info(f"\nApplying to: {job_title}")
                         success = strategy.apply(job)
                         
                         if success:
                             guards.increment_counter()
                             applied_count += 1
                             logger.info(f"✅ Application #{applied_count} successful")
+                            
+                            # Record in history (LIVE mode only — dry run stays read-only)
+                            if not settings.DRY_RUN:
+                                try:
+                                    new_app = Application(
+                                        job_site_id=site.id,
+                                        job_title=job_title,
+                                        job_url=job_url,
+                                        status='success'
+                                    )
+                                    session.add(new_app)
+                                    session.commit()
+                                    logger.info(f"📝 Recorded application in history")
+                                except Exception as db_err:
+                                    logger.warning(f"⚠️ Failed to record application in history: {db_err}")
+                                    session.rollback()
+                            else:
+                                logger.info("🔍 [DRY RUN] Skipping history recording")
                         else:
                             logger.warning("⚠️ Application failed")
                             

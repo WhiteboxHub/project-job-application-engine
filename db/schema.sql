@@ -287,7 +287,92 @@ INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES
 );
 
 
+
+-- =====================================================
+-- SEED DATA: TCS Configuration
+-- =====================================================
+
+-- Insert TCS ATS Platform
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
+    3,
+    'TCS iBegin',
+    'strategies.custom.tcs.TCSStrategy',
+    false
+);
+
+-- Insert TCS Job Site
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+    3,
+    3,
+    'TCS',
+    'tcs.com',
+    'System integrator',
+    'https://www.tcs.com/careers',
+    true
+);
+
+-- Insert TCS Listing Selectors (Placeholder)
+INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+    5,
+    3,
+    'listing',
+    '{
+        "search_input": "input[placeholder*=\\"search\\"]",
+        "container": "div.card"
+    }'::JSON
+);
+
+-- =====================================================
+-- CREDENTIALS TABLE
+-- =====================================================
+
+-- 7. Site Credentials (Login credentials per job site)
+CREATE TABLE IF NOT EXISTS site_credentials (
+    id          INTEGER PRIMARY KEY,
+    job_site_id INTEGER NOT NULL,
+    username    VARCHAR(255) NOT NULL,   -- typically email/login
+    password    VARCHAR(255) NOT NULL,   -- stored as-is (plaintext for local use)
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (job_site_id) REFERENCES job_sites(id)
+);
+
+-- =====================================================
+-- SEED DATA: Dice Credentials
+-- =====================================================
+
+-- Ensure Dice job site exists (id=5)
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required)
+VALUES (5, 'Dice Custom', 'strategies.custom.DiceStrategy', false);
+
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active)
+VALUES (
+    5,
+    5,
+    'Dice',
+    'dice.com',
+    'Staffing vendor',
+    'https://www.dice.com/jobs?q={keyword}&l={location}',
+    true
+);
+
+-- Insert Dice login credentials
+INSERT OR IGNORE INTO site_credentials (id, job_site_id, username, password)
+VALUES (1, 5, 'mayuri.jayaram@gmail.com', 'MayuriP@1984');
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
 CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);
 CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at);
+CREATE INDEX IF NOT EXISTS idx_site_credentials_site ON site_credentials(job_site_id);
+
+-- L&T Config
+INSERT OR IGNORE INTO ats_platforms (id, name, website_url) VALUES (4, 'L&T Careers', 'https://www.ltm.com');
+
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+    4, 4, 'LT', 'ltm.com', 'Technology Consulting', 'https://www.ltm.com/careers', true
+);
+
+INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (
+    6, 4, 'listing', '{"container": "div.job-tile"}'
+);

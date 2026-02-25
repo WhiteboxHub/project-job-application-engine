@@ -57,9 +57,11 @@ class BrowserService:
             logger.warning(f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver.")
             uc = None
 
-        options = None
         if uc:
             options = uc.ChromeOptions()
+        else:
+            from selenium.webdriver import ChromeOptions
+            options = ChromeOptions()
         options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
         
         proxy_arg = proxy_manager.get_proxy_option()
