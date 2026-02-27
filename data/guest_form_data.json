@@ -60,7 +60,21 @@
         "veteran": "No",
         "disability": "No",
         "employed_before_wipro": "No",
-        "wipro_employee_id": ""
+        "wipro_employee_id": "",
+        "usa_form": {
+            "residence": "Mountain House, CA",
+            "travel": "25%",
+            "relocate": "Yes",
+            "relocation_destinations": "Open to all major US hubs",
+            "certifications": "None",
+            "expected_salary": "$120,000 - $150,000"
+        },
+        "general_usa_form": {
+            "address": "440 Oceanside dr, Mountain House, CA 95391",
+            "ability_to_perform": "Yes",
+            "authorization": "US Citizen",
+            "acknowledge": true
+        }
     },
     "wipro_credentials": {
         "email": "candiategmail.com",

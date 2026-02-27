@@ -1,7 +1,7 @@
 """
-Scheduler Worker — JSON-Driven Automation Orchestration
+Scheduler Worker  JSON-Driven Automation Orchestration
 
-Triggered by Windows Task Scheduler → run_scheduler.bat
+Triggered by Windows Task Scheduler  run_scheduler.bat
 
 Flow:
   1. Load candidate from parsed_resume.json + guest_form_data.json
@@ -66,9 +66,9 @@ class SchedulerWorker:
 
     def get_fully_automated_sites(self):
         """Return list of fully automated site configs"""
-        logger.info(f"📋 Fully automated sites configured: {len(FULLY_AUTOMATED_SITES)}")
+        logger.info(f"List of fully automated sites configured: {len(FULLY_AUTOMATED_SITES)}")
         for s in FULLY_AUTOMATED_SITES:
-            logger.info(f"   ✅ {s['company_name']} ({s['domain']})")
+            logger.info(f"   [OK] {s['company_name']} ({s['domain']})")
         return FULLY_AUTOMATED_SITES
 
     # -------------------------------------------------------------------------
@@ -88,7 +88,7 @@ class SchedulerWorker:
         """
         site_name = site["company_name"]
         logger.info(f"\n{'='*60}")
-        logger.info(f"🎯 Processing: {candidate.get('first_name')} {candidate.get('last_name')} → {site_name}")
+        logger.info(f"Target Processing: {candidate.get('first_name')} {candidate.get('last_name')} -> {site_name}")
         logger.info(f"{'='*60}")
 
         # Resolve strategy class
@@ -108,7 +108,7 @@ class SchedulerWorker:
             logger.addHandler(file_handler)
 
             if self.dry_run:
-                logger.info("🔍 DRY RUN — no applications will be submitted")
+                logger.info("SEARCH DRY RUN - no applications will be submitted")
                 settings.DRY_RUN = True
 
             # Dynamically import and instantiate the strategy
@@ -126,7 +126,7 @@ class SchedulerWorker:
                 # Build a minimal job_site object the strategy expects
                 job_site = _SiteConfig(site)
 
-                # Instantiate strategy — passes candidate JSON as candidate_data
+                # Instantiate strategy  passes candidate JSON as candidate_data
                 strategy = StrategyClass(
                     driver=driver,
                     job_site=job_site,
@@ -142,12 +142,12 @@ class SchedulerWorker:
 
                 # Find + apply (single-phase for LanceSoft)
                 if self.dry_run:
-                    logger.info("🔍 DRY RUN — skipping actual applications")
+                    logger.info("SEARCH DRY RUN - skipping actual applications")
                     apps_submitted = 0
                 else:
                     apps_submitted = strategy.find_and_apply_jobs()
 
-                logger.info(f"✅ {site_name} complete — {apps_submitted} applications submitted")
+                logger.info(f"[OK] {site_name} complete - {apps_submitted} applications submitted")
 
             finally:
                 try:
@@ -170,7 +170,7 @@ class SchedulerWorker:
             return {"status": "success", "applications": apps_submitted, "log_file": str(log_file)}
 
         except Exception as e:
-            logger.error(f"❌ Error processing {site_name}: {e}")
+            logger.error(f"[ERROR] Error processing {site_name}: {e}")
             import traceback
             traceback.print_exc()
 
@@ -198,34 +198,34 @@ class SchedulerWorker:
     def run(self):
         """Main execution"""
         logger.info("=" * 70)
-        logger.info("🚀 SCHEDULER WORKER STARTED")
+        logger.info("STARTING SCHEDULER WORKER")
         logger.info("=" * 70)
         logger.info(f"Timestamp : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"Dry Run   : {self.dry_run}")
         logger.info("")
 
-        # Step 1 — Load candidate from JSON files
-        logger.info("📄 Loading candidate data from JSON files...")
+        # Step 1  Load candidate from JSON files
+        logger.info(" Loading candidate data from JSON files...")
         candidate = CandidateLoader.load()
         if not candidate:
-            logger.critical("❌ Could not load candidate data — aborting")
+            logger.critical("[ERROR] Could not load candidate data - aborting")
             return
 
         logger.info(
-            f"👤 Candidate: {candidate.get('first_name')} {candidate.get('last_name')} "
+            f"Profile Candidate: {candidate.get('first_name')} {candidate.get('last_name')} "
             f"| {candidate.get('email')}"
         )
         logger.info("")
 
-        # Step 2 — Get fully automated sites
+        # Step 2  Get fully automated sites
         sites = self.get_fully_automated_sites()
         if not sites:
-            logger.info("ℹ️  No fully automated sites configured")
+            logger.info("INFO No fully automated sites configured")
             return
 
-        logger.info(f"🌐 Running automation for {len(sites)} site(s)...\n")
+        logger.info(f" Running automation for {len(sites)} site(s)...\n")
 
-        # Step 3 — Run each site
+        # Step 3  Run each site
         for idx, site in enumerate(sites, 1):
             logger.info(f"[{idx}/{len(sites)}] {site['company_name']}")
             result = self.run_automation_for_site(candidate, site)
@@ -245,7 +245,7 @@ class SchedulerWorker:
 
     def _print_summary(self):
         logger.info("\n" + "=" * 70)
-        logger.info("📊 EXECUTION SUMMARY")
+        logger.info("EXECUTION SUMMARY")
         logger.info("=" * 70)
         logger.info(f"Sites processed   : {self.results['sites_processed']}")
         logger.info(f"Total applications: {self.results['total_applications']}")
@@ -253,12 +253,12 @@ class SchedulerWorker:
         logger.info(f"Failed            : {self.results['failed']}")
 
         if self.results["errors"]:
-            logger.info("\n❌ Errors:")
+            logger.info("\n[ERROR] Errors:")
             for err in self.results["errors"]:
                 logger.info(f"   - {err['site']}: {err['error']}")
 
         logger.info("=" * 70)
-        logger.info("✅ SCHEDULER WORKER COMPLETED")
+        logger.info("[OK] SCHEDULER WORKER COMPLETED")
         logger.info("=" * 70)
 
 
@@ -285,7 +285,7 @@ class _SiteConfig:
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Scheduler Worker — Automated Job Applications")
+    parser = argparse.ArgumentParser(description="Scheduler Worker  Automated Job Applications")
     parser.add_argument("--dry-run", action="store_true",
                         help="Run without submitting applications")
     args = parser.parse_args()

@@ -1,4 +1,4 @@
-﻿
+
 """
 Configuration Manager for Database-Driven Configuration
 

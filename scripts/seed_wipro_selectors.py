@@ -18,102 +18,139 @@ conn.execute("DELETE FROM site_selectors WHERE job_site_id = ?", [WIPRO_SITE_ID]
 
 # ---- Listing selectors (all keys wipro.py accesses via selectors_config) ----
 wipro_listing = {
-    # Search form
-    "keyword_input":   "input[id*='keyword'], input[placeholder*='Keyword' i], input[placeholder*='Search' i], input[aria-label*='keyword' i]",
-    "location_input":  "input[id*='location'], input[placeholder*='Location' i], input[aria-label*='location' i]",
-    "search_button":   "button[type='submit'], button[id*='search' i], button.search-btn",
+    # Search form (SuccessFactors Horizon)
+    "keyword_input":   "input[data-testid='searchByKeywords'], input[placeholder*='Skills' i], input[name='q']",
+    "location_input":  "input[data-testid='searchByLocation'], input[placeholder*='Location' i], input[name='locationsearch']",
+    "search_button":   "button[data-testid='submitJobSearchBtn'], button.keywordsearchbutton",
+    "cookie_accept_button": "#cookie-accept, button.cookiemanageracceptall",
 
-    # Job results
-    "job_container":   "li.job-list-item, article.job-card, div.job-listing-item",
-    "job_title":       "a.job-title, h2.job-title, span.job-title",
-    "job_link":        "a[href*='/job/'], a.job-title",
-    "job_id":          "span.job-id, span[class*='job-id'], span[class*='footer-value']",
-    "next_page":       "a[aria-label='Next page'], button[aria-label='Next'], li.next a"
+    # Job results (Horizon theme)
+    "job_container":   "li[data-testid='jobCard'], li.JobsList_jobCard__8wE-Z",
+    "job_title":       "a[data-testid^='jobCardTitle_'], a.jobCardTitle",
+    "job_link":        "a[data-testid^='jobCardTitle_'], a.jobCardTitle",
+    "job_id":          "span[data-help-id^='jobCardFooterValue_'], span.JobsList_jobCardFooterValue__Lc--j",
+    "next_page":       "button[data-testid='goToNextPageBtn'], button.Paginator_btn__KRVdV:contains('Next')",
+    "location":        "div[data-testid='jobCardLocation'], div.JobsList_jobCardLocation__oMpM+"
 }
 
 # ---- Application selectors (all keys wipro.py accesses for form filling) ----
 wipro_application = {
-    # Apply button flow (two-step)
-    "apply_button_dropdown":  "button[title*='Apply' i], button.apply-action",
-    "apply_button_menu_item": "li a[href*='apply'], div.dropdown-menu a[title*='Apply Now' i]",
+    # Apply button flow (two-step - SuccessFactors Horizon)
+    "apply_button_dropdown":  ["#unifyApplyNowTopButton", "button[title*='Apply' i]", "button.apply-action"],
+    "apply_button_menu_item": ["#applyOption--manual", "li a[href*='apply']", "div.dropdown-menu a[title*='Apply Now' i]"],
 
-    # Login (for Wipro's candidate portal)
-    "login_email_input":    "input[type='email'], input[id*='email']",
-    "login_password_input": "input[type='password'], input[id*='password']",
-    "login_submit_button":  "button[type='submit'], input[type='submit']",
+    # Login (SuccessFactors Horizon)
+    "login_email_input":    ["#username", "input[type='email']", "input[id*='email']"],
+    "login_password_input": ["#password", "input[type='password']", "input[id*='password']"],
+    "login_submit_button":  ["button[onclick*='validateFields']", "button[type='submit']", "input[type='submit']"],
 
-    # Form expansion
-    "expand_all_sections":  "button[title*='Expand' i], a[title*='Expand All' i]",
+    # Form navigation & expansion
+    "expand_all_sections":  ["[id$=':_expandAllSections']", ".expandCollapseTxt:contains('Expand')"],
+    "section_trigger_profile": ["//button[.//span[contains(text(),'Profile')]]", "[id*=':topBar']"],
+    "section_trigger_experience": ["//button[.//span[contains(text(),'Experience')]]", "[id*=':topBar']"],
+    "section_trigger_education": ["//button[.//span[contains(text(),'Education')]]", "[id*=':topBar']"],
+    "section_trigger_job_specific": ["//button[.//span[contains(text(),'Specific')]]", "[id*=':topBar']"],
 
-    # Personal info
-    "first_name_input":   "input[id*='firstName' i], input[id*='first_name' i]",
-    "last_name_input":    "input[id*='lastName' i],  input[id*='last_name' i]",
-    "email_input":        "input[id*='email' i]",
-    "phone_input":        "input[id*='phone' i], input[id*='mobile' i]",
-    "preferred_name_input":   "input[id*='preferred' i]",
-    "social_account_url_input": "input[id*='social' i], input[id*='linkedin' i]",
-    "address_input":      "input[id*='address' i], input[id*='street' i]",
-    "city_input":         "input[id*='city' i]",
-    "zip_input":          "input[id*='zip' i], input[id*='postal' i]",
-    "employee_id_input":  "input[id*='employee' i]",
+    # Personal info (Horizon use consistent 'name' attributes)
+    "first_name_input":   ["input[name='firstName']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'First Name')]][1]//input"],
+    "last_name_input":    ["input[name='lastName']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Last Name')]][1]//input"],
+    "email_input":        ["input[name='contactEmail']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Email Address')]][1]//input"],
+    "phone_input":        ["input[name='cellPhone']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Phone')]][1]//input"],
+    "preferred_name_input":   ["input[name='preferredName']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Preferred Name')]][1]//input"],
+    "social_account_url_input": ["input[name='custSocialURL']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Social Account URL')]][1]//input"],
+    "address_input":      ["input[name='address']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Address Line 1')]][1]//input"],
+    "city_input":         ["input[name='city']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'City')]][1]//input"],
+    "zip_input":          ["input[name='zip']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Postal Code')]][1]//input"],
+    "employee_id_input":  ["input[name='custCandidateFillEmpID']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Employee ID')]][1]//input"],
 
-    # Dropdowns
-    "country_code_select":  "select[id*='countryCode' i]",
-    "gender_select":        "select[id*='gender' i]",
-    "disability_assistance_select": "select[id*='disability' i]",
-    "disability_assistance_explain_input": "textarea[id*='disabilityExplain' i]",
-    "country_select":       "select[id*='country' i]",
-    "state_select":         "select[id*='state' i]",
-    "employed_before_select": "select[id*='employed' i]",
+    # Searchable Dropdowns (Horizon uses juic.fire searchable inputs)
+    "country_code_select":  ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Country Code')]][1]//input", "[id*=':_input']"],
+    "gender_select":        ["//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Gender')]]//input", "[id*=':_input']"],
+    "disability_assistance_select": ["//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Disability Assistance')]]//input", "[id*=':_input']"],
+    "disability_assistance_explain_input": ["input[name='custDisabilityAssistance']", "//div[contains(@class,'RCMFormField')][.//*[contains(text(),'assistance/accommodations')]]//input"],
+    "country_select":       ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Country/Region')]][1]//input", "[id*=':_input']"],
+    "state_select":         ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Profile Information')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Province') or contains(text(),'State')]][1]//input", "[id*=':_input']"],
+    "employed_before_select": ["//div[contains(@class,'RCMFormField')][.//*[contains(text(),'employed with Wipro')]]//input", "[id*=':_input']"],
 
-    # Experience section
-    "experience_section_trigger": "a[title*='Experience' i], button[id*='experience' i]",
-    "job_title_input":      "input[id*='jobTitle' i], input[id*='job_title' i]",
-    "company_input":        "input[id*='company' i], input[id*='employer' i]",
-    "start_date_input":     "input[id*='startDate' i], input[id*='start_date' i]",
-    "end_date_input":       "input[id*='endDate' i], input[id*='end_date' i]",
-    "exp_country_select":   "select[id*='expCountry' i]",
-    "exp_state_select":     "select[id*='expState' i]",
-    "exp_city_input":       "input[id*='expCity' i]",
+    # Experience section (Row 1)
+    "experience_section_trigger": ["//button[.//span[contains(text(),'Experience')]]", "[id*=':topBar']"],
+    "job_title_input":      ["input[name='VFLD13']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Title')]][1]//input"],
+    "company_input":        ["input[name='VFLD12']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Company')]][1]//input"],
+    "start_date_input":     ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Start Date')]][1]//ui5-date-picker", "[title='Start Date']"],
+    "end_date_input":       ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'End Date')]][1]//ui5-date-picker", "[title='End Date']"],
+    "exp_country_select":   ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Country')]][1]//input", "[id*=':_input']"],
+    "exp_state_select":     ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'State')]][1]//input", "[id*=':_input']"],
+    "exp_city_input":       ["input[name='VFLD6']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'City')]][1]//input"],
 
-    # Education section
-    "education_section_trigger": "a[title*='Education' i], button[id*='education' i]",
-    "edu_type_select":      "select[id*='eduType' i], select[id*='educationType' i]",
-    "edu_degree_select":    "select[id*='degree' i]",
-    "edu_school_input":     "input[id*='school' i], input[id*='university' i]",
-    "edu_major_select":     "select[id*='major' i], select[id*='field' i]",
-    "edu_start_date":       "input[id*='eduStartDate' i]",
-    "edu_end_date":         "input[id*='eduEndDate' i]",
-    "edu_grad_date":        "input[id*='gradDate' i], input[id*='graduationDate' i]",
-    "edu_country_select":   "select[id*='eduCountry' i]",
-    "edu_state_select":     "select[id*='eduState' i]",
-    "edu_city_input":       "input[id*='eduCity' i]",
+    # Education section (Row 1)
+    "education_section_trigger": ["//button[.//span[contains(text(),'Education')]]", "[id*=':topBar']"],
+    "edu_type_select":      ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Education Type')]][1]//input", "[id*=':_input']"],
+    "edu_degree_select":    ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Degree')]][1]//input", "[id*=':_input']"],
+    "edu_school_input":     ["input[name='VFLD1']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'School/University')]][1]//input"],
+    "edu_major_select":     ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Major')]][1]//input", "[id*=':_input']"],
+    "edu_start_date":       ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Start Date')]][1]//ui5-date-picker-xweb-calendar-widget"],
+    "edu_end_date":         ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'End Date')]][1]//ui5-date-picker-xweb-calendar-widget"],
+    "edu_grad_date":        ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Year Of Passing')]][1]//ui5-date-picker-xweb-calendar-widget"],
+    "edu_country_select":   ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Country')]][1]//input", "[id*=':_input']"],
+    "edu_state_select":     ["//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'State')]][1]//input", "[id*=':_input']"],
+    "edu_city_input":       ["input[name='VFLD7']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'City')]][1]//input"],
 
-    # Work auth / compliance
-    "auth_country_select":      "select[id*='authCountry' i]",
-    "auth_work_country_select": "select[id*='authWorkCountry' i]",
-    "visa_status_select":       "select[id*='visa' i]",
-    "sponsorship_future_select": "select[id*='sponsor' i]",
-    "citizenship_select":       "select[id*='citizen' i]",
-    "govt_employed_select":     "select[id*='govtEmployed' i]",
-    "race_select":              "select[id*='race' i]",
-    "veteran_select":           "select[id*='veteran' i]",
-    "disability_select":        "select[id*='disability' i]",
+    # Job-Specific Information
+    # Robust label-based selectors instead of titles, as titles change based on selected value
+    "auth_country_select":      [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'legally authorized')]][1]//input"
+    ],
+    "auth_work_country_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Work Authorization Country')]][1]//input"
+    ],
+    "visa_status_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Visa Status')]][1]//input"
+    ],
+    "sponsorship_future_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'sponsorship')]][1]//input"
+    ],
+    "citizenship_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Citizenship')]][1]//input"
+    ],
+    "govt_employed_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'government')]][1]//input"
+    ],
+    "race_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Race')]][1]//input"
+    ],
+    "veteran_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Veteran')]][1]//input"
+    ],
+    "disability_select": [
+        "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Job-Specific')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Disability')]][1]//input"
+    ],
 
     # Resume upload
-    "resume_upload": "input[type='file']",
+    "resume_upload_input":   ["input[type='file']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Documents')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Resume')]][1]//input[@type='file']"],
+    "resume_upload_trigger": ["span[class*='addAttachments']", "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Documents')]]//div[contains(@class,'RCMFormField')][.//*[contains(text(),'Resume')]][1]//span[contains(@class,'addAttachments')]", "[id*=':_attachIcon']"],
+    "upload_success_indicator": ["[id*=':_attachSuccess']:not(.displayNone)", "[id*=':_attachDownloadLabelLink']"],
 
     # Terms + submit
-    "terms_checkbox": "input[type='checkbox'][id*='terms' i], input[type='checkbox'][id*='consent' i]",
-    "submit_button":  "button[type='submit'][id*='submit' i], input[type='submit']",
+    "terms_checkbox": ["input[type='checkbox'][name='termsAndConditions']", ".rcmFormElement input[type='checkbox']", "input[type='checkbox'][id*='terms' i]", "input[type='checkbox'][id*='consent' i]"],
+    "submit_button":  [
+        "[id$=':_submitBtn']", 
+        "button[title*='Apply' i]", 
+        "button[id*='submit' i]", 
+        ".rcmSaveButton:contains('Apply')",
+        "//button[.//span[contains(text(),'Apply')]]",
+        "//button[.//span[contains(text(),'Submit')]]",
+        ".rcmSaveButton"
+    ],
 
     # Success detection
     "success_indicators": [
         "Your application has been sent",
         "Application submitted",
-        "Thank you for applying"
+        "Thank you for applying",
+        "Ghazal_Sultan.pdf" # Temporary for dry run check if resume persists
     ]
 }
+
 
 # Insert new selectors
 # Use high IDs (100+) to avoid conflicts with existing records
@@ -128,7 +165,7 @@ conn.execute("""
 """, [WIPRO_SITE_ID, json.dumps(wipro_application)])
 
 conn.close()
-print("✅ Wipro selectors seeded successfully (listing + application)")
+print("[OK] Wipro selectors seeded successfully (listing + application)")
 print(f"   Site ID: {WIPRO_SITE_ID}")
 print(f"   Listing keys: {len(wipro_listing)}")
 print(f"   Application keys: {len(wipro_application)}")

@@ -144,21 +144,39 @@ class WiproStrategy(BaseStrategy):
                 f"https://careers.wipro.com/search/?q={encoded_keyword}"
                 + (f"&locationsearch={encoded_location}" if encoded_location else "")
             )
-            logger.info(f"  [+] Entering keyword: {keyword}  |  Location: {location}")
-            logger.info(f"  [+] Navigating directly to: {search_results_url}")
-            self.driver.get(search_results_url)
 
-            # ------------------------------------------------------------------ #
-            # Wipro uses SAP UI5 Horizon custom elements like:                    #
-            #   <ui5-li-xweb-rmk-jobs-search>                                    #
-            # Standard CSS selectors won't easily find them because they are      #
-            # in Shadow DOM. We use JS execute_script + querySelectorAll instead. #
-            # ------------------------------------------------------------------ #
+            time.sleep(2)
             
-            # JS that extracts all job data from the Wipro SAP UI5 results page
-            EXTRACT_JOBS_JS = """
-            (function() {
-                var results = [];
+            # Accept cookies if banner present
+            try:
+                cookie_selectors = self.selectors_config.get('cookie_accept_button', '').split(', ')
+                for selector in cookie_selectors:
+                    if not selector: continue
+                    try:
+                        cookie_btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        if cookie_btn.is_displayed():
+                            cookie_btn.click()
+                            logger.info("  [+] Accepted cookies")
+                            time.sleep(1)
+                            break
+                    except:
+                        continue
+            except Exception as e:
+                logger.debug(f"Cookie acceptance skipped: {e}")
+
+            # Fill search form
+            try:
+                # Enter keyword
+                keyword_selectors = self.selectors_config['keyword_input'].split(', ')
+                keyword_input = None
+                
+                for selector in keyword_selectors:
+                    try:
+                        keyword_input = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        break
+                    except:
+                        continue
+
                 
                 // Strategy 1: Look for anchor tags inside the document (light DOM)
                 // SAP SF j2w pages render <a class="jobTitle"> in the LIGHT DOM
@@ -234,21 +252,15 @@ class WiproStrategy(BaseStrategy):
                     return {strategy: 'shadow-dom-a[href*="/job/"]', jobs: results};
                 }
                 
-                // Strategy 5: Look for SAP UI5 custom list items 
-                var ui5Items = document.querySelectorAll(
-                    'ui5-li-xweb-rmk-jobs-search, ' +
-                    '[ui5-li], ui5-li-custom-xweb-rmk-jobs-search'
-                );
-                if (ui5Items.length > 0) {
-                    ui5Items.forEach(function(item) {
-                        var a = item.querySelector('a') || item.closest('a');
-                        results.push({
-                            title: (item.textContent || item.innerText || '').trim().split('\\n')[0],
-                            href: a ? (a.href || a.getAttribute('href') || '') : ''
-                        });
-                    });
-                    return {strategy: 'ui5-li-xweb-rmk-jobs-search', jobs: results};
-                }
+
+                if search_btn:
+                    try:
+                        search_btn.click()
+                    except:
+                        self.driver.execute_script("arguments[0].click();", search_btn)
+                    logger.info("  [+] Clicked search button")
+                    time.sleep(10)  # Wait for results to load
+
                 
                 return {strategy: 'none', jobs: []};
             })()
@@ -294,65 +306,52 @@ class WiproStrategy(BaseStrategy):
                     
                     if not title or not job_url:
                         continue
-                    
-                    # Build full URL if relative
-                    if job_url.startswith('/'):
-                        job_url = 'https://careers.wipro.com' + job_url
-                    
-                    if job_url in seen_urls:
-                        continue
-                    
-                    # Extract job ID from URL: /job/TITLE/125816-en_US
-                    job_id = None
-                    try:
-                        url_parts = job_url.split('/')
-                        id_part = url_parts[-1]         # "125816-en_US"
-                        job_id = id_part.split('-')[0]  # "125816"
-                        if not job_id.isdigit():
-                            job_id = str(abs(hash(job_url)))[:8]
-                    except Exception:
-                        job_id = str(abs(hash(job_url)))[:8]
-                    
-                    seen_urls.add(job_url)
-                    job_data = {
-                        'job_title': title,
-                        'external_id': job_id,
-                        'job_url': job_url
-                    }
-                    all_jobs.append(job_data)
-                    logger.info(f"  [+] [{idx+1}] {title} (ID: {job_id})")
-                    
-                    # Save to CSV
-                    csv_tracker.add_discovered_jobs('wipro', [job_data])
-                    
-                    if self.db_session and self.job_site:
-                        self._save_job_to_db(job_data)
 
+                # Try to go to next page
+                try:
+                    next_btn = self._find_element_by_selectors(
+                        self.selectors_config['next_page'],
+                        timeout=5
+                    )
+                    
+                    if next_btn and next_btn.is_displayed():
+                        # SAP sometimes uses custom attributes or classes to disable buttons
+                        is_disabled = next_btn.get_attribute("aria-disabled") == "true" or "sapMBtnDisabled" in next_btn.get_attribute("class")
+                        
+                        if is_disabled:
+                            logger.info("  - No more pages (Next button disabled)")
+                            break
+                            
+                        # Wait for any loading overlays to disappear before clicking
+                        try:
+                            WebDriverWait(self.driver, 10).until(
+                                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".sapUiLocalBusyIndicator, #busyIndicator, .sapMBusyDialog"))
+                            )
+                        except:
+                            pass # If it times out waiting for overlay to disappear, try clicking anyway
+                            
+                        # Try standard click first, fallback to JS
+                        try:
+                            # Scroll into view safely
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
+                            time.sleep(1)
+                            self.human.human_click(next_btn)
+                        except Exception as e:
+                            logger.debug(f"  Standard click failed, attempting JS click: {e}")
+                            self.driver.execute_script("arguments[0].click();", next_btn)
+                            
+                        logger.info(f"  > Navigating to page {page_num + 1}...")
+                        
+                        # Wait longer for the next page of results to actually load
+                        time.sleep(5) 
+                        page_num += 1
+                    else:
+                        logger.info("  - No more pages (Next button not found or not visible)")
+                        break
+                        
                 except Exception as e:
-                    logger.debug(f"  Error processing job entry: {e}")
-                    continue
-
-            # Pagination: look for a "next page" anchor/button via JS
-            try:
-                next_url = self.driver.execute_script("""
-                    var btns = document.querySelectorAll('[data-testid="next"], ' +
-                        'a[aria-label*="Next"], button[aria-label*="Next"], ' +
-                        '.pagination-next:not([disabled]), a[rel="next"]');
-                    for (var i = 0; i < btns.length; i++) {
-                        if (btns[i].href) return btns[i].href;
-                        if (btns[i].offsetParent !== null) { btns[i].click(); return '__clicked__'; }
-                    }
-                    return null;
-                """)
-                if next_url and next_url != '__clicked__':
-                    logger.info(f"  > Next page URL: {next_url}")
-                elif next_url == '__clicked__':
-                    logger.info("  > Clicked next page button")
-                    time.sleep(3)
-                else:
-                    logger.info("  - No more pages (no next button found)")
-            except Exception:
-                pass
+                    logger.debug(f"  - Pagination error (stopping): {e}")
+                    break            
 
             logger.info(f"\n{'='*60}")
             logger.info(f"[OK] Job Discovery Complete: {len(all_jobs)} jobs found")
@@ -777,7 +776,7 @@ class WiproStrategy(BaseStrategy):
             # Save application (Disabled as it may clear fields)
             # try:
             #     save_btn = self._find_element_by_selectors(
-            #         self.selectors_config['save_draft_button'].split(', ')
+            #         self.selectors_config['save_draft_button']
             #     )
             #     if save_btn:
             #         self.human.human_click(save_btn)
@@ -801,7 +800,7 @@ class WiproStrategy(BaseStrategy):
             
             # Find and click submit button
             submit_btn = self._find_element_by_selectors(
-                self.selectors_config['submit_button'].split(', ')
+                self.selectors_config['submit_button']
             )
             
             
@@ -1160,19 +1159,21 @@ class WiproStrategy(BaseStrategy):
                     continue
                     
             # Step 2b: Partial match with guards
-            for opt in all_options:
-                try:
-                    opt_text = opt.text.strip()
-                    if value.lower() in opt_text.lower() or opt_text.lower() in value.lower():
-                        # Guard: 'Male' should not match 'Female'
-                        if value.lower() == 'male' and 'female' in opt_text.lower():
-                            continue
-                        logger.info(f"  [+] Found partial match: '{opt_text}'")
-                        self.human.human_click(opt)
-                        time.sleep(1)
-                        return True
-                except:
-                    continue
+            # Do not use partial match for very short strings ("No", "Yes") which easily collide
+            if len(value) > 3:
+                for opt in all_options:
+                    try:
+                        opt_text = opt.text.strip()
+                        if value.lower() in opt_text.lower() or opt_text.lower() in value.lower():
+                            # Guard: 'Male' should not match 'Female'
+                            if value.lower() == 'male' and 'female' in opt_text.lower():
+                                continue
+                            logger.info(f"  [+] Found partial match: '{opt_text}'")
+                            self.human.human_click(opt)
+                            time.sleep(1)
+                            return True
+                    except:
+                        continue
 
             # 3. Final Fallback: Arrow Down + Enter
             logger.info(f"  [+] Using keyboard fallback (ARROW_DOWN + ENTER) for {selector_key}")

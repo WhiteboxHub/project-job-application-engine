@@ -32,11 +32,12 @@ class InsightGlobalStrategy(BaseStrategy):
         # Merge in candidate-specific data from scheduler (overrides JSON defaults)
         if candidate_data and isinstance(candidate_data, dict):
             self.config_data = {**self.config_data, **candidate_data}
-            logger.info("✅ Candidate-specific data merged into config")
+            logger.info("[OK] Candidate-specific data merged into config")
 
         # Initialize human behavior and CAPTCHA handler
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=120)  # 120-second wait for CAPTCHA
+
 
         # DuckDB connection for deduplication
         try:
@@ -46,6 +47,7 @@ class InsightGlobalStrategy(BaseStrategy):
         except Exception as _e:
             self._duckdb = None
             logger.warning(f"⚠️ DuckDB not available - will only use CSV tracking ({_e})")
+
     
     def _load_config(self):
         """Load configuration from JSON file (optional - candidate_data from DB takes priority)"""
@@ -60,10 +62,10 @@ class InsightGlobalStrategy(BaseStrategy):
             logger.info(f"Loaded configuration from {config_path}")
             return data
         except FileNotFoundError:
-            logger.info("ℹ️ guest_form_data.json not found — will use candidate_data from DB")
+            logger.info("[INFO] guest_form_data.json not found  will use candidate_data from DB")
             return {}
         except Exception as e:
-            logger.warning(f"Config JSON load error: {e} — will use candidate_data from DB")
+            logger.warning(f"Config JSON load error: {e}  will use candidate_data from DB")
             return {}
     
     def _verify_upload_success(self):
@@ -76,7 +78,7 @@ class InsightGlobalStrategy(BaseStrategy):
             try:
                 uploaded_file = self.driver.find_element(By.CSS_SELECTOR, "div.dz-filename span, .dz-filename, div.dz-details span.dz-filename")
                 if uploaded_file and uploaded_file.text:
-                    logger.info(f"✅ Upload verification: Found filename '{uploaded_file.text}' in UI")
+                    logger.info(f"[OK] Upload verification: Found filename '{uploaded_file.text}' in UI")
                     return True
             except Exception:
                 pass
@@ -85,7 +87,7 @@ class InsightGlobalStrategy(BaseStrategy):
             try:
                 success_elements = self.driver.find_elements(By.CSS_SELECTOR, ".dz-success, .dz-complete, .dz-processing")
                 if success_elements:
-                    logger.info(f"✅ Upload verification: Found {len(success_elements)} Dropzone status indicator(s)")
+                    logger.info(f"[OK] Upload verification: Found {len(success_elements)} Dropzone status indicator(s)")
                     return True
             except Exception:
                 pass
@@ -94,7 +96,7 @@ class InsightGlobalStrategy(BaseStrategy):
             try:
                 preview = self.driver.find_element(By.CSS_SELECTOR, ".dz-preview, .dz-image-preview, .dz-file-preview")
                 if preview and preview.is_displayed():
-                    logger.info(f"✅ Upload verification: Found visible preview element")
+                    logger.info(f"[OK] Upload verification: Found visible preview element")
                     return True
             except Exception:
                 pass
@@ -112,7 +114,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     """, dropzone_msg[0])
                     
                     if is_hidden:
-                        logger.info(f"✅ Upload verification: Dropzone message hidden (file uploaded)")
+                        logger.info(f"[OK] Upload verification: Dropzone message hidden (file uploaded)")
                         return True
             except Exception:
                 pass
@@ -128,13 +130,13 @@ class InsightGlobalStrategy(BaseStrategy):
                 """
                 filename = self.driver.execute_script(js_check)
                 if filename:
-                    logger.info(f"ℹ️ Upload verification: File input contains '{filename}' (but UI may not show it)")
+                    logger.info(f"[INFO] Upload verification: File input contains '{filename}' (but UI may not show it)")
                     # Don't return True here - we want visual confirmation
                     pass
             except Exception:
                 pass
             
-            logger.warning("⚠️ Upload verification: No visual upload indicators found in UI")
+            logger.warning("[WARNING] Upload verification: No visual upload indicators found in UI")
             return False
             
         except Exception as e:
@@ -154,7 +156,7 @@ class InsightGlobalStrategy(BaseStrategy):
             - False if image challenge appears or clicking fails
         """
         try:
-            logger.info("🔄 Attempting to automatically click reCAPTCHA checkbox...")
+            logger.info(" Attempting to automatically click reCAPTCHA checkbox...")
             logger.info("   Note: Modern reCAPTCHA detects bots - this may not work")
             
             # Wait for reCAPTCHA iframe to load
@@ -172,18 +174,18 @@ class InsightGlobalStrategy(BaseStrategy):
                 try:
                     recaptcha_iframe = self.driver.find_element(By.CSS_SELECTOR, selector)
                     if recaptcha_iframe:
-                        logger.info(f"✅ Found reCAPTCHA iframe with selector: {selector}")
+                        logger.info(f"[OK] Found reCAPTCHA iframe with selector: {selector}")
                         break
                 except Exception:
                     continue
             
             if not recaptcha_iframe:
-                logger.warning("❌ Could not find reCAPTCHA iframe")
+                logger.warning("[ERROR] Could not find reCAPTCHA iframe")
                 return False
             
             # Switch to the iframe
             self.driver.switch_to.frame(recaptcha_iframe)
-            logger.info("🔄 Switched to reCAPTCHA iframe")
+            logger.info(" Switched to reCAPTCHA iframe")
             
             # Wait for checkbox to be present
             time.sleep(1)
@@ -208,7 +210,7 @@ class InsightGlobalStrategy(BaseStrategy):
                         # Fallback to JavaScript click
                         self.driver.execute_script("arguments[0].click();", checkbox)
                     
-                    logger.info(f"✅ Clicked reCAPTCHA checkbox using: {selector}")
+                    logger.info(f"[OK] Clicked reCAPTCHA checkbox using: {selector}")
                     checkbox_clicked = True
                     break
                 except Exception as e:
@@ -216,12 +218,12 @@ class InsightGlobalStrategy(BaseStrategy):
                     continue
             
             if not checkbox_clicked:
-                logger.warning("❌ Could not find or click reCAPTCHA checkbox")
+                logger.warning("[ERROR] Could not find or click reCAPTCHA checkbox")
                 self.driver.switch_to.default_content()
                 return False
             
             # Wait for reCAPTCHA to process (3-5 seconds)
-            logger.info("⏳ Waiting for reCAPTCHA to process...")
+            logger.info(" Waiting for reCAPTCHA to process...")
             time.sleep(4)
             
             # Check if we got the green checkmark (success) or image challenge (failed)
@@ -229,7 +231,7 @@ class InsightGlobalStrategy(BaseStrategy):
                 # Look for the green checkmark indicator
                 checkmark = self.driver.find_element(By.CSS_SELECTOR, "span.recaptcha-checkbox-checked")
                 if checkmark:
-                    logger.info("✅ SUCCESS! reCAPTCHA checkbox is checked (green checkmark)")
+                    logger.info("[OK] SUCCESS! reCAPTCHA checkbox is checked (green checkmark)")
                     self.driver.switch_to.default_content()
                     return True
             except Exception:
@@ -242,7 +244,7 @@ class InsightGlobalStrategy(BaseStrategy):
             try:
                 challenge_iframe = self.driver.find_element(By.CSS_SELECTOR, "iframe[src*='recaptcha/api2/bframe']")
                 if challenge_iframe and challenge_iframe.is_displayed():
-                    logger.warning("⚠️ reCAPTCHA image challenge detected")
+                    logger.warning("[WARNING] reCAPTCHA image challenge detected")
                     logger.warning("   Google detected automation - showing image puzzle")
                     logger.warning("   Cannot solve image challenges without 2Captcha API")
                     return False
@@ -251,7 +253,7 @@ class InsightGlobalStrategy(BaseStrategy):
             
             # If we're here, status is unclear - switch back and return False
             self.driver.switch_to.default_content()
-            logger.warning("⚠️ reCAPTCHA click attempted but status unclear")
+            logger.warning("[WARNING] reCAPTCHA click attempted but status unclear")
             return False
             
         except Exception as e:
@@ -386,7 +388,7 @@ class InsightGlobalStrategy(BaseStrategy):
             try:
                 result_rows = self.driver.find_elements(By.CSS_SELECTOR, "div.result")
                 current_count = len(result_rows)
-                logger.info(f"📄 Page {page}: Found {current_count} job results")
+                logger.info(f" Page {page}: Found {current_count} job results")
 
                 for row in result_rows:
                     try:
@@ -397,7 +399,7 @@ class InsightGlobalStrategy(BaseStrategy):
                         if href and href not in seen:
                             seen.add(href)
                             job_urls.append(href)
-                            logger.info(f"  ✓ Found job: {title}")
+                            logger.info(f"  [YES] Found job: {title}")
                             
                             # Extract job ID from URL
                             job_id = href.split('/')[-2] if '/' in href else href
@@ -412,6 +414,7 @@ class InsightGlobalStrategy(BaseStrategy):
                             # Deduplication check via DuckDB applied_jobs table
                             if self._duckdb:
                                 try:
+
                                     already = self._duckdb.execute(
                                         "SELECT 1 FROM applied_jobs WHERE job_id=? AND site='insight_global'",
                                         [job_id]
@@ -439,7 +442,7 @@ class InsightGlobalStrategy(BaseStrategy):
 
             # Try to find and click pagination/next button
             clicked = False
-            logger.info(f"  🔍 Looking for pagination button...")
+            logger.info(f"  [SEARCH] Looking for pagination button...")
             
             # STRATEGY 1: Scroll to bottom and look for pagination elements
             try:
@@ -461,7 +464,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     parent_class = parent_li.get_attribute('class')
                     if parent_class and 'disabled' in parent_class:
                         is_disabled = True
-                        logger.info(f"  ✓ Reached LAST PAGE - Forward button is disabled")
+                        logger.info(f"  [YES] Reached LAST PAGE - Forward button is disabled")
                 except:
                     pass
                 
@@ -470,7 +473,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     is_disabled = True
                 
                 if is_disabled:
-                    logger.info(f"  ⏹️ PAGINATION COMPLETE - No more pages available")
+                    logger.info(f"   PAGINATION COMPLETE - No more pages available")
                     clicked = False  # Stop pagination loop
                     
             except Exception as e:
@@ -515,7 +518,7 @@ class InsightGlobalStrategy(BaseStrategy):
                                 button_href = elem.get_attribute('href')
                                 button_title = elem.get_attribute('title')
                                 
-                                logger.info(f"  ✓ Found next button")
+                                logger.info(f"  [YES] Found next button")
                                 logger.info(f"    Title: '{button_title}' | URL: {button_href}")
                                 
                                 # Scroll to button and click
@@ -528,7 +531,7 @@ class InsightGlobalStrategy(BaseStrategy):
                                     logger.info(f"    Regular click failed, trying JavaScript click...")
                                     self.driver.execute_script("arguments[0].click();", elem)
                                 
-                                logger.info(f"  ✓ Successfully clicked pagination button!")
+                                logger.info(f"  [YES] Successfully clicked pagination button!")
                                 clicked = True
                                 time.sleep(3)  # Wait for page to load
                                 
@@ -537,9 +540,9 @@ class InsightGlobalStrategy(BaseStrategy):
                                     WebDriverWait(self.driver, 10).until(
                                         EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.result"))
                                     )
-                                    logger.info(f"  ✓ New page loaded successfully")
+                                    logger.info(f"  [YES] New page loaded successfully")
                                 except Exception as e:
-                                    logger.warning(f"  ⚠️ Timeout waiting for new results: {e}")
+                                    logger.warning(f"  [WARNING] Timeout waiting for new results: {e}")
                                 break
                             except Exception as e:
                                 logger.debug(f"    Error with button: {type(e).__name__}")
@@ -550,11 +553,11 @@ class InsightGlobalStrategy(BaseStrategy):
             
             # STRATEGY 3: If no button found, we've reached the end
             if not clicked:
-                logger.info(f"  ⏹️ No pagination button found - pagination complete")
+                logger.info(f"   No pagination button found - pagination complete")
                 break
 
         logger.info(f"\n{'='*60}")
-        logger.info(f"✓ SEARCH & PAGINATION COMPLETE")
+        logger.info(f"[YES] SEARCH & PAGINATION COMPLETE")
         logger.info(f"  Total pages processed: {page}")
         logger.info(f"  Unique jobs extracted: {len(job_urls)}")
         logger.info(f"{'='*60}\n")
@@ -701,7 +704,7 @@ class InsightGlobalStrategy(BaseStrategy):
             applicant = self.config_data.get('applicant', {})
             
             try:
-                logger.info("\n📝 Filling form fields with human-like behavior...")
+                logger.info("\n Filling form fields with human-like behavior...")
                 
                 # First Name - with human-like typing
                 first_name_input = self.driver.find_element(By.CSS_SELECTOR, "#txtFirstName")
@@ -744,7 +747,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     # Human-like click
                     self.human.human_click(min_req_yes)
                     
-                    logger.info("✅ Selected 'Yes' for minimum requirements")
+                    logger.info("[OK] Selected 'Yes' for minimum requirements")
                 except Exception as e:
                     logger.warning(f"Could not click minimum requirements (may not exist on this form): {e}")
                 
@@ -767,22 +770,22 @@ class InsightGlobalStrategy(BaseStrategy):
                     resume_full_path = resume_full_path.replace('\\', '/')  # Convert to forward slashes for Selenium
                     
                     logger.info(f"=" * 60)
-                    logger.info(f"📎 RESUME UPLOAD STARTING")
+                    logger.info(f" RESUME UPLOAD STARTING")
                     logger.info(f"File path: {resume_full_path}")
                     
                     # Validate file exists and get info
                     if not os.path.exists(resume_full_path):
-                        logger.error(f"❌ Resume file not found at: {resume_full_path}")
+                        logger.error(f"[ERROR] Resume file not found at: {resume_full_path}")
                         logger.error(f"Please verify the file exists and the path is correct")
                         return False
                     
                     file_size = os.path.getsize(resume_full_path)
                     logger.info(f"File size: {file_size / 1024:.2f} KB")
-                    logger.info(f"File exists: ✅")
+                    logger.info(f"File exists: [OK]")
                     logger.info(f"=" * 60)
                     
                     # Wait for page to fully stabilize
-                    logger.info("⏳ Waiting for page to fully load...")
+                    logger.info(" Waiting for page to fully load...")
                     time.sleep(3)  # Increased wait time for JavaScript to fully initialize
                     
                     # Scroll to resume section with retry
@@ -791,7 +794,7 @@ class InsightGlobalStrategy(BaseStrategy):
                             resume_section = self.driver.find_element(By.CSS_SELECTOR, "#pnlResumeDrop")
                             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", resume_section)
                             time.sleep(1.5)
-                            logger.info("✅ Scrolled to resume section")
+                            logger.info("[OK] Scrolled to resume section")
                             break
                         except Exception as e:
                             if attempt == 2:
@@ -804,7 +807,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     # METHOD 1: Direct file input with Dropzone event triggering
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 1: Direct file input with Dropzone triggers...")
+                            logger.info("\n[SEARCH] METHOD 1: Direct file input with Dropzone triggers...")
                             
                             # Wait explicitly for file input to be present
                             file_input = WebDriverWait(self.driver, 10).until(
@@ -818,11 +821,11 @@ class InsightGlobalStrategy(BaseStrategy):
                             
                             # Send the file path
                             file_input.send_keys(resume_full_path)
-                            logger.info("✅ File path sent to input element")
+                            logger.info("[OK] File path sent to input element")
                             
                             # CRITICAL: Trigger Dropzone events to make it process the file
                             try:
-                                logger.info("🔄 Triggering Dropzone events...")
+                                logger.info(" Triggering Dropzone events...")
                                 trigger_script = """
                                 var fileInput = arguments[0];
                                 
@@ -864,16 +867,16 @@ class InsightGlobalStrategy(BaseStrategy):
                             upload_success = self._verify_upload_success()
                             if upload_success:
                                 upload_method = "Method 1: Direct file input with Dropzone triggers"
-                                logger.info(f"✅ {upload_method} - SUCCESS")
+                                logger.info(f"[OK] {upload_method} - SUCCESS")
                             
                         except Exception as e:
-                            logger.warning(f"❌ Method 1 failed: {e}")
+                            logger.warning(f"[ERROR] Method 1 failed: {e}")
 
                     
                     # METHOD 2: Make file input visible then interact
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 2: Visible file input approach...")
+                            logger.info("\n[SEARCH] METHOD 2: Visible file input approach...")
                             
                             # Find all file inputs and make them visible
                             js_make_visible = """
@@ -903,18 +906,18 @@ class InsightGlobalStrategy(BaseStrategy):
                                         if self._verify_upload_success():
                                             upload_success = True
                                             upload_method = f"Method 2: Visible file input #{idx + 1}"
-                                            logger.info(f"✅ {upload_method} - SUCCESS")
+                                            logger.info(f"[OK] {upload_method} - SUCCESS")
                                             break
                                     except Exception as e:
                                         logger.debug(f"File input #{idx + 1} failed: {e}")
                                         continue
                         except Exception as e:
-                            logger.warning(f"❌ Method 2 failed: {e}")
+                            logger.warning(f"[ERROR] Method 2 failed: {e}")
                     
                     # METHOD 3: Click dropzone then send keys
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 3: Click dropzone approach...")
+                            logger.info("\n[SEARCH] METHOD 3: Click dropzone approach...")
                             
                             # Find dropzone clickable area
                             dropzone_selectors = [
@@ -946,19 +949,19 @@ class InsightGlobalStrategy(BaseStrategy):
                                     if self._verify_upload_success():
                                         upload_success = True
                                         upload_method = f"Method 3: Click dropzone ({selector})"
-                                        logger.info(f"✅ {upload_method} - SUCCESS")
+                                        logger.info(f"[OK] {upload_method} - SUCCESS")
                                         break
                                 except Exception as e:
                                     logger.debug(f"Dropzone selector {selector} failed: {e}")
                                     continue
                                     
                         except Exception as e:
-                            logger.warning(f"❌ Method 3 failed: {e}")
+                            logger.warning(f"[ERROR] Method 3 failed: {e}")
                     
                     # METHOD 4: Direct JavaScript file manipulation
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 4: JavaScript file manipulation...")
+                            logger.info("\n[SEARCH] METHOD 4: JavaScript file manipulation...")
                             
                             # Try to trigger Dropzone's file handling directly
                             js_upload = """
@@ -987,15 +990,15 @@ class InsightGlobalStrategy(BaseStrategy):
                                 if self._verify_upload_success():
                                     upload_success = True
                                     upload_method = "Method 4: JavaScript manipulation"
-                                    logger.info(f"✅ {upload_method} - SUCCESS")
+                                    logger.info(f"[OK] {upload_method} - SUCCESS")
                                     
                         except Exception as e:
-                            logger.warning(f"❌ Method 4 failed: {e}")
+                            logger.warning(f"[ERROR] Method 4 failed: {e}")
                     
                     # METHOD 5: Find file input within dropzone container
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 5: Nested file input search...")
+                            logger.info("\n[SEARCH] METHOD 5: Nested file input search...")
                             
                             # Find dropzone container then locate file input within it
                             resume_panel = self.driver.find_element(By.CSS_SELECTOR, "#pnlResumeDrop")
@@ -1015,15 +1018,15 @@ class InsightGlobalStrategy(BaseStrategy):
                             if self._verify_upload_success():
                                 upload_success = True
                                 upload_method = "Method 5: Nested file input"
-                                logger.info(f"✅ {upload_method} - SUCCESS")
+                                logger.info(f"[OK] {upload_method} - SUCCESS")
                                 
                         except Exception as e:
-                            logger.warning(f"❌ Method 5 failed: {e}")
+                            logger.warning(f"[ERROR] Method 5 failed: {e}")
                     
                     # METHOD 6: Simulate user clicking the dropzone (most realistic)
                     if not upload_success:
                         try:
-                            logger.info("\n🔍 METHOD 6: Simulating user click on dropzone...")
+                            logger.info("\n[SEARCH] METHOD 6: Simulating user click on dropzone...")
                             
                             # Find and click the dropzone area to simulate user interaction
                             dropzone_selectors = [
@@ -1056,7 +1059,7 @@ class InsightGlobalStrategy(BaseStrategy):
                                     # Now the file input should be activated, try uploading
                                     file_input = self.driver.find_element(By.CSS_SELECTOR, "input[type='file']")
                                     file_input.send_keys(resume_full_path)
-                                    logger.info("✅ File sent after clicking dropzone")
+                                    logger.info("[OK] File sent after clicking dropzone")
                                     
                                     # Trigger events
                                     self.driver.execute_script("""
@@ -1077,7 +1080,7 @@ class InsightGlobalStrategy(BaseStrategy):
                                     if self._verify_upload_success():
                                         upload_success = True
                                         upload_method = f"Method 6: User click simulation ({selector})"
-                                        logger.info(f"✅ {upload_method} - SUCCESS")
+                                        logger.info(f"[OK] {upload_method} - SUCCESS")
                                         break
                                     
                                 except Exception as e:
@@ -1085,17 +1088,17 @@ class InsightGlobalStrategy(BaseStrategy):
                                     continue
                                     
                         except Exception as e:
-                            logger.warning(f"❌ Method 6 failed: {e}")
+                            logger.warning(f"[ERROR] Method 6 failed: {e}")
                     
                     # Final result
                     logger.info(f"\n{'=' * 60}")
                     if upload_success:
-                        logger.info(f"✅ RESUME UPLOAD SUCCESSFUL!")
+                        logger.info(f"[OK] RESUME UPLOAD SUCCESSFUL!")
                         logger.info(f"Method used: {upload_method}")
                         logger.info(f"{'=' * 60}\n")
                         time.sleep(2)  # Wait for upload to fully process
                     else:
-                        logger.error(f"❌ RESUME UPLOAD FAILED!")
+                        logger.error(f"[ERROR] RESUME UPLOAD FAILED!")
                         logger.error(f"All 6 upload methods failed")
                         logger.error(f"The application will continue WITHOUT the resume")
                         logger.error(f"{'=' * 60}\n")
@@ -1107,11 +1110,11 @@ class InsightGlobalStrategy(BaseStrategy):
             
             # Handle reCAPTCHA if present
             try:
-                logger.info("\n🔍 Checking for reCAPTCHA...")
+                logger.info("\n[SEARCH] Checking for reCAPTCHA...")
                 recaptcha_frame = self.driver.find_elements(By.CSS_SELECTOR, "iframe[src*='recaptcha']")
                 
                 if recaptcha_frame:
-                    logger.info("⚠️ reCAPTCHA detected on this form")
+                    logger.info("[WARNING] reCAPTCHA detected on this form")
                     
                     # ATTEMPT 1: Try automatic clicking (user's preferred method)
                     logger.info("\n" + "=" * 60)
@@ -1122,11 +1125,11 @@ class InsightGlobalStrategy(BaseStrategy):
                     
                     if recaptcha_solved:
                         logger.info("=" * 60)
-                        logger.info("✅ reCAPTCHA SOLVED AUTOMATICALLY!")
+                        logger.info("[OK] reCAPTCHA SOLVED AUTOMATICALLY!")
                         logger.info("=" * 60 + "\n")
                     else:
                         logger.warning("=" * 60)
-                        logger.warning("❌ AUTOMATIC reCAPTCHA SOLVING FAILED")
+                        logger.warning("[ERROR] AUTOMATIC reCAPTCHA SOLVING FAILED")
                         logger.warning("=" * 60 + "\n")
                         
                         # ATTEMPT 2: Wait for user to solve manually (uses 120s timeout from constructor)
@@ -1156,7 +1159,7 @@ class InsightGlobalStrategy(BaseStrategy):
                                         document.getElementById('g-recaptcha-response').innerHTML = '{response_token}';
                                         """
                                         self.driver.execute_script(js_inject)
-                                        logger.info("✅ reCAPTCHA solved using 2Captcha API")
+                                        logger.info("[OK] reCAPTCHA solved using 2Captcha API")
                                         time.sleep(1)
                                     except ImportError:
                                         logger.info("2captcha-python not installed (optional). Run: pip install 2captcha-python")
@@ -1165,15 +1168,15 @@ class InsightGlobalStrategy(BaseStrategy):
                                 except Exception as e:
                                     logger.debug(f"reCAPTCHA 2Captcha error: {e}")
                 else:
-                    logger.info("✅ No reCAPTCHA detected - proceeding to submit")
+                    logger.info("[OK] No reCAPTCHA detected - proceeding to submit")
             except Exception as e:
                 logger.debug(f"reCAPTCHA check error: {e}")
             
             # Submit form
             if _settings.DRY_RUN:
                 logger.info("=" * 80)
-                logger.info("🔵 DRY RUN MODE: Form filled but NOT submitting")
-                logger.info("📋 REVIEW THE BROWSER NOW - You have 30 seconds to inspect the form!")
+                logger.info(" DRY RUN MODE: Form filled but NOT submitting")
+                logger.info(" REVIEW THE BROWSER NOW - You have 30 seconds to inspect the form!")
                 logger.info("   Check: First Name, Last Name, Email, Phone, Resume attached")
                 logger.info("=" * 80)
                 csv_tracker.update_job_status('insight_global', job_url, 'dry_run',
@@ -1200,33 +1203,33 @@ class InsightGlobalStrategy(BaseStrategy):
                         try:
                             submit_btn = self.driver.find_element(By.CSS_SELECTOR, selector)
                             if submit_btn:
-                                logger.info(f"✅ Found submit button with selector: {selector}")
+                                logger.info(f"[OK] Found submit button with selector: {selector}")
                                 break
                         except Exception:
                             continue
                     
                     if not submit_btn:
-                        logger.error("❌ Could not find submit button with any selector")
+                        logger.error("[ERROR] Could not find submit button with any selector")
                         csv_tracker.update_job_status('insight_global', job_url, 'failed',
                                                     attempts_inc=1, last_error='Submit button not found')
                         return False
                     
                     # Scroll button into view with human-like behavior
-                    logger.info("🔄 Scrolling submit button into view...")
+                    logger.info(" Scrolling submit button into view...")
                     self.human.scroll_to_element(submit_btn, smooth=True)
                     
                     # Human-like delay before clicking submit (2-4 seconds - seems more natural)
                     HumanBehavior.random_delay(2, 4)
                     
                     # Wait for button to be clickable (in case it's disabled)
-                    logger.info("⏳ Waiting for button to be enabled...")
+                    logger.info(" Waiting for button to be enabled...")
                     try:
                         WebDriverWait(self.driver, 10).until(
                             EC.element_to_be_clickable((By.CSS_SELECTOR, submit_selectors[0]))
                         )
-                        logger.info("✅ Button is enabled and clickable")
+                        logger.info("[OK] Button is enabled and clickable")
                     except Exception as e:
-                        logger.warning(f"⚠️ Timeout waiting for button to be clickable: {e}")
+                        logger.warning(f"[WARNING] Timeout waiting for button to be clickable: {e}")
                         logger.info("Attempting to click anyway...")
                     
                     # Try multiple click methods
@@ -1234,61 +1237,61 @@ class InsightGlobalStrategy(BaseStrategy):
                     
                     # Method 1: Normal Selenium click
                     try:
-                        logger.info("🔄 Attempting normal click...")
+                        logger.info(" Attempting normal click...")
                         submit_btn.click()
                         clicked = True
-                        logger.info("✅ Normal click successful")
+                        logger.info("[OK] Normal click successful")
                     except Exception as e:
-                        logger.warning(f"⚠️ Normal click failed: {e}")
+                        logger.warning(f"[WARNING] Normal click failed: {e}")
                     
                     # Method 2: JavaScript click
                     if not clicked:
                         try:
-                            logger.info("🔄 Attempting JavaScript click...")
+                            logger.info(" Attempting JavaScript click...")
                             self.driver.execute_script("arguments[0].click();", submit_btn)
                             clicked = True
-                            logger.info("✅ JavaScript click successful")
+                            logger.info("[OK] JavaScript click successful")
                         except Exception as e:
-                            logger.warning(f"⚠️ JavaScript click failed: {e}")
+                            logger.warning(f"[WARNING] JavaScript click failed: {e}")
                     
                     # Method 3: Remove disabled attribute and click
                     if not clicked:
                         try:
-                            logger.info("🔄 Removing disabled attribute and clicking...")
+                            logger.info(" Removing disabled attribute and clicking...")
                             self.driver.execute_script("arguments[0].removeAttribute('disabled');", submit_btn)
                             time.sleep(0.5)
                             submit_btn.click()
                             clicked = True
-                            logger.info("✅ Click after removing disabled successful")
+                            logger.info("[OK] Click after removing disabled successful")
                         except Exception as e:
-                            logger.warning(f"⚠️ Click after removing disabled failed: {e}")
+                            logger.warning(f"[WARNING] Click after removing disabled failed: {e}")
                     
                     # Method 4: ActionChains click
                     if not clicked:
                         try:
-                            logger.info("🔄 Attempting ActionChains click...")
+                            logger.info(" Attempting ActionChains click...")
                             from selenium.webdriver.common.action_chains import ActionChains
                             actions = ActionChains(self.driver)
                             actions.move_to_element(submit_btn).click().perform()
                             clicked = True
-                            logger.info("✅ ActionChains click successful")
+                            logger.info("[OK] ActionChains click successful")
                         except Exception as e:
-                            logger.warning(f"⚠️ ActionChains click failed: {e}")
+                            logger.warning(f"[WARNING] ActionChains click failed: {e}")
                     
                     # Method 5: Submit the form directly
                     if not clicked:
                         try:
-                            logger.info("🔄 Attempting to submit form directly...")
+                            logger.info(" Attempting to submit form directly...")
                             self.driver.execute_script("arguments[0].form.submit();", submit_btn)
                             clicked = True
-                            logger.info("✅ Form submitted directly")
+                            logger.info("[OK] Form submitted directly")
                         except Exception as e:
-                            logger.warning(f"⚠️ Direct form submit failed: {e}")
+                            logger.warning(f"[WARNING] Direct form submit failed: {e}")
                     
                     # Method 6: Force click via JavaScript with all events
                     if not clicked:
                         try:
-                            logger.info("🔄 Force clicking with JavaScript events...")
+                            logger.info(" Force clicking with JavaScript events...")
                             self.driver.execute_script("""
                                 var btn = arguments[0];
                                 btn.removeAttribute('disabled');
@@ -1302,19 +1305,19 @@ class InsightGlobalStrategy(BaseStrategy):
                                 btn.click();
                             """, submit_btn)
                             clicked = True
-                            logger.info("✅ Force click with events successful")
+                            logger.info("[OK] Force click with events successful")
                         except Exception as e:
-                            logger.warning(f"⚠️ Force click failed: {e}")
+                            logger.warning(f"[WARNING] Force click failed: {e}")
                     
                     
                     if not clicked:
-                        logger.error("❌ All click methods failed!")
+                        logger.error("[ERROR] All click methods failed!")
                         csv_tracker.update_job_status('insight_global', job_url, 'failed',
                                                     attempts_inc=1, last_error='Failed to click submit button')
                         return False
                     
                     logger.info("=" * 60)
-                    logger.info("✅ SUBMITTED APPLICATION!")
+                    logger.info("[OK] SUBMITTED APPLICATION!")
                     logger.info("=" * 60 + "\n")
                     
                     # Update CSV tracker
@@ -1352,9 +1355,9 @@ class InsightGlobalStrategy(BaseStrategy):
                             )
                             self.db_session.add(application)
                             self.db_session.commit()
-                            logger.info("💾 Application saved to database")
+                            logger.info(" Application saved to database")
                         except Exception as e:
-                            logger.warning(f"⚠️ Database save failed: {e}")
+                            logger.warning(f"[WARNING] Database save failed: {e}")
                             self.db_session.rollback()
                     
                     guards.increment_counter()
@@ -1362,7 +1365,7 @@ class InsightGlobalStrategy(BaseStrategy):
                     return True
                     
                 except Exception as e:
-                    logger.error(f"❌ Failed to submit form: {e}")
+                    logger.error(f"[ERROR] Failed to submit form: {e}")
                     import traceback
                     logger.error(traceback.format_exc())
                     csv_tracker.update_job_status('insight_global', job_url, 'failed',
@@ -1461,9 +1464,9 @@ class InsightGlobalStrategy(BaseStrategy):
         logger.info("=" * 80)
         
         if _settings.DRY_RUN:
-            logger.info("🔵 MODE: DRY RUN (forms will be filled but NOT submitted)")
+            logger.info(" MODE: DRY RUN (forms will be filled but NOT submitted)")
         else:
-            logger.info("🟢 MODE: LIVE (applications WILL be submitted)")
+            logger.info(" MODE: LIVE (applications WILL be submitted)")
         
         # ========================================================================
         # PHASE 1: SEARCH FOR JOBS (with pagination through all pages)
@@ -1478,7 +1481,7 @@ class InsightGlobalStrategy(BaseStrategy):
             logger.info("No jobs found")
             return 0
         
-        logger.info(f"\n✓ Job search complete!")
+        logger.info(f"\n[YES] Job search complete!")
         logger.info(f"Found {len(jobs)} total jobs to process")
         
         # ========================================================================
@@ -1502,22 +1505,22 @@ class InsightGlobalStrategy(BaseStrategy):
             success = self.apply(job)
             if success:
                 applied_count += 1
-                logger.info(f"✓ Successfully applied!")
+                logger.info(f"[YES] Successfully applied!")
             else:
                 failed_count += 1
-                logger.info(f"✗ Failed to apply")
+                logger.info(f" Failed to apply")
             
             # Cooldown between applications
             if i < len(jobs):
                 cooldown = _settings.SUBMISSION_COOLDOWN_SECONDS
-                logger.info(f"⏳ Waiting {cooldown} seconds before next job...")
+                logger.info(f" Waiting {cooldown} seconds before next job...")
                 time.sleep(cooldown)
         
         logger.info(f"\n{'=' * 80}")
         logger.info(f"APPLICATION RUN COMPLETE")
         logger.info(f"{'=' * 80}")
-        logger.info(f"✓ Applied: {applied_count}")
-        logger.info(f"✗ Failed: {failed_count}")
+        logger.info(f"[YES] Applied: {applied_count}")
+        logger.info(f" Failed: {failed_count}")
         logger.info(f"Total processed: {applied_count + failed_count}/{len(jobs)}")
         logger.info(f"{'=' * 80}\n")
         

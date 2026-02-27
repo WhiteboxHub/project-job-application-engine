@@ -15,13 +15,13 @@ print("DATABASE CONTENT SUMMARY")
 print("=" * 70)
 
 # Show all tables
-print("\n📊 TABLES IN DATABASE:")
+print("\n[STATS] TABLES IN DATABASE:")
 tables = conn.execute("SHOW TABLES").fetchall()
 for table in tables:
-    print(f"  ✓ {table[0]}")
+    print(f"  [YES] {table[0]}")
 
 # Row counts
-print("\n📈 ROW COUNTS:")
+print("\n ROW COUNTS:")
 for table in tables:
     count = conn.execute(f"SELECT COUNT(*) FROM {table[0]}").fetchone()[0]
     print(f"  {table[0]}: {count} rows")
@@ -31,19 +31,19 @@ print("\n" + "=" * 70)
 print("CONFIGURATION DATA")
 print("=" * 70)
 
-print("\n🔧 ATS PLATFORMS:")
+print("\n ATS PLATFORMS:")
 platforms = conn.execute("SELECT id, name, class_handler, automation_level FROM ats_platforms").fetchall()
 for p in platforms:
-    icon = "🤖" if p[3] == "full" else "👤"
+    icon = "" if p[3] == "full" else ""
     print(f"  {icon} ID {p[0]}: {p[1]} -> {p[2]} [{p[3]}]")
 
-print("\n🏢 JOB SITES:")
+print("\n JOB SITES:")
 sites = conn.execute("SELECT id, company_name, domain, category, is_active FROM job_sites").fetchall()
 for s in sites:
-    status = "✓ Active" if s[4] else "✗ Inactive"
+    status = "[YES] Active" if s[4] else " Inactive"
     print(f"  ID {s[0]}: {s[1]} ({s[2]}) - {s[3]} [{status}]")
 
-print("\n🎯 SITE SELECTORS:")
+print("\n SITE SELECTORS:")
 selectors = conn.execute('SELECT id, job_site_id, "type" FROM site_selectors').fetchall()
 for sel in selectors:
     print(f"  ID {sel[0]}: Job Site {sel[1]} - Type: {sel[2]}")
@@ -54,7 +54,7 @@ print("HISTORY DATA")
 print("=" * 70)
 
 job_count = conn.execute("SELECT COUNT(*) FROM job_listings").fetchone()[0]
-print(f"\n📋 JOB LISTINGS: {job_count} jobs discovered")
+print(f"\n JOB LISTINGS: {job_count} jobs discovered")
 
 if job_count > 0:
     print("\n  Status breakdown:")
@@ -63,7 +63,7 @@ if job_count > 0:
         print(f"    - {status[0]}: {status[1]}")
 
 app_count = conn.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
-print(f"\n✉️ APPLICATIONS: {app_count} applications submitted")
+print(f"\n APPLICATIONS: {app_count} applications submitted")
 
 if app_count > 0:
     print("\n  Status breakdown:")
@@ -72,10 +72,10 @@ if app_count > 0:
         print(f"    - {status[0]}: {status[1]}")
 
 metrics_count = conn.execute("SELECT COUNT(*) FROM metrics").fetchone()[0]
-print(f"\n📊 METRICS: {metrics_count} metric records")
+print(f"\n[STATS] METRICS: {metrics_count} metric records")
 
 conn.close()
 
 print("\n" + "=" * 70)
-print("✅ Database check complete!")
+print("[OK] Database check complete!")
 print("=" * 70)

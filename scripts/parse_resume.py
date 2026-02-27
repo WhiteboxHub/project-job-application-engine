@@ -13,14 +13,14 @@ import re
 import json
 import pdfplumber
 
-# ── Paths ──────────────────────────────────────────────────────────────────
+# -- Paths ------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESUME_DIR = os.path.join(BASE_DIR, "resume")
 PDF_PATH = os.path.join(RESUME_DIR, "Ghazal_Sultan.pdf")
 OUTPUT_PATH = os.path.join(RESUME_DIR, "parsed_resume.json")
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# -- Helpers ----------------------------------------------------------------
 def extract_text(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         return "\n".join(page.extract_text() or "" for page in pdf.pages)
@@ -98,7 +98,7 @@ def lines_between(lines, start_idx, *end_headers):
     return result
 
 
-# ── Section parsers ────────────────────────────────────────────────────────
+# -- Section parsers --------------------------------------------------------
 def parse_header(lines, raw_lines=None):
     """Extract name, title, phone, email, city/state from the top lines."""
     # Use the raw (unstripped) first line for name parsing to preserve double-spaces
@@ -125,7 +125,7 @@ def parse_header(lines, raw_lines=None):
         city = city_match.group(1).strip()
         state = city_match.group(2).strip()
 
-    # ── Name extraction ──
+    # -- Name extraction --
     # Primary: extract from email if it has a dot-separated name (e.g. ghazal.sultan@...)
     first_name, last_name = "", ""
     if email:
@@ -161,7 +161,7 @@ def parse_education(edu_lines):
         year_match = year_re.search(line)
         # Lines like: "BACHELORS - UNIVERSITY OF SINDH, JAMSHORO, PAKISTAN"
         degree_match = re.match(
-            r"(BACHELORS?|MASTERS?|PHD|DOCTORATE|ASSOCIATE|B\.?S\.?|M\.?S\.?)[^-]*[-–]\s*(.+)",
+            r"(BACHELORS?|MASTERS?|PHD|DOCTORATE|ASSOCIATE|B\.?S\.?|M\.?S\.?)[^-]*[-]\s*(.+)",
             line,
             re.IGNORECASE,
         )
@@ -179,7 +179,7 @@ def parse_education(edu_lines):
                 }
             )
         elif year_match and not entries:
-            # Standalone year line before the degree line — store for next entry
+            # Standalone year line before the degree line  store for next entry
             pass
 
     # If we got entries but no endDate, try to find a year in the section
@@ -203,7 +203,7 @@ def parse_work(work_lines):
     entries = []
     date_re = re.compile(
         r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}"
-        r"\s*[-–]\s*"
+        r"\s*[-]\s*"
         r"(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}|Present)",
         re.IGNORECASE,
     )
@@ -278,19 +278,19 @@ def parse_skills(skill_lines):
     return list(dict.fromkeys(skills))  # deduplicate, preserve order
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# -- Main -------------------------------------------------------------------
 def parse_resume(pdf_path):
     raw = extract_text(pdf_path)
     lines = [l for l in raw.splitlines()]  # keep all lines for header parsing
     stripped = [l.strip() for l in lines]
 
-    # ── Header ──
+    # -- Header --
     header = parse_header(stripped, raw_lines=lines)
 
     first_name = header["first_name"]
     last_name = header["last_name"]
 
-    # ── Section boundaries ──
+    # -- Section boundaries --
     edu_idx = find_section(stripped, "EDUCATION")
     work_idx = find_section(stripped, "WORK EXPERIENCE", "EXPERIENCE")
     skills_idx = find_section(stripped, "SKILLS")
@@ -303,12 +303,12 @@ def parse_resume(pdf_path):
     work_lines = lines_between(stripped, work_idx, *section_headers) if work_idx is not None else []
     skill_lines = lines_between(stripped, skills_idx, *section_headers) if skills_idx is not None else []
 
-    # ── Parse sections ──
+    # -- Parse sections --
     education = parse_education(edu_lines)
     work = parse_work(work_lines)
     skills = parse_skills(skill_lines)
 
-    # ── Assemble output ──
+    # -- Assemble output --
     result = {
         "personal_info": {
             "first_name": first_name,
@@ -317,10 +317,10 @@ def parse_resume(pdf_path):
             "phone": header["phone"],
         },
         "address": {
-            "street_address": "",   # Not in resume — leave blank for manual entry
+            "street_address": "",   # Not in resume  leave blank for manual entry
             "city": header["city"],
             "state": header["state"],
-            "zip_code": "",         # Not in resume — leave blank for manual entry
+            "zip_code": "",         # Not in resume  leave blank for manual entry
             "country": "United States",
         },
         "education": education,
@@ -352,7 +352,7 @@ if __name__ == "__main__":
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
-    print(f"✅ Written to: {OUTPUT_PATH}")
+    print(f"[OK] Written to: {OUTPUT_PATH}")
     print(f"   Name    : {data['personal_info']['first_name']} {data['personal_info']['last_name']}")
     print(f"   Email   : {data['personal_info']['email']}")
     print(f"   Phone   : {data['personal_info']['phone']}")
