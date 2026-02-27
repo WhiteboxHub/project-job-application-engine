@@ -1,8 +1,10 @@
 {
     "search": {
         "keywords": [
-            "AI Engineer",
-            "Python"
+            "Gen AI Engineer",
+            "Python Developer",
+            "Machine Learning Engineer",
+            "AI Architect"
         ],
         "location": "United States",
         "distance": "0"
@@ -13,8 +15,8 @@
         "email": "ghazal.sultan1616@gmail.com",
         "gender": "Female",
         "phone": "6692133034",
-        "street_address": "440 Oceanside dr",
-        "address": "440 Oceanside dr",
+        "street_address": "440 Oceanside Dr",
+        "address": "440 Oceanside Dr",
         "city": "Mountain House",
         "state": "California",
         "zip_code": "95391",
@@ -26,28 +28,41 @@
         "disability_assistance_explain": "",
         "experience": [
             {
-                "title": "AIML Engineer",
-                "company": "Gainwell Technologies",
-                "location": "Irving, TX",
-                "country": "United States",
-                "state": "Texas",
-                "city": "Irving",
-                "start_date": "10/01/2023",
-                "end_date": "Present"
+                "company": "Gainwell Technologies, Irving, TX",
+                "position": "AIML Engineer",
+                "start_date": "Oct 2023",
+                "end_date": "Present",
+                "description": "Engineered a multi-agent architecture using LangGraph, defining autonomous agents for retrieval, reasoning, validation, routing, and orchestration to support complex, context-driven conversational workflows. Integrated ToolNode for intelligent tool calling and adaptive task delegation, enabling agents to invoke tools, APIs, and external systems within a goal-driven execution pipeline. Implemented Model Context Protocol (MCP) to standardize context exchange across distributed agents, enabling interoperability, shared memory, and coordinated multi-agent operations. Designed router and guardrail agents to manage intent routing, enforce safety/compliance constraints, and regulate LLM behavior for controlled and grounded outputs. Applied LangFuse for observability and analytics, tracing agent interactions, debugging execution flows, and optimizing system performance through telemetry insights. Designed and developed an enterprise-grade Retrieval-Augmented Generation (RAG) chatbot integrating LLMs with structured and unstructured datasets for context-aware, accurate responses. Built document ingestion and preprocessing pipelines using Unstructured.io for parsing, chunking, cleaning, and metadata extraction across large PDFs and knowledge bases. Generated high-quality semantic embeddings using Sentence Transformers (MiniLM), optimizing latency and enhancing retrieval precision with efficient vector representations. Implemented hybrid retrieval pipelines combining semantic search, keyword search, vector indexing, and RAG graph structures to maximize recall, precision, and contextual relevance. Developed re-ranking mechanisms using semantic relevance scoring to refine candidate responses and improve coherence during inference. Solved state-management challenges by architecting dynamic memory buffers and inter-agent communication flows to maintain context during multi-turn conversations. Established human-in-the-loop (HITL) evaluation workflows to enable iterative validation, feedback loops, and continuous model fine-tuning. Designed and implemented GenAI evaluation frameworks using LLM-as-a-judge scoring, embedding similarity metrics, retriever evaluations, and human assessments for comprehensive benchmarking. Conducted emotion-based fine-tuning experiments on Databricks, training classification models to enhance emotional intelligence and empathy in conversational outputs. Leveraged AWS services including S3, Lambda, EKS, CloudWatch, and Bedrock to build scalable, event- driven, and containerized microservice ecosystems for LLM and RAG deployments."
+            },
+            {
+                "company": "Labcorp, Burlington, NC",
+                "position": "Machine Learning Engineer",
+                "start_date": "Feb 2021",
+                "end_date": "Sept 2023",
+                "description": "Designed and automated end-to-end ML workflows using Apache Airflow for ETL orchestration, feature engineering, and continuous model retraining. Utilized Databricks for the full ML lifecycle including preprocessing, model development, deployment, experiment tracking, and operational monitoring. Built standardized, reusable data science utilities and modular components to streamline experimentation and promote workflow consistency. Developed production-ready ML pipelines using Pandas, NumPy, Scikit-learn, and Airflow for data processing, feature generation, and model training. Performed in-depth exploratory data analysis (EDA) using Matplotlib, Seaborn, Plotly, SciPy, and Statsmodels to inform model design. Integrated MLflow for experiment tracking, model versioning, and lifecycle governance to ensure reproducibility and traceability. Deployed and managed ML models using deep learning and time-series forecasting techniques. Implemented secure model inference endpoints using API Gateway for scalable and reliable consumption. Optimized model performance through cross-validation, hyperparameter tuning, statistical evaluation metrics, and data drift monitoring. Automated testing, validation, and deployments through CI/CD pipelines using GitHub Actions and Jenkins. Operationalized containerized ML models on AWS SageMaker using Docker and Kubernetes for scalable, resilient deployments. Established observability using Prometheus, Grafana, and cloud-native monitoring to track performance and trigger automated retraining. Built continuous retraining workflows and scheduled model update mechanisms based on performance metrics. Implemented ML governance practices including version control, reproducibility validation, and lifecycle compliance."
+            },
+            {
+                "company": "E-Trade, SFO, CA",
+                "position": "Softeware Engineer",
+                "start_date": "Nov 2018",
+                "end_date": "Jan 2021",
+                "description": "Designed and implemented scalable ETL pipelines for structured and unstructured financial datasets using Apache Airflow, Python, and SQL, enabling efficient data extraction, transformation, and loading across analytics systems. Managed high-volume data ingestion and processing workflows in cloud environments, using Docker for containerization and Kubernetes for orchestration to ensure resilient and scalable pipeline deployments. Built and optimized data pipelines to provide consistent, reliable, and high-availability data for downstream analytics, machine learning workloads, and business intelligence reporting. Developed and maintained financial data models and schemas optimized for query performance, storage efficiency, and compliance with industry analytics standards. Integrated cloud storage solutions such as Amazon S3 to support scalable, secure, and cost-efficient storage, retrieval, and lifecycle management of financial datasets. Leveraged Snowflake to process and query large-scale banking datasets, enabling fast, flexible access for analytics, regulatory reporting, and risk assessment workflows. Built monitoring and observability dashboards using Prometheus and Grafana to track pipeline performance, detect operational anomalies, and ensure system reliability. Collaborated with data science and DevOps teams to implement CI/CD workflows for automated deployment, testing, and maintenance of data pipelines supporting predictive modeling and financial analytics."
+            },
+            {
+                "company": "Wallgreens, SFO, CA",
+                "position": "Software Engineer",
+                "start_date": "Nov 2016",
+                "end_date": "Oct 2018",
+                "description": "Developed and maintained responsive, high-performance web applications using React and JavaScript, delivering smooth, intuitive, and user-centric interfaces. Built reusable and modular React components to standardize UI patterns, enhance maintainability, and accelerate feature development. Implemented secure client-side validation, dynamic form handling, and robust input processing to ensure data integrity and an error-free user experience. Collaborated with product, design, and backend teams to deliver features that improved application speed, usability, and overall platform reliability. Integrated frontend components with backend APIs and managed complex state using Redux and the Context API for predictable and consistent application behavior. Applied performance optimization techniques—including lazy loading, code splitting, and memoization—to reduce load times and enhance responsiveness. Developed unit and integration tests using Jest and React Testing Library to improve code quality, reliability, and long-term maintainability."
             }
         ],
         "education": [
             {
-                "degree": "BA",
-                "University": "University of Sindh",
+                "institution": "University Of Sindh, Jamshoro, Pakistan",
+                "degree": "Bachelors",
                 "major": "Computer Science",
-                "education_type": "University",
-                "country": "Pakistan",
-                "state": "Pakistan",
-                "city": "JAMSHORO",
-                "year_of_passing": "06/01/2013",
-                "start_date": "09/01/2011",
-                "end_date": "06/01/2013"
+                "start_date": "2011",
+                "end_date": "2013"
             }
         ],
         "auth_country_select": "Yes",
@@ -56,7 +71,7 @@
         "sponsorship_future": "No",
         "citizenship": "American",
         "govt_employed": "No",
-        "race": "Opt Out",
+        "race": "Asian",
         "veteran": "No",
         "disability": "No",
         "employed_before_wipro": "No",

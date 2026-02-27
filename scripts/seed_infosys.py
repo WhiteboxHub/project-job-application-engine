@@ -36,8 +36,8 @@ conn.execute("""
 
 # Infosys Listing Selectors
 infosys_listing = {
-    "search_input": ["input#keyword", "input[name='keyword']", "input.search-keyword"],
-    "search_button": ["button#search", "button.search-btn", "input[type='submit']"],
+    "search_input": ["input.js_search_cp_jobs", "input[name='search']", "input#keyword"],
+    "search_button": ["a.search-jobs-button", "button#search", "button.search-btn"],
     "search_keywords": ["Gen AI Engineer", "Python Developer", "Machine Learning Engineer", "AI Architect"],
     "target_keyword": ["ai", "machine learning", "ml", "data science", "engineer", "developer", "technology", "software", "architect"],
     "blocked_keyword": ["nurse", "sales", "hr", "marketing", "finance", "legal", "doctor"],

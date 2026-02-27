@@ -58,13 +58,13 @@ class InfosysStrategy(BaseStrategy):
     # Config loaders
     # -------------------------
     def _load_config(self):
-        """Load configuration from candidate_data (database) or fallback to JSON file"""
-        # Priority 1: Use candidate_data from database
-        if self.candidate_data:
-            logger.info("✅ Using candidate data from database")
-            return self.candidate_data
+        """
+        [USER_DIRECTIVE]: Prioritize guest_form_data.json as the single source of truth.
+        Fallback to database (candidate_data) only if JSON is unavailable or incomplete.
+        """
+        config_data = {}
         
-        # Priority 2: Fallback to JSON file for backward compatibility
+        # Priority 1: Load from guest_form_data.json
         try:
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -72,44 +72,56 @@ class InfosysStrategy(BaseStrategy):
                 "guest_form_data.json",
             )
             if os.path.exists(config_path):
-                logger.info("⚠️ Using fallback config from guest_form_data.json")
+                logger.info("✅ Using primary candidate data from guest_form_data.json")
                 with open(config_path, "r") as f:
-                    return json.load(f)
-            return {}
+                    config_data = json.load(f)
         except Exception as e:
-            logger.error(f"Failed to load config: {e}")
-            return {}
+            logger.error(f"Failed to load guest_form_data.json: {e}")
+
+        # Priority 2: Merge with database data (if available)
+        if self.candidate_data:
+            logger.info("🔄 Merging with candidate data from database")
+            # Deep merge or simple update? Let's do a simple update for missing keys
+            for key, value in self.candidate_data.items():
+                if key not in config_data:
+                    config_data[key] = value
+                elif isinstance(value, dict) and isinstance(config_data[key], dict):
+                    # Shallow merge for first level dictionaries
+                    for sub_key, sub_val in value.items():
+                        if sub_key not in config_data[key]:
+                            config_data[key][sub_key] = sub_val
+
+        return config_data
 
     def _load_resume_json(self):
-        try:
-            resume_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                "resume"
-            )
-            # Try both names
-            for name in ["parsed_resume.json", "resume.json"]:
-                path = os.path.join(resume_dir, name)
-                if os.path.exists(path):
-                    with open(path, "r") as f:
-                        data = json.load(f)
-                        logger.info(f"Loaded resume data from {name}")
-                        return self._normalize_resume_data(data)
-            return {}
-        except Exception as e:
-            logger.error(f"Failed to load resume JSON: {e}")
-            
-        # Priority 3: Synthesize from config_data (Always check if data is empty or missing sections)
-        if not data or not data.get("education") or not data.get("work"):
-            if self.config_data and "applicant" in self.config_data:
-                applicant = self.config_data["applicant"]
-                if "education" in applicant or "experience" in applicant:
-                    logger.info("Synthesizing missing sections from config_data['applicant']")
-                    synth_data = data or {}
-                    if not synth_data.get("education"): synth_data["education"] = applicant.get("education", [])
-                    if not synth_data.get("work"): synth_data["work"] = applicant.get("experience", [])
-                    return self._normalize_resume_data(synth_data)
+        """
+        [USER_DIRECTIVE]: Strictly using guest_form_data.json (config_data) 
+        as the single source of truth for experience and education.
+        """
+        applicant = self.config_data.get("applicant", {})
+        data = {
+            "education": [{
+                "institution": e.get("institution", ""),
+                "studyType": e.get("degree", ""),
+                "area": e.get("major", ""),
+                "endDate": e.get("end_date", ""),
+                "startDate": e.get("start_date", ""),
+                "gpa": e.get("gpa", ""),
+            } for e in applicant.get("education", [])],
+            "work": [{
+                "company": j.get("company", ""),
+                "position": j.get("position", ""),
+                "startDate": j.get("start_date", ""),
+                "endDate": j.get("end_date", ""),
+                "summary": j.get("description", ""),
+            } for j in applicant.get("experience", [])]
+        }
         
-        return data or {}
+        if data.get("work") or data.get("education"):
+            logger.info("✅ Sourcing all career data strictly from guest_form_data.json")
+            return self._normalize_resume_data(data)
+            
+        return {}
 
     def _normalize_resume_data(self, data):
         """Standardizes structure between different parser outputs"""
@@ -1435,6 +1447,22 @@ class InfosysStrategy(BaseStrategy):
             eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "race category", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
             if self._page_has_any_field(eeo_keywords):
                 logger.info("Detected EEO / Other Info section by fields ΓåÆ filling...")
+                
+                # DEBUG: Log all inputs/selects in this section
+                try:
+                    all_int = self.driver.find_elements(By.CSS_SELECTOR, "input, select, textarea")
+                    logger.info(f"EEO Debug: Found {len(all_int)} total interactive elements")
+                    for i, el in enumerate(all_int):
+                        if el.is_displayed():
+                            tag = el.tag_name
+                            typ = el.get_attribute("type") or ""
+                            val = el.get_attribute("value") or ""
+                            nm = el.get_attribute("name") or ""
+                            id_ = el.get_attribute("id") or ""
+                            logger.info(f"EEO Debug [{i}]: {tag} type={typ} name='{nm}' id='{id_}' value='{val}'")
+                except:
+                    pass
+
                 applicant = self.config_data.get("applicant", {})
                 full_name = f"{applicant.get('first_name', '')} {applicant.get('last_name', '')}"
                 
@@ -1524,9 +1552,11 @@ class InfosysStrategy(BaseStrategy):
     def _fill_race_dropdown(self):
         """
         Finds the Race Category dropdown on the Infosys EEO page and selects
-        the Decline/Opt-Out option. Tries all known option text variations.
+        the user's race or the Decline/Opt-Out option. 
         """
-        # All known Infosys race dropdown option texts for Decline/Opt-Out
+        applicant = self.config_data.get("applicant", {})
+        preferred_race = applicant.get("race", "Asian")
+        
         decline_options = [
             "Decline to Self-Identify",
             "Decline to self identify",
@@ -1536,68 +1566,72 @@ class InfosysStrategy(BaseStrategy):
             "Choose not to provide",
             "Prefer not to say",
             "Not Specified",
-            "Two or more races",  # last resort if decline not available
         ]
 
         try:
             selects = self.driver.find_elements(By.CSS_SELECTOR, "select")
-            for sel_elem in selects:
+            logger.info(f"EEO: Found {len(selects)} selects in section.")
+            
+            for i, sel_elem in enumerate(selects):
                 if not sel_elem.is_displayed():
                     continue
                 try:
-                    # Check if this select is label-associated with "race"
                     sel_id = sel_elem.get_attribute("id") or ""
                     sel_name = sel_elem.get_attribute("name") or ""
                     sel_class = sel_elem.get_attribute("class") or ""
-                    attr_hay = (sel_id + " " + sel_name + " " + sel_class).lower()
+                    
+                    from selenium.webdriver.support.ui import Select
+                    select_obj = Select(sel_elem)
+                    available = [o.text.strip() for o in select_obj.options]
+                    
+                    logger.info(f"EEO Select [{i}]: id='{sel_id}' name='{sel_name}' options={available}")
 
-                    # Also check parent/label text
+                    attr_hay = (sel_id + " " + sel_name + " " + sel_class).lower()
                     parent_text = ""
                     try:
                         parent_text = sel_elem.find_element(By.XPATH, "./ancestor::*[self::div or self::td or self::li][1]").text.lower()
-                    except Exception:
-                        pass
-                    if not parent_text:
-                        try:
-                            parent_text = sel_elem.find_element(By.XPATH, "./..").text.lower()
-                        except Exception:
-                            pass
-
-                    # Check associated label
+                    except: pass
+                    
                     label_text = ""
                     if sel_id:
                         try:
                             lbl = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{sel_id}']")
                             label_text = lbl.text.lower()
-                        except Exception:
-                            pass
+                        except: pass
 
                     combined = attr_hay + " " + parent_text + " " + label_text
-                    if "race" not in combined:
+                    
+                    # HEURISTIC: Skip binary dropdowns
+                    if len(available) < 5 and any(o.strip().lower() in ["yes", "no", "choose", "select"] for o in available):
                         continue
+                        
+                    # Check for "race" or racial options
+                    race_keywords = ["race", "ethnic origin", "ancestry"]
+                    is_race = any(k in combined for k in race_keywords)
+                    
+                    if not is_race:
+                        racial_options = ["asian", "black", "white", "hispanic", "native"]
+                        match_count = sum(1 for o in available if any(r in o.lower() for r in racial_options))
+                        if match_count >= 2:
+                            is_race = True
 
-                    logger.info(f"Found race dropdown (id={sel_id}, label='{label_text.strip()}')")
-                    from selenium.webdriver.support.ui import Select
-                    select_obj = Select(sel_elem)
-                    available = [o.text.strip() for o in select_obj.options]
-                    logger.info(f"Race dropdown options: {available}")
-
-                    for opt_text in decline_options:
+                    if is_race:
+                        logger.info(f"🎯 🎯 🎯 TARGET RACE DROPDOWN IDENTIFIED [{i}]")
                         for avail in available:
-                            if opt_text.lower() in avail.lower() or avail.lower() in opt_text.lower():
+                            if preferred_race.lower() in avail.lower():
                                 select_obj.select_by_visible_text(avail)
-                                logger.info(f"✅ Race selected: '{avail}'")
+                                logger.info(f"✅ Race selected (preferred): '{avail}'")
                                 return True
-
-                    # Last resort: select first non-empty option
-                    for avail in available:
-                        if avail.strip() and avail.strip() not in ["-", "--", "Select", "Select One"]:
-                            select_obj.select_by_visible_text(avail)
-                            logger.info(f"Race: fallback selected first available option: '{avail}'")
-                            return True
-
+                        
+                        # Decline fallback
+                        for opt_text in decline_options:
+                            for avail in available:
+                                if opt_text.lower() in avail.lower():
+                                    select_obj.select_by_visible_text(avail)
+                                    logger.info(f"✅ Race selected (decline): '{avail}'")
+                                    return True
                 except Exception as e:
-                    logger.warning(f"Error processing race select: {e}")
+                    logger.warning(f"Error checking EEO select {i}: {e}")
                     continue
         except Exception as e:
             logger.error(f"_fill_race_dropdown error: {e}")

@@ -29,8 +29,15 @@ class DuckDBConnection:
         """Initialize DuckDB connection"""
         try:
             db_path = settings.DUCKDB_PATH
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+            
+            # For MotherDuck, we don't need to create local directories
+            if not db_path.startswith("md:"):
+                os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+            
+            # Pass token if provided in settings
+            if settings.MOTHERDUCK_TOKEN:
+                os.environ["MOTHERDUCK_TOKEN"] = settings.MOTHERDUCK_TOKEN
+
             self.conn = duckdb.connect(db_path)
             logger.info(f"DuckDB connection initialized: {db_path}")
         except Exception as e:

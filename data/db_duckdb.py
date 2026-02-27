@@ -20,8 +20,17 @@ class DuckDBManager:
         return cls._instance
 
     def _initialize(self):
-        db_path = os.path.join(os.getcwd(), "data", "job_engine.duckdb")
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        from config.settings import settings
+        db_path = settings.DUCKDB_PATH
+        
+        # For MotherDuck, we don't need to create local directories
+        if not db_path.startswith("md:"):
+            os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+            
+        # Pass token if provided in settings
+        if settings.MOTHERDUCK_TOKEN:
+            os.environ["MOTHERDUCK_TOKEN"] = settings.MOTHERDUCK_TOKEN
+
         self.conn = duckdb.connect(db_path)
         self._create_schema()
         logger.info(f"DuckDB initialized at {db_path}")

@@ -230,8 +230,9 @@ class KForceStrategy(BaseStrategy):
             "button[id*='search' i]",
         ]
         LINK_SELECTORS = [
-            "a[href*='/candidate/jobs/'],",
+            "a[href*='/candidate/jobs/']",
             "a[href*='/find-work/'][href*='job']",
+            "a.tile__title-link",
             "a[class*='job-title' i]",
             "a[class*='title' i][href*='job']",
             "h4 > a, h3 > a, h2 > a",
@@ -308,7 +309,8 @@ class KForceStrategy(BaseStrategy):
                     for link in links:
                         url = link.get_attribute('href') or ''
                         title = link.text.strip()
-                        if not url or not title or url in seen_urls:
+                        # Basic filtering for noise
+                        if not url or url == '#' or url.startswith('javascript:') or not title or url in seen_urls:
                             continue
                         if 'kforce.com' not in url and not url.startswith('/'):
                             continue
