@@ -17,10 +17,15 @@ from core.logger import logger
 
 def init_db():
     db_path = settings.DUCKDB_PATH
-    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
-
-    logger.info(f"Initializing DuckDB at: {db_path}")
-    conn = duckdb.connect(db_path)
+    
+    if db_path.startswith("md:"):
+        logger.info(f"Initializing MotherDuck Cloud at: {db_path}")
+        token_suffix = f"?motherduck_token={settings.MOTHERDUCK_TOKEN}" if settings.MOTHERDUCK_TOKEN else ""
+        conn = duckdb.connect(f"{db_path}{token_suffix}")
+    else:
+        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+        logger.info(f"Initializing DuckDB at: {db_path}")
+        conn = duckdb.connect(db_path)
 
     # -----------------------------------------------------------------------
     # Core schema tables
