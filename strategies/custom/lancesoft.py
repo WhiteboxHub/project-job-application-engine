@@ -38,7 +38,7 @@ class LanceSoftStrategy(BaseStrategy):
         # Merge in candidate-specific data from scheduler (overrides JSON defaults)
         if candidate_data and isinstance(candidate_data, dict):
             self.config_data = {**self.config_data, **candidate_data}
-            logger.info("✅ Candidate-specific data merged into config")
+            logger.info("[OK] Candidate-specific data merged into config")
         
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=30)
@@ -51,9 +51,9 @@ class LanceSoftStrategy(BaseStrategy):
         
         # Debug logging
         if self.db_session:
-            logger.info("✅ Database session available - will save to MySQL")
+            logger.info("[OK] Database session available - will save to MySQL")
         else:
-            logger.warning("⚠️ No database session - will only use CSV tracking")
+            logger.warning("[WARNING] No database session - will only use CSV tracking")
     
     def _load_config(self):
         """Load configuration from JSON file (optional - candidate_data from DB takes priority)"""
@@ -68,10 +68,10 @@ class LanceSoftStrategy(BaseStrategy):
             logger.info(f"Loaded configuration from {config_path}")
             return data
         except FileNotFoundError:
-            logger.info("ℹ️ guest_form_data.json not found — will use candidate_data from DB")
+            logger.info("INFO guest_form_data.json not found - will use candidate_data from DB")
             return {}
         except Exception as e:
-            logger.warning(f"Config JSON load error: {e} — will use candidate_data from DB")
+            logger.warning(f"Config JSON load error: {e}  will use candidate_data from DB")
             return {}
     
     def _load_selectors(self):
@@ -138,11 +138,11 @@ class LanceSoftStrategy(BaseStrategy):
             )
             time.sleep(2)
             
-            logger.info("✅ Portal loaded - no login required (guest mode)")
+            logger.info("[OK] Portal loaded - no login required (guest mode)")
             return True
             
         except Exception as e:
-            logger.error(f"Error accessing JobDiva portal: {e}")
+            logger.error(f"[ERROR] Error accessing JobDiva portal: {e}")
             return False
     
     def find_and_apply_jobs(self):
@@ -156,7 +156,7 @@ class LanceSoftStrategy(BaseStrategy):
         Returns:
             int: Number of successful applications
         """
-        logger.info("🔍 Starting find_and_apply_jobs workflow (Single-Phase)...")
+        logger.info("SEARCH Starting find_and_apply_jobs workflow (Single-Phase)...")
         
         if not self.config_data:
             logger.error("No configuration data available")
@@ -177,14 +177,14 @@ class LanceSoftStrategy(BaseStrategy):
                 {'keyword': kw, 'location': location, 'distance': distance}
                 for kw in keywords
             ]
-            logger.info(f"📋 Built {len(search_configurations)} search configs from run_parameters")
+            logger.info(f"LIST Built {len(search_configurations)} search configs from run_parameters")
         
         total_applied = 0
         
         # Perform each search and apply immediately
         for config in search_configurations:
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Search: {config['keyword']} in {config['location']}")
+            logger.info(f"[SEARCH] Search: {config['keyword']} in {config['location']}")
             logger.info(f"{'='*60}")
             
             # Search and apply immediately (single-phase)
@@ -199,7 +199,7 @@ class LanceSoftStrategy(BaseStrategy):
             if len(search_configurations) > 1:
                 time.sleep(random.uniform(2, 4))
         
-        logger.info(f"\n✅ Workflow complete: {total_applied} applications submitted")
+        logger.info(f"\n[OK] Workflow complete: {total_applied} applications submitted")
         return total_applied
 
     
@@ -235,7 +235,7 @@ class LanceSoftStrategy(BaseStrategy):
         # Perform each search
         for config in search_configurations:
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Search: {config['keyword']} in {config['location']}")
+            logger.info(f"[SEARCH] Search: {config['keyword']} in {config['location']}")
             logger.info(f"{'='*60}")
             
             # Collect all jobs from all pages for this search
@@ -251,7 +251,7 @@ class LanceSoftStrategy(BaseStrategy):
                 time.sleep(random.uniform(2, 4))
         
         logger.info(f"\n{'='*60}")
-        logger.info(f"✅ Job Collection Complete")
+        logger.info(f" [OK] Job Collection Complete")
         logger.info(f"Total jobs found: {len(all_jobs)}")
         logger.info(f"{'='*60}\n")
         
@@ -288,7 +288,7 @@ class LanceSoftStrategy(BaseStrategy):
             WebDriverWait(self.driver, 15).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
-            logger.info("  ✓ Portal loaded")
+            logger.info("  [YES] Portal loaded")
             time.sleep(2)
             
             # --- Country Filter Selection ---
@@ -301,7 +301,7 @@ class LanceSoftStrategy(BaseStrategy):
                 # First check if United States is already selected
                 try:
                     current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
-                    logger.info("  ✓ Country 'United States' already selected")
+                    logger.info("  [YES] Country 'United States' already selected")
                     country_selected = True
                 except Exception:
                     logger.info("    Country selection needed - attempting to select...")
@@ -315,12 +315,12 @@ class LanceSoftStrategy(BaseStrategy):
                         dropdown_btn = WebDriverWait(self.driver, 10).until(  # Increased from 5 to 10 seconds
                             EC.element_to_be_clickable((By.XPATH, country_btn_xpath))
                         )
-                        logger.info("    ✓ Found country dropdown button")
+                        logger.info("    [YES] Found country dropdown button")
                         
                         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_btn)
                         time.sleep(0.5)
                         self.human.human_click(dropdown_btn)
-                        logger.info("    ✓ Clicked country dropdown")
+                        logger.info("    [YES] Clicked country dropdown")
                         time.sleep(1.5)
                         
                         # Strategy 2: Select 'United States' from dropdown using multiple selectors
@@ -337,7 +337,7 @@ class LanceSoftStrategy(BaseStrategy):
                                 time.sleep(0.3)
                                 self.human.human_click(usa_option)
                                 usa_found = True
-                                logger.info("    ✓ Selected USA (method 1)")
+                                logger.info("    [YES] Selected USA (method 1)")
                                 time.sleep(1)
                         except Exception as e:
                             logger.debug(f"    Method 1 failed: {e}")
@@ -362,7 +362,7 @@ class LanceSoftStrategy(BaseStrategy):
                                             time.sleep(0.3)
                                             self.human.human_click(usa_option)
                                             usa_found = True
-                                            logger.info(f"    ✓ Selected USA (method 2, variant {idx})")
+                                            logger.info(f"    [YES] Selected USA (method 2, variant {idx})")
                                             time.sleep(1)
                                             break
                                     except Exception:
@@ -373,10 +373,10 @@ class LanceSoftStrategy(BaseStrategy):
                         if usa_found:
                             country_selected = True
                         else:
-                            logger.warning("    ⚠️ Could not find USA option in dropdown")
+                            logger.warning("    [WARNING] Could not find USA option in dropdown")
                             
                     except Exception as e:
-                        logger.warning(f"    ⚠️ Could not open Country dropdown: {e}")
+                        logger.warning(f"    [WARNING] Could not open Country dropdown: {e}")
                     
                     # Fallback: Try CSS selector approach
                     if not country_selected:
@@ -389,17 +389,17 @@ class LanceSoftStrategy(BaseStrategy):
                                 usa_option = self.driver.find_element(By.XPATH, "//div[contains(@class, 'dropdown-menu')]//a[contains(., 'United States')]")
                                 self.human.human_click(usa_option)
                                 country_selected = True
-                                logger.info("    ✓ Selected USA (fallback method)")
+                                logger.info("    [YES] Selected USA (fallback method)")
                         except Exception as fb_err:
                             logger.debug(f"    Fallback country selection failed: {fb_err}")
                 
                 if country_selected:
-                    logger.info("  ✅ Country filter set to 'United States'")
+                    logger.info("  [OK] Country filter set to 'United States'")
                 else:
-                    logger.warning("  ⚠️ Country selection failed - continuing anyway (may affect results)")
+                    logger.warning("  [WARNING] Country selection failed - continuing anyway (may affect results)")
 
             except Exception as e:
-                logger.warning(f"  ⚠️ Country filter error (non-critical, continuing): {e}")
+                logger.warning(f"  [WARNING] Country filter error (non-critical, continuing): {e}")
 
             # --- Enter Search Keyword ---
             logger.info(f"  Entering search keyword: '{keyword}'")
@@ -412,15 +412,15 @@ class LanceSoftStrategy(BaseStrategy):
             # Clear any existing text and type the keyword
             search_input.clear()
             self.human.fill_text_field(search_input, keyword)
-            logger.info(f"  ✓ Entered keyword: '{keyword}'")
+            logger.info(f"  [YES] Entered keyword: '{keyword}'")
             
             # Press Enter or wait for results to load
             search_input.send_keys("\n")
             time.sleep(3)  # Wait for search results to load
-            logger.info("  ✓ Search results loaded")
+            logger.info("  [YES] Search results loaded")
             
         except Exception as e:
-            logger.error(f"  ❌ Failed to perform search: {e}")
+            logger.error(f"  [ERROR] Failed to perform search: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -433,7 +433,7 @@ class LanceSoftStrategy(BaseStrategy):
         
         # Pagination loop: Collect jobs from all pages
         while page_num <= MAX_PAGES:
-            logger.info(f"  📄 Collecting from page {page_num}...")
+            logger.info(f"   Collecting from page {page_num}...")
             
             # Extract jobs from current page (no applying yet)
             jobs_on_page = self._extract_job_listings(container_selector)
@@ -454,27 +454,27 @@ class LanceSoftStrategy(BaseStrategy):
                 has_disabled_class = 'disabled' in (next_btn.get_attribute('class') or '')
                 
                 if is_disabled or has_disabled_class:
-                    logger.info(f"    ✓ Reached last page")
+                    logger.info(f"    [YES] Reached last page")
                     break
                 
                 # Scroll to button and click
                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                 time.sleep(0.5)
                 self.human.human_click(next_btn)
-                logger.info(f"    ✓ Navigating to page {page_num + 1}...")
+                logger.info(f"    [YES] Navigating to page {page_num + 1}...")
                 
                 # Wait for new page to load
                 time.sleep(2)
                 page_num += 1
                 
             except Exception as e:
-                logger.info(f"    ✓ No more pages")
+                logger.info(f"    [YES] No more pages")
                 break
         
         if page_num > MAX_PAGES:
-            logger.warning(f"  ⚠️ Reached maximum page limit ({MAX_PAGES})")
+            logger.warning(f"  [WARNING] Reached maximum page limit ({MAX_PAGES})")
         
-        logger.info(f"  ✅ Collection complete: {len(all_jobs)} total jobs")
+        logger.info(f"  [OK] Collection complete: {len(all_jobs)} total jobs")
         return all_jobs
     
     def _search_and_apply_immediately(self, keyword, location, distance):
@@ -507,7 +507,7 @@ class LanceSoftStrategy(BaseStrategy):
             WebDriverWait(self.driver, 15).until(
                 EC.presence_of_element_located((By.TAG_NAME, "body"))
             )
-            logger.info("  ✓ Portal loaded")
+            logger.info("  [YES] Portal loaded")
             time.sleep(2)
             
             # Country Filter Selection - IMPROVED WITH MULTIPLE STRATEGIES
@@ -520,7 +520,7 @@ class LanceSoftStrategy(BaseStrategy):
                 # STRATEGY 1: Check if United States is already selected
                 try:
                     current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
-                    logger.info("  ✓ Country 'United States' already selected")
+                    logger.info("  [YES] Country 'United States' already selected")
                     country_selected = True
                 except Exception:
                     logger.info("    Country not pre-selected - will attempt to select...")
@@ -564,7 +564,7 @@ class LanceSoftStrategy(BaseStrategy):
                                 # Fallback to JavaScript click
                                 self.driver.execute_script("arguments[0].click();", dropdown_btn)
                             
-                            logger.info("    ✓ Clicked country dropdown")
+                            logger.info("    [OK] Clicked country dropdown")
                             dropdown_clicked = True
                             time.sleep(1.5)
                             
@@ -573,7 +573,7 @@ class LanceSoftStrategy(BaseStrategy):
                             continue
                     
                     if not dropdown_clicked:
-                        logger.warning("    ⚠️ Could not find/click country dropdown")
+                        logger.warning("    [WARNING] Could not find/click country dropdown")
                     else:
                         # Try to select USA from dropdown
                         usa_selectors = [
@@ -613,7 +613,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     
                                     usa_found = True
                                     country_selected = True
-                                    logger.info("    ✓ Selected USA")
+                                    logger.info("    [OK] Selected USA")
                                     time.sleep(1)
                                     
                             except Exception as e:
@@ -621,16 +621,16 @@ class LanceSoftStrategy(BaseStrategy):
                                 continue
                         
                         if not usa_found:
-                            logger.warning("    ⚠️ Could not find USA option in dropdown")
+                            logger.warning("    [WARNING] Could not find USA option in dropdown")
                 
                 # Final status
                 if country_selected:
-                    logger.info("  ✅ Country filter set to 'United States'")
+                    logger.info("  [OK] Country filter set to 'United States'")
                 else:
-                    logger.warning("  ⚠️ Country selection failed - continuing anyway (search may show all countries)")
+                    logger.warning("  [WARNING] Country selection failed - continuing anyway (search may show all countries)")
 
             except Exception as e:
-                logger.warning(f"  ⚠️ Country filter error (non-critical, continuing): {e}")
+                logger.warning(f"  [WARNING] Country filter error (non-critical, continuing): {e}")
 
 
             # Enter Search Keyword
@@ -643,14 +643,14 @@ class LanceSoftStrategy(BaseStrategy):
             
             search_input.clear()
             self.human.fill_text_field(search_input, keyword)
-            logger.info(f"  ✓ Entered keyword: '{keyword}'")
+            logger.info(f"  [YES] Entered keyword: '{keyword}'")
             
             search_input.send_keys("\n")
             time.sleep(3)
-            logger.info("  ✓ Search results loaded")
+            logger.info("  [YES] Search results loaded")
             
         except Exception as e:
-            logger.error(f"  ❌ Failed to perform search: {e}")
+            logger.error(f"  [ERROR] Failed to perform search: {e}")
             import traceback
             traceback.print_exc()
             return 0
@@ -664,7 +664,7 @@ class LanceSoftStrategy(BaseStrategy):
         MAX_PAGES = 20
         
         while page_num <= MAX_PAGES:
-            logger.info(f"\n  📄 Processing page {page_num}...")
+            logger.info(f"\n   Processing page {page_num}...")
             
             try:
                 container_selector = selectors['job_container']
@@ -700,7 +700,7 @@ class LanceSoftStrategy(BaseStrategy):
                     try:
                         # Check limits
                         if not guards.can_apply():
-                            logger.warning(f"\n  ⛔ Application limit reached")
+                            logger.warning(f"\n  [LIMIT] Application limit reached")
                             return total_applied
                         
                         # Re-find the specific job row by ID
@@ -713,7 +713,7 @@ class LanceSoftStrategy(BaseStrategy):
                                 break
                         
                         if not target_row:
-                            logger.warning(f"    ⚠️ Could not re-locate job {job_id} (page state changed?)")
+                            logger.warning(f"    [WARNING] Could not re-locate job {job_id} (page state changed?)")
                             continue
                             
                         # Extract title and link for data
@@ -738,7 +738,7 @@ class LanceSoftStrategy(BaseStrategy):
                         
                         # Apply to this job
                         # (This method handles clicking Details -> Apply -> Form)
-                        logger.info(f"    💼 Processing: {title} ({job_id})")
+                        logger.info(f"     Processing: {title} ({job_id})")
                         
                         # Save discovery to DB
                         if self.db_session:
@@ -765,7 +765,7 @@ class LanceSoftStrategy(BaseStrategy):
                         items_processed += 1
                         
                     except Exception as e:
-                        logger.error(f"    ❌ Error processing job {job_id}: {e}")
+                        logger.error(f"    [ERROR] Error processing job {job_id}: {e}")
                         # Try to recover state
                         try:
                             self.driver.back()
@@ -775,7 +775,7 @@ class LanceSoftStrategy(BaseStrategy):
                         continue
                         
             except Exception as e:
-                logger.error(f"    ❌ Error processing page {page_num}: {e}")
+                logger.error(f"    [ERROR] Error processing page {page_num}: {e}")
 
             
             # Try to navigate to next page
@@ -789,24 +789,24 @@ class LanceSoftStrategy(BaseStrategy):
                 has_disabled_class = 'disabled' in (next_btn.get_attribute('class') or '')
                 
                 if is_disabled or has_disabled_class:
-                    logger.info(f"    ✓ Reached last page")
+                    logger.info(f"    [YES] Reached last page")
                     break
                 
                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                 time.sleep(0.5)
                 self.human.human_click(next_btn)
-                logger.info(f"    ✓ Navigating to page {page_num + 1}...")
+                logger.info(f"    [YES] Navigating to page {page_num + 1}...")
                 time.sleep(2)
                 page_num += 1
                 
             except Exception as e:
-                logger.info(f"    ✓ No more pages")
+                logger.info(f"    [YES] No more pages")
                 break
         
         if page_num > MAX_PAGES:
-            logger.warning(f"  ⚠️ Reached maximum page limit ({MAX_PAGES})")
+            logger.warning(f"  [WARNING] Reached maximum page limit ({MAX_PAGES})")
         
-        logger.info(f"\n  📊 Search complete: Applied to {total_applied} jobs")
+        logger.info(f"\n  [STATS] Search complete: Applied to {total_applied} jobs")
         return total_applied
     
     def _apply_to_all_jobs(self, all_jobs):
@@ -828,13 +828,13 @@ class LanceSoftStrategy(BaseStrategy):
             try:
                 # Check if we can still apply
                 if not guards.can_apply():
-                    logger.warning(f"\n  ⛔ Application limit reached after {total_applied} applications")
+                    logger.warning(f"\n   Application limit reached after {total_applied} applications")
                     break
                 
                 job_id = job_data['external_id']
                 job_title = job_data['job_title']
                 
-                logger.info(f"\n  📌 Job {idx}/{len(all_jobs)}: {job_title} ({job_id})")
+                logger.info(f"\n   Job {idx}/{len(all_jobs)}: {job_title} ({job_id})")
                 
                 # Save to DB first
                 if self.db_session and self.job_site:
@@ -851,24 +851,24 @@ class LanceSoftStrategy(BaseStrategy):
                 if success:
                     guards.increment_counter()
                     total_applied += 1
-                    logger.info(f"    ✅ Application #{total_applied} successful")
+                    logger.info(f"    [OK] Application #{total_applied} successful")
                     
                     # Update job status in DB
                     if self.db_session:
                         self._update_job_status(job_id, 'applied')
                 else:
-                    logger.warning(f"    ⚠️ Application failed for {job_id}")
+                    logger.warning(f"    [WARNING] Application failed for {job_id}")
                 
                 # Small delay between applications to avoid rate limiting
                 time.sleep(random.uniform(1, 2))
                 
             except Exception as e:
-                logger.error(f"    ❌ Error applying to job {idx}: {e}")
+                logger.error(f"    [ERROR] Error applying to job {idx}: {e}")
                 import traceback
                 logger.debug(traceback.format_exc())
                 continue
         
-        logger.info(f"\n  📊 Phase 2 Complete: Applied to {total_applied}/{len(all_jobs)} jobs")
+        logger.info(f"\n  [STATS] Phase 2 Complete: Applied to {total_applied}/{len(all_jobs)} jobs")
         return total_applied
     
     def _extract_job_listings(self, container_selector):
@@ -944,9 +944,9 @@ class LanceSoftStrategy(BaseStrategy):
                 )
                 self.db_session.add(job_listing)
                 self.db_session.commit()
-                logger.info(f"      💾 Saved to DB")
+                logger.info(f"       Saved to DB")
         except Exception as e:
-            logger.error(f"      ❌ DB Save Error: {e}")
+            logger.error(f"      [ERROR] DB Save Error: {e}")
             self.db_session.rollback()
     
     def _apply_to_job_by_id(self, job_id, job_data):
@@ -981,7 +981,7 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.error(f"      Could not locate job {job_id} in search results")
                 return False
             
-            logger.info(f"      ✓ Found job in list")
+            logger.info(f"      [YES] Found job in list")
             
             # Click Details button
             details_btn = target_row.find_element(By.CSS_SELECTOR, self.selectors_config['details_button'])
@@ -1027,11 +1027,11 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info(f"      Step 7: Completing application...")
                 self._complete_application()
             except Exception as eeo_error:
-                logger.info(f"      ℹ️ EEO form not available or optional: {eeo_error}")
+                logger.info(f"      [INFO] EEO form not available or optional: {eeo_error}")
                 logger.info(f"      Step 7: Application may be complete (EEO form not required)")
             
             # Success!
-            logger.info(f"      ✅ Successfully applied")
+            logger.info(f"      [OK] Successfully applied")
             
             # Update tracking
             csv_tracker.update_job_status(
@@ -1053,13 +1053,13 @@ class LanceSoftStrategy(BaseStrategy):
                     self.db_session.add(application)
                     self.db_session.commit()
                 except Exception as e:
-                    logger.warning(f"      ⚠️ Database save failed: {e}")
+                    logger.warning(f"      [WARNING] Database save failed: {e}")
                     self.db_session.rollback()
             
             return True
             
         except Exception as e:
-            logger.error(f"      ❌ Application error: {e}")
+            logger.error(f"      [ERROR] Application error: {e}")
             import traceback
             logger.debug(traceback.format_exc())
             
@@ -1147,7 +1147,7 @@ class LanceSoftStrategy(BaseStrategy):
                     logger.error(f"Could not locate job {job_id} in search results")
                     return False
                 
-                logger.info(f"✓ Found job row for {job_id}")
+                logger.info(f"[YES] Found job row for {job_id}")
                 # Click Details
                 details_btn = target_row.find_element(By.CSS_SELECTOR, self.selectors_config['details_button'])
                 
@@ -1208,7 +1208,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     time.sleep(0.5)
                                 if inp.is_selected():
                                     consent_found = True
-                                    logger.info("  ✓ Consent checkbox selected via 'for' attribute")
+                                    logger.info("  [YES] Consent checkbox selected via 'for' attribute")
                                     break
                             except Exception:
                                 pass
@@ -1227,7 +1227,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     time.sleep(0.5)
                                 if inp.is_selected():
                                     consent_found = True
-                                    logger.info("  ✓ Consent checkbox selected via nested input")
+                                    logger.info("  [YES] Consent checkbox selected via nested input")
                                     break
                             except Exception:
                                 pass
@@ -1238,18 +1238,18 @@ class LanceSoftStrategy(BaseStrategy):
                             try:
                                 lbl.click()
                                 consent_found = True
-                                logger.info("  ✓ Clicked consent label (fallback)")
+                                logger.info("  [YES] Clicked consent label (fallback)")
                                 break
                             except Exception:
                                 self.driver.execute_script("arguments[0].click();", lbl)
                                 consent_found = True
-                                logger.info("  ✓ Clicked consent label via JS (fallback)")
+                                logger.info("  [YES] Clicked consent label via JS (fallback)")
                                 break
                     except Exception as label_error:
                         logger.debug(f"  Error processing consent label: {label_error}")
 
                 if not consent_found:
-                    logger.info("  ℹ️ Consent checkbox not found before resume upload (continuing anyway)")
+                    logger.info("  [INFO] Consent checkbox not found before resume upload (continuing anyway)")
             except Exception as e:
                 logger.debug(f"  Consent pre-upload check error: {e}")
 
@@ -1266,16 +1266,16 @@ class LanceSoftStrategy(BaseStrategy):
                 EC.element_to_be_clickable((By.CSS_SELECTOR, submit_btn_selector))
             )
             self.human.human_click(submit_btn)
-            logger.info("  ✓ Submit button clicked")
+            logger.info("  [YES] Submit button clicked")
             
             # Wait for confirmation page to appear (contains "You've applied" message)
             try:
-                logger.info("  ⏳ Waiting for confirmation page...")
+                logger.info("   Waiting for confirmation page...")
                 WebDriverWait(self.driver, 5).until(
                     EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'applied')]"))
                 )
                 time.sleep(1)
-                logger.info("  ✓ Confirmation page loaded")
+                logger.info("  [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"  Confirmation message not found: {e}")
                 time.sleep(2)
@@ -1293,13 +1293,13 @@ class LanceSoftStrategy(BaseStrategy):
                     btn_text = (btn.text or '').strip()
                     if 'next' in btn_text.lower():
                         next_btn = btn
-                        logger.info(f"  ✓ Found Next button: '{btn_text}'")
+                        logger.info(f"  [YES] Found Next button: '{btn_text}'")
                         break
                 
                 # If no text match, take the first one
                 if not next_btn and next_btns:
                     next_btn = next_btns[0]
-                    logger.info("  ✓ Found Next button (first match)")
+                    logger.info("  [YES] Found Next button (first match)")
                     
             except Exception as e:
                 logger.debug(f"  CSS selector failed: {e}")
@@ -1311,7 +1311,7 @@ class LanceSoftStrategy(BaseStrategy):
                     next_btn = WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.XPATH, "//button[normalize-space(.)='Next' or .//span[contains(., 'Next')]]"))
                     )
-                    logger.info("  ✓ Found Next button via XPath")
+                    logger.info("  [YES] Found Next button via XPath")
                 except Exception as e:
                     logger.debug(f"  XPath search failed: {e}")
             
@@ -1320,13 +1320,13 @@ class LanceSoftStrategy(BaseStrategy):
                     self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                     time.sleep(0.5)
                     self.human.human_click(next_btn)
-                    logger.info("  ✓ Clicked Next button successfully")
+                    logger.info("  [YES] Clicked Next button successfully")
                     time.sleep(2)
                 except Exception as e:
-                    logger.error(f"  ✗ Failed to click Next button: {e}")
+                    logger.error(f"   Failed to click Next button: {e}")
                     raise
             else:
-                logger.error("  ✗ Could not find Next button on confirmation page")
+                logger.error("   Could not find Next button on confirmation page")
                 raise Exception("Next button not found on confirmation page")
             
             # Step 9: Fill EEO form
@@ -1347,7 +1347,7 @@ class LanceSoftStrategy(BaseStrategy):
                         try:
                             btn_text = (btn.text or '').strip()
                             if 'next' in btn_text.lower():
-                                logger.info(f"  ✓ Found EEO Next button with text: '{btn_text}'")
+                                logger.info(f"  [YES] Found EEO Next button with text: '{btn_text}'")
                                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                                 time.sleep(0.3)
                                 
@@ -1357,10 +1357,10 @@ class LanceSoftStrategy(BaseStrategy):
                                     WebDriverWait(self.driver, 10).until(
                                         lambda d: not d.find_element(By.CSS_SELECTOR, "button.btn.jd-btn:not(.jd-btn-outline)").get_attribute('disabled')
                                     )
-                                    logger.info("  ✓ Button enabled")
+                                    logger.info("  [YES] Button enabled")
                                 
                                 self.human.human_click(btn)
-                                logger.info("  ✓ Clicked EEO form Next button")
+                                logger.info("  [YES] Clicked EEO form Next button")
                                 next_button_found = True
                                 time.sleep(2)
                                 break
@@ -1379,11 +1379,11 @@ class LanceSoftStrategy(BaseStrategy):
                         
                         if next_btns:
                             next_btn = next_btns[0]
-                            logger.info("  ✓ Found EEO Next button via XPath")
+                            logger.info("  [YES] Found EEO Next button via XPath")
                             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                             time.sleep(0.3)
                             self.human.human_click(next_btn)
-                            logger.info("  ✓ Clicked EEO form Next button (XPath)")
+                            logger.info("  [YES] Clicked EEO form Next button (XPath)")
                             next_button_found = True
                             time.sleep(2)
                     except Exception as e:
@@ -1399,11 +1399,11 @@ class LanceSoftStrategy(BaseStrategy):
                         for btn in buttons_in_container:
                             btn_text = (btn.text or '').lower()
                             if 'next' in btn_text and 'back' not in btn_text:
-                                logger.info(f"  ✓ Found Next button in container")
+                                logger.info(f"  [YES] Found Next button in container")
                                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                                 time.sleep(0.3)
                                 self.human.human_click(btn)
-                                logger.info("  ✓ Clicked EEO form Next button (container search)")
+                                logger.info("  [YES] Clicked EEO form Next button (container search)")
                                 next_button_found = True
                                 time.sleep(2)
                                 break
@@ -1411,9 +1411,9 @@ class LanceSoftStrategy(BaseStrategy):
                         logger.debug(f"  Strategy 3 failed: {e}")
                 
                 if not next_button_found:
-                    logger.warning("  ⚠️ Could not find EEO Next button - continuing anyway")
+                    logger.warning("  [WARNING] Could not find EEO Next button - continuing anyway")
                 else:
-                    logger.info("✅ EEO form Next button clicked successfully")
+                    logger.info("[OK] EEO form Next button clicked successfully")
                     
             except Exception as e:
                 logger.warning(f"Error clicking EEO Next button: {e}")
@@ -1423,7 +1423,7 @@ class LanceSoftStrategy(BaseStrategy):
             
             # Success!
             logger.info("=" * 60)
-            logger.info("✅ APPLICATION SUBMITTED SUCCESSFULLY!")
+            logger.info("[OK] APPLICATION SUBMITTED SUCCESSFULLY!")
             logger.info("=" * 60)
             
             # Update tracking
@@ -1445,9 +1445,9 @@ class LanceSoftStrategy(BaseStrategy):
                     )
                     self.db_session.add(application)
                     self.db_session.commit()
-                    logger.info("💾 Application saved to database")
+                    logger.info(" Application saved to database")
                 except Exception as e:
-                    logger.warning(f"⚠️ Database save failed: {e}")
+                    logger.warning(f"[WARNING] Database save failed: {e}")
                     self.db_session.rollback()
             
             guards.increment_counter()
@@ -1537,11 +1537,11 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info(f"      Step 7: Completing application...")
                 self._complete_application()
             except Exception as eeo_error:
-                logger.info(f"      ℹ️ EEO form not available or optional: {eeo_error}")
+                logger.info(f"      [INFO] EEO form not available or optional: {eeo_error}")
                 logger.info(f"      Step 7: Application may be complete (EEO form not required)")
             
             # Success!
-            logger.info(f"      ✅ Successfully applied")
+            logger.info(f"      [OK] Successfully applied")
             
             # Update tracking
             csv_tracker.update_job_status(
@@ -1563,13 +1563,13 @@ class LanceSoftStrategy(BaseStrategy):
                     self.db_session.add(application)
                     self.db_session.commit()
                 except Exception as e:
-                    logger.warning(f"      ⚠️ Database save failed: {e}")
+                    logger.warning(f"      [WARNING] Database save failed: {e}")
                     self.db_session.rollback()
             
             return True
             
         except Exception as e:
-            logger.error(f"      ❌ Application error: {e}")
+            logger.error(f"      [ERROR] Application error: {e}")
             import traceback
             logger.debug(traceback.format_exc())
             
@@ -1638,7 +1638,7 @@ class LanceSoftStrategy(BaseStrategy):
                         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_field)
                         time.sleep(0.5)
                         self.human.fill_text_field(input_field, user_data[data_key])
-                        logger.info(f"  ✓ Filled {label_text}")
+                        logger.info(f"  [YES] Filled {label_text}")
                     else:
                         logger.warning(f"  Could not find input for {label_text}")
                         
@@ -1654,7 +1654,7 @@ class LanceSoftStrategy(BaseStrategy):
                     self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", phone_input)
                     phone_input.clear()
                     self.human.fill_text_field(phone_input, user_data["Phone"])
-                    logger.info("  ✓ Filled Phone")
+                    logger.info("  [YES] Filled Phone")
             except Exception as e:
                 logger.warning(f"  Could not fill Phone: {e}")
 
@@ -1679,10 +1679,10 @@ class LanceSoftStrategy(BaseStrategy):
                             # Try clicking the label if input click fails?
                             try:
                                 self.human.human_click(cb)
-                                logger.info("  ✓ Clicked consent checkbox")
+                                logger.info("  [YES] Clicked consent checkbox")
                             except:
                                 self.driver.execute_script("arguments[0].click();", cb)
-                                logger.info("  ✓ Clicked consent checkbox (JS force)")
+                                logger.info("  [YES] Clicked consent checkbox (JS force)")
                                 
                     except Exception as cbe:
                         logger.debug(f"  Checkbox interaction failed: {cbe}")
@@ -1753,7 +1753,7 @@ class LanceSoftStrategy(BaseStrategy):
                 
                 try:
                     file_input.send_keys(resume_path)
-                    logger.info("  ✓ Resume uploaded successfully")
+                    logger.info("  [YES] Resume uploaded successfully")
                     time.sleep(2)
                 except Exception as send_error:
                     # If send_keys fails, try alternative method
@@ -1761,10 +1761,10 @@ class LanceSoftStrategy(BaseStrategy):
                     self.driver.execute_script(f"arguments[0].value = '{resume_path}';", file_input)
                     # Trigger change event
                     self.driver.execute_script("arguments[0].dispatchEvent(new Event('change', {{ bubbles: true }}));", file_input)
-                    logger.info("  ✓ Resume uploaded via JS property assignment")
+                    logger.info("  [YES] Resume uploaded via JS property assignment")
                     time.sleep(2)
             else:
-                logger.error("  ✗ Could not find file input for resume upload")
+                logger.error("   Could not find file input for resume upload")
                 # Last ditch: try to find the drop zone and see if we can attach to it? No, Selenium needs input.
                 raise Exception("Resume upload input not found")
             
@@ -1829,9 +1829,9 @@ class LanceSoftStrategy(BaseStrategy):
                     continue
             
             if clicked_count > 0:
-                logger.info(f"  ✓ Selected {clicked_count} 'I do not wish...' options")
+                logger.info(f"  [YES] Selected {clicked_count} 'I do not wish...' options")
             else:
-                logger.warning("  ⚠️ No EEO options found (checked for 'I do not wish...')")
+                logger.warning("  [WARNING] No EEO options found (checked for 'I do not wish...')")
             
             # Click Save/Submit button
             logger.info("  Clicking Save/Submit button...")
@@ -1861,7 +1861,7 @@ class LanceSoftStrategy(BaseStrategy):
                             except:
                                 self.driver.execute_script("arguments[0].click();", btn)
                             
-                            logger.info("  ✓ Clicked Save/Submit")
+                            logger.info("  [YES] Clicked Save/Submit")
                             btn_clicked = True
                             time.sleep(2)
                             break
@@ -1869,7 +1869,7 @@ class LanceSoftStrategy(BaseStrategy):
                     continue
             
             if not btn_clicked:
-                logger.warning("  ⚠️ Could not find Save button")
+                logger.warning("  [WARNING] Could not find Save button")
 
         except Exception as e:
             logger.warning(f"  EEO/Veteran form handling warning: {e}")
@@ -1903,7 +1903,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     time.sleep(0.5)
                                 if inp.is_selected():
                                     consent_found = True
-                                    logger.info("      ✓ Consent checkbox selected via 'for' attribute")
+                                    logger.info("      [YES] Consent checkbox selected via 'for' attribute")
                                     break
                             except Exception:
                                 pass
@@ -1922,7 +1922,7 @@ class LanceSoftStrategy(BaseStrategy):
                                     time.sleep(0.5)
                                 if inp.is_selected():
                                     consent_found = True
-                                    logger.info("      ✓ Consent checkbox selected via nested input")
+                                    logger.info("      [YES] Consent checkbox selected via nested input")
                                     break
                             except Exception:
                                 pass
@@ -1933,18 +1933,18 @@ class LanceSoftStrategy(BaseStrategy):
                             try:
                                 lbl.click()
                                 consent_found = True
-                                logger.info("      ✓ Clicked consent label (fallback)")
+                                logger.info("      [YES] Clicked consent label (fallback)")
                                 break
                             except Exception:
                                 self.driver.execute_script("arguments[0].click();", lbl)
                                 consent_found = True
-                                logger.info("      ✓ Clicked consent label via JS (fallback)")
+                                logger.info("      [YES] Clicked consent label via JS (fallback)")
                                 break
                     except Exception as label_error:
                         logger.debug(f"      Error processing consent label: {label_error}")
 
                 if not consent_found:
-                    logger.info("      ℹ️ Consent checkbox not found before resume upload (continuing anyway)")
+                    logger.info("      [INFO] Consent checkbox not found before resume upload (continuing anyway)")
             except Exception as e:
                 logger.debug(f"      Consent pre-upload check error: {e}")
 
@@ -1961,16 +1961,16 @@ class LanceSoftStrategy(BaseStrategy):
                 EC.element_to_be_clickable((By.CSS_SELECTOR, submit_btn_selector))
             )
             self.human.human_click(submit_btn)
-            logger.info("      ✓ Submit button clicked")
+            logger.info("      [YES] Submit button clicked")
             
             # Wait for confirmation page to appear (contains "You've applied" message)
             try:
-                logger.info("      ⏳ Waiting for confirmation page...")
+                logger.info("       Waiting for confirmation page...")
                 WebDriverWait(self.driver, 15).until(
                     EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'applied')]"))
                 )
                 time.sleep(1)
-                logger.info("      ✓ Confirmation page loaded")
+                logger.info("      [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"      Confirmation message not found: {e}")
                 time.sleep(2)
@@ -1988,13 +1988,13 @@ class LanceSoftStrategy(BaseStrategy):
                     btn_text = (btn.text or '').strip()
                     if 'next' in btn_text.lower():
                         next_btn = btn
-                        logger.info(f"      ✓ Found Next button: '{btn_text}'")
+                        logger.info(f"      [YES] Found Next button: '{btn_text}'")
                         break
                 
                 # If no text match, take the first one
                 if not next_btn and next_btns:
                     next_btn = next_btns[0]
-                    logger.info("      ✓ Found Next button (first match)")
+                    logger.info("      [YES] Found Next button (first match)")
                     
             except Exception as e:
                 logger.debug(f"      CSS selector failed: {e}")
@@ -2006,7 +2006,7 @@ class LanceSoftStrategy(BaseStrategy):
                     next_btn = WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.XPATH, "//button[normalize-space(.)='Next' or .//span[contains(., 'Next')]]"))
                     )
-                    logger.info("      ✓ Found Next button via XPath")
+                    logger.info("      [YES] Found Next button via XPath")
                 except Exception as e:
                     logger.debug(f"      XPath search failed: {e}")
             
@@ -2015,16 +2015,16 @@ class LanceSoftStrategy(BaseStrategy):
                     self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                     time.sleep(0.5)
                     self.human.human_click(next_btn)
-                    logger.info("      ✓ Clicked Next button successfully")
+                    logger.info("      [YES] Clicked Next button successfully")
                     
                     # Wait for the EEO form to be visible (look for gender radio buttons or other EEO elements)
-                    logger.info("      ⏳ Waiting for EEO form to load...")
+                    logger.info("       Waiting for EEO form to load...")
                     eeo_form_found = False
                     try:
                         WebDriverWait(self.driver, 10).until(
                             EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][@name='gender']"))
                         )
-                        logger.info("      ✓ EEO form loaded successfully (gender field found)")
+                        logger.info("      [YES] EEO form loaded successfully (gender field found)")
                         eeo_form_found = True
                         time.sleep(1)
                     except Exception:
@@ -2036,7 +2036,7 @@ class LanceSoftStrategy(BaseStrategy):
                             WebDriverWait(self.driver, 5).until(
                                 EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][@name='ethnicity']"))
                             )
-                            logger.info("      ✓ EEO form loaded successfully (ethnicity field found)")
+                            logger.info("      [YES] EEO form loaded successfully (ethnicity field found)")
                             eeo_form_found = True
                             time.sleep(1)
                         except Exception:
@@ -2048,7 +2048,7 @@ class LanceSoftStrategy(BaseStrategy):
                             WebDriverWait(self.driver, 3).until(
                                 EC.presence_of_element_located((By.XPATH, "//label[contains(text(), 'Gender') or contains(text(), 'gender')]"))
                             )
-                            logger.info("      ✓ EEO form found via label text")
+                            logger.info("      [YES] EEO form found via label text")
                             eeo_form_found = True
                             time.sleep(1)
                         except Exception:
@@ -2056,15 +2056,15 @@ class LanceSoftStrategy(BaseStrategy):
                     
                     # If no EEO form found after 10+ seconds, the application might be complete without EEO
                     if not eeo_form_found:
-                        logger.info("      ⚠️ EEO form not found - application may be complete without EEO questions")
-                        logger.info("      ℹ️ EEO form might not be required for this portal")
+                        logger.info("      [WARNING] EEO form not found - application may be complete without EEO questions")
+                        logger.info("      [INFO] EEO form might not be required for this portal")
                         time.sleep(2)
                     
                 except Exception as e:
-                    logger.error(f"      ✗ Failed to click Next button or navigate: {e}")
+                    logger.error(f"       Failed to click Next button or navigate: {e}")
                     raise
             else:
-                logger.error("      ✗ Could not find Next button on confirmation page")
+                logger.error("       Could not find Next button on confirmation page")
                 raise Exception("Next button not found on confirmation page")
 
         except Exception as e:
@@ -2089,7 +2089,7 @@ class LanceSoftStrategy(BaseStrategy):
                         try:
                             btn_text = (btn.text or '').strip()
                             if 'next' in btn_text.lower():
-                                logger.info(f"      ✓ Found EEO Next button with text: '{btn_text}'")
+                                logger.info(f"      [YES] Found EEO Next button with text: '{btn_text}'")
                                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                                 time.sleep(0.3)
                                 
@@ -2099,21 +2099,21 @@ class LanceSoftStrategy(BaseStrategy):
                                     WebDriverWait(self.driver, 10).until(
                                         lambda d: not d.find_element(By.CSS_SELECTOR, "button.btn.jd-btn:not(.jd-btn-outline)").get_attribute('disabled')
                                     )
-                                    logger.info("      ✓ Button enabled")
+                                    logger.info("      [YES] Button enabled")
                                 
                                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                                 time.sleep(0.5)
                                 self.human.human_click(btn)
-                                logger.info("      ✓ Clicked EEO form Next button")
+                                logger.info("      [YES] Clicked EEO form Next button")
                                 next_button_found = True
                                 
                                 # Wait for page transition after clicking
-                                logger.info("      ⏳ Waiting for page to transition...")
+                                logger.info("       Waiting for page to transition...")
                                 try:
                                     WebDriverWait(self.driver, 10).until(
                                         EC.staleness_of(btn)
                                     )
-                                    logger.info("      ✓ Page transitioned successfully")
+                                    logger.info("      [YES] Page transitioned successfully")
                                 except Exception:
                                     logger.debug("      Page didn't transition (normal), waiting...")
                                     time.sleep(3)
@@ -2132,16 +2132,16 @@ class LanceSoftStrategy(BaseStrategy):
                         next_btn = WebDriverWait(self.driver, 5).until(
                             EC.element_to_be_clickable((By.XPATH, next_btn_xpath))
                         )
-                        logger.info("      ✓ Found EEO Next button via XPath")
+                        logger.info("      [YES] Found EEO Next button via XPath")
                         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
                         time.sleep(0.5)
                         self.human.human_click(next_btn)
-                        logger.info("      ✓ Clicked EEO form Next button (XPath)")
+                        logger.info("      [YES] Clicked EEO form Next button (XPath)")
                         
                         # Wait for page transition
                         try:
                             WebDriverWait(self.driver, 10).until(EC.staleness_of(next_btn))
-                            logger.info("      ✓ Page transitioned successfully")
+                            logger.info("      [YES] Page transitioned successfully")
                         except Exception:
                             time.sleep(3)
                         
@@ -2159,7 +2159,7 @@ class LanceSoftStrategy(BaseStrategy):
                         for btn in buttons_in_container:
                             btn_text = (btn.text or '').lower()
                             if 'next' in btn_text and 'back' not in btn_text:
-                                logger.info(f"      ✓ Found Next button in container")
+                                logger.info(f"      [YES] Found Next button in container")
                                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                                 time.sleep(0.5)
                                 
@@ -2171,12 +2171,12 @@ class LanceSoftStrategy(BaseStrategy):
                                     )
                                 
                                 self.human.human_click(btn)
-                                logger.info("      ✓ Clicked EEO form Next button (container search)")
+                                logger.info("      [YES] Clicked EEO form Next button (container search)")
                                 
                                 # Wait for page transition
                                 try:
                                     WebDriverWait(self.driver, 10).until(EC.staleness_of(btn))
-                                    logger.info("      ✓ Page transitioned successfully")
+                                    logger.info("      [YES] Page transitioned successfully")
                                 except Exception:
                                     time.sleep(3)
                                 
@@ -2186,9 +2186,9 @@ class LanceSoftStrategy(BaseStrategy):
                         logger.debug(f"      Strategy 3 failed: {e}")
                 
                 if not next_button_found:
-                    logger.warning("      ⚠️ Could not find EEO Next button - continuing anyway")
+                    logger.warning("      [WARNING] Could not find EEO Next button - continuing anyway")
                 else:
-                    logger.info("      ✅ EEO form Next button clicked successfully")
+                    logger.info("      [OK] EEO form Next button clicked successfully")
             
             except Exception as e:
                 logger.warning(f"      Error clicking EEO Next button: {e}")
@@ -2198,7 +2198,7 @@ class LanceSoftStrategy(BaseStrategy):
             
              # Success!
             logger.info("=" * 60)
-            logger.info("      ✅ APPLICATION SUBMITTED SUCCESSFULLY!")
+            logger.info("      [OK] APPLICATION SUBMITTED SUCCESSFULLY!")
             logger.info("=" * 60)
 
         except Exception as e:

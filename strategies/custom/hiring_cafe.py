@@ -252,7 +252,7 @@ class HiringCafeStrategy(BaseStrategy):
         self.search_url = search_url
 
         logger.info(
-            "✅ HiringCafeStrategy initialized (keywords=%s, date_fetched_past_n_days=%s)",
+            "[OK] HiringCafeStrategy initialized (keywords=%s, date_fetched_past_n_days=%s)",
             self._search_keywords,
             self._date_fetched_past_n_days,
         )
@@ -262,7 +262,7 @@ class HiringCafeStrategy(BaseStrategy):
         Hiring Cafe doesn't require login for viewing jobs.
         Returns True to indicate success.
         """
-        logger.info("ℹ️ No login required for Hiring Cafe")
+        logger.info("[INFO] No login required for Hiring Cafe")
         return True
     
     def _scroll_to_bottom(self):
@@ -300,7 +300,7 @@ class HiringCafeStrategy(BaseStrategy):
         Debug method to print page structure for troubleshooting.
         Useful when selectors don't match the actual page structure.
         """
-        logger.info("🔍 Analyzing page structure for debugging...")
+        logger.info("[SEARCH] Analyzing page structure for debugging...")
         try:
             # Get page source length
             page_source_length = len(self.driver.page_source)
@@ -359,7 +359,7 @@ class HiringCafeStrategy(BaseStrategy):
         Returns:
             True if scrolling completed, False if max scrolls reached
         """
-        logger.info("🔄 Starting infinite scroll to load all positions...")
+        logger.info(" Starting infinite scroll to load all positions...")
         
         previous_count = 0
         no_change_count = 0
@@ -368,13 +368,13 @@ class HiringCafeStrategy(BaseStrategy):
         while scroll_attempts < max_scrolls:
             # Get current job count
             current_count = self._get_current_job_count()
-            logger.info(f"📊 Current job count: {current_count} (scroll attempt {scroll_attempts + 1}/{max_scrolls})")
+            logger.info(f"[STATS] Current job count: {current_count} (scroll attempt {scroll_attempts + 1}/{max_scrolls})")
             
             # If count hasn't changed after multiple scrolls, we're done
             if current_count == previous_count:
                 no_change_count += 1
                 if no_change_count >= 3:  # No change for 3 consecutive scrolls
-                    logger.info(f"✅ No new jobs loaded after {no_change_count} scrolls. Reached end.")
+                    logger.info(f"[OK] No new jobs loaded after {no_change_count} scrolls. Reached end.")
                     return True
             else:
                 no_change_count = 0  # Reset counter when new jobs appear
@@ -400,7 +400,7 @@ class HiringCafeStrategy(BaseStrategy):
             # Human-like delay
             self.human.random_delay(0.5, 1.5)
         
-        logger.warning(f"⚠️ Reached maximum scroll attempts ({max_scrolls}). Stopping.")
+        logger.warning(f"[WARNING] Reached maximum scroll attempts ({max_scrolls}). Stopping.")
         return False
     
     def extract_all_job_ids(self) -> list[str]:
@@ -416,7 +416,7 @@ class HiringCafeStrategy(BaseStrategy):
         Each link gives job_id from href; url is base_url + href.
         """
         jobs = []
-        logger.info("🔍 Extracting job listings via viewjob links...")
+        logger.info("[SEARCH] Extracting job listings via viewjob links...")
         
         try:
             seen_ids = set()
@@ -456,11 +456,11 @@ class HiringCafeStrategy(BaseStrategy):
                     logger.warning(f"Error extracting from link: {e}")
                     continue
             
-            logger.info(f"✅ Extracted {len(jobs)} unique job listings (job IDs)")
+            logger.info(f"[OK] Extracted {len(jobs)} unique job listings (job IDs)")
             return jobs
             
         except Exception as e:
-            logger.error(f"❌ Error extracting job listings: {e}")
+            logger.error(f"[ERROR] Error extracting job listings: {e}")
             import traceback
             traceback.print_exc()
             return []
@@ -649,12 +649,12 @@ class HiringCafeStrategy(BaseStrategy):
         if limit is not None:
             ordered = ordered[:limit]
         total = len(ordered)
-        logger.info("🔗 Enriching %d jobs in batches of %d (per-keyword order)", total, batch_size)
+        logger.info(" Enriching %d jobs in batches of %d (per-keyword order)", total, batch_size)
         for start in range(0, total, batch_size):
             batch = ordered[start : start + batch_size]
             batch_num = start // batch_size + 1
             max_batch = (total + batch_size - 1) // batch_size
-            logger.info("📦 Batch %d/%d: jobs %d–%d", batch_num, max_batch, start + 1, start + len(batch))
+            logger.info(" Batch %d/%d: jobs %d%d", batch_num, max_batch, start + 1, start + len(batch))
             try:
                 for i, job in enumerate(batch):
                     jid = job.get("job_id") or job.get("external_id")
@@ -672,7 +672,7 @@ class HiringCafeStrategy(BaseStrategy):
                 if output_file:
                     self._write_jobs_payload(output_file, jobs)
             except BaseException:
-                logger.warning("⚠️ Batch %d interrupted; saving current state.", batch_num)
+                logger.warning("[WARNING] Batch %d interrupted; saving current state.", batch_num)
                 if output_file:
                     self._write_jobs_payload(output_file, jobs)
                 raise
@@ -687,21 +687,21 @@ class HiringCafeStrategy(BaseStrategy):
             keyword, self.base_url, self._date_fetched_past_n_days
         )
         try:
-            logger.info("🌐 Keyword %r -> %s", keyword, search_url)
+            logger.info(" Keyword %r -> %s", keyword, search_url)
             self.driver.get(search_url)
             time.sleep(3)
             self.human.random_delay(2, 4)
             if "hiring.cafe" not in self.driver.current_url.lower():
-                logger.warning("⚠️ Unexpected URL: %s", self.driver.current_url)
+                logger.warning("[WARNING] Unexpected URL: %s", self.driver.current_url)
             initial_count = self._get_current_job_count()
             if initial_count == 0:
                 self._debug_page_structure()
             self._scroll_until_end(max_scrolls=100, scroll_delay=2)
             jobs = self._extract_job_listings()
-            logger.info("✅ Keyword %r: %d jobs", keyword, len(jobs))
+            logger.info("[OK] Keyword %r: %d jobs", keyword, len(jobs))
             return jobs
         except Exception as e:
-            logger.error("❌ Error for keyword %r: %s", keyword, e)
+            logger.error("[ERROR] Error for keyword %r: %s", keyword, e)
             import traceback
             traceback.print_exc()
             return []
@@ -762,7 +762,7 @@ class HiringCafeStrategy(BaseStrategy):
             keyword_job_lists.append((keyword, jobs))
             self.human.random_delay(1, 2)
         merged = self._merge_jobs_unique(keyword_job_lists)
-        logger.info("✅ Unique jobs across all keywords: %d", len(merged))
+        logger.info("[OK] Unique jobs across all keywords: %d", len(merged))
         return merged
     
     def apply(self, listing: JobListing):
@@ -776,7 +776,7 @@ class HiringCafeStrategy(BaseStrategy):
         Returns:
             False (not implemented)
         """
-        logger.warning("⚠️ Apply functionality not implemented for Hiring Cafe")
+        logger.warning("[WARNING] Apply functionality not implemented for Hiring Cafe")
         return False
 
     def _write_jobs_payload(self, output_file: str, jobs: list) -> None:
@@ -805,9 +805,9 @@ class HiringCafeStrategy(BaseStrategy):
             }
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(payload, f, indent=2, ensure_ascii=False)
-            logger.info("💾 Saved %d jobs to %s", len(jobs), output_file)
+            logger.info(" Saved %d jobs to %s", len(jobs), output_file)
         except Exception as e:
-            logger.error("❌ Error saving to file: %s", e)
+            logger.error("[ERROR] Error saving to file: %s", e)
     
     def scrape_and_save(
         self,
@@ -826,20 +826,20 @@ class HiringCafeStrategy(BaseStrategy):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = f"hiring_cafe_jobs_{timestamp}.json"
         
-        logger.info("🚀 Phase 1: Infinite scroll per keyword, collect unique jobs...")
+        logger.info("[START] Phase 1: Infinite scroll per keyword, collect unique jobs...")
         if job_limit is not None:
-            logger.info("🧪 Test mode: limiting to %d jobs", job_limit)
+            logger.info(" Test mode: limiting to %d jobs", job_limit)
         
         jobs = self.find_jobs()
         
         if job_limit is not None and jobs:
             jobs = jobs[:job_limit]
-            logger.info("📋 Using first %d jobs (test limit)", len(jobs))
+            logger.info(" Using first %d jobs (test limit)", len(jobs))
         
         self._write_jobs_payload(output_file, jobs)
         
         if enrich_ats and jobs:
-            logger.info("🔗 Phase 2: Enrich in batches of %d (per-keyword order)...", ats_batch_size)
+            logger.info(" Phase 2: Enrich in batches of %d (per-keyword order)...", ats_batch_size)
             try:
                 self.enrich_jobs_with_ats_links_batched(
                     jobs,
@@ -849,11 +849,11 @@ class HiringCafeStrategy(BaseStrategy):
                 )
                 self._write_jobs_payload(output_file, jobs)
             except BaseException:
-                logger.warning("⚠️ Enrichment interrupted; current state saved to JSON.")
+                logger.warning("[WARNING] Enrichment interrupted; current state saved to JSON.")
                 self._write_jobs_payload(output_file, jobs)
                 raise
         
         if not jobs:
-            logger.warning("⚠️ No jobs found to save")
+            logger.warning("[WARNING] No jobs found to save")
         return jobs
 

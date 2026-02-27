@@ -24,7 +24,7 @@ class CapgeminiStrategy(BaseStrategy):
     
     Features:
     - Login-based application flow
-    - Multi-step navigation (Capgemini → SuccessFactors)
+    - Multi-step navigation (Capgemini  SuccessFactors)
     - Human-like form filling
     """
     
@@ -46,14 +46,14 @@ class CapgeminiStrategy(BaseStrategy):
         self.password = settings.CAPGEMINI_PASSWORD
         
         if not self.email or not self.password:
-            logger.warning("⚠️ Capgemini: No credentials found in .env file!")
+            logger.warning("[WARNING] Capgemini: No credentials found in .env file!")
             logger.warning("   Please set CAPGEMINI_EMAIL and CAPGEMINI_PASSWORD")
         
         # Initial log
         if self.db_session:
-            logger.info("✅ Capgemini: Database session available")
+            logger.info("[OK] Capgemini: Database session available")
         else:
-            logger.warning("⚠️ Capgemini: No database session")
+            logger.warning("[WARNING] Capgemini: No database session")
 
     def _load_selectors(self):
         """Load selectors from database configuration."""
@@ -61,7 +61,7 @@ class CapgeminiStrategy(BaseStrategy):
         application = self.selectors.get('application', {})
         
         if not listing or not application:
-            logger.error("❌ Capgemini: Missing critical selectors in database!")
+            logger.error("[ERROR] Capgemini: Missing critical selectors in database!")
         
         return {
             'listing': listing,
@@ -81,7 +81,7 @@ class CapgeminiStrategy(BaseStrategy):
             
         if not val:
             if required:
-                msg = f"❌ Capgemini: Critical selector '{key}'" + (f"['{subkey}']" if subkey else "") + f" missing in database '{category}' config!"
+                msg = f"[ERROR] Capgemini: Critical selector '{key}'" + (f"['{subkey}']" if subkey else "") + f" missing in database '{category}' config!"
                 logger.error(msg)
                 raise RuntimeError(msg)
             return None
@@ -113,15 +113,15 @@ class CapgeminiStrategy(BaseStrategy):
         """
         Combined workflow: Find and apply to jobs immediately.
         """
-        logger.info("🔍 Capgemini: Starting combined find-and-apply workflow")
+        logger.info("[SEARCH] Capgemini: Starting combined find-and-apply workflow")
         
         # Strictly database-driven keywords
         keywords = self.selectors.get('listing', {}).get('search_keywords')
         if not keywords:
-            logger.error("❌ Capgemini: Critically missing 'search_keywords' in database configuration!")
+            logger.error("[ERROR] Capgemini: Critically missing 'search_keywords' in database configuration!")
             return 0
             
-        logger.info(f"  📊 Using {len(keywords)} keywords from database")
+        logger.info(f"  [STATS] Using {len(keywords)} keywords from database")
         
         total_applied = 0
         seen_urls = set()
@@ -129,7 +129,7 @@ class CapgeminiStrategy(BaseStrategy):
         for keyword in keywords:
             keyword = keyword.strip()
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Search: {keyword}")
+            logger.info(f"[SEARCH] Search: {keyword}")
             logger.info(f"{'='*60}")
             
             # 1. Search for jobs
@@ -141,11 +141,11 @@ class CapgeminiStrategy(BaseStrategy):
                 if url and url not in seen_urls:
                     seen_urls.add(url)
                     
-                    logger.info(f"\n🚀 Applying to: {listing.get('job_title')}")
+                    logger.info(f"\n[START] Applying to: {listing.get('job_title')}")
                     if self.apply(listing):
                         total_applied += 1
                         # Pause after submission
-                        logger.info("  ✓ Human Behavior: Pausing for 3 seconds...")
+                        logger.info("  [YES] Human Behavior: Pausing for 3 seconds...")
                         time.sleep(3)
                 else:
                     logger.debug(f"Capgemini: Skipping duplicate job: {listing.get('job_title')}")
@@ -154,7 +154,7 @@ class CapgeminiStrategy(BaseStrategy):
             if len(keywords) > 1:
                 time.sleep(random.uniform(3, 6))
                 
-        logger.info(f"\n✅ Capgemini: Combined workflow finished. Total applications: {total_applied}")
+        logger.info(f"\n[OK] Capgemini: Combined workflow finished. Total applications: {total_applied}")
         return total_applied
 
     def find_jobs(self):
@@ -169,7 +169,7 @@ class CapgeminiStrategy(BaseStrategy):
         for keyword in keywords:
             keyword = keyword.strip()
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Capgemini Search: {keyword}")
+            logger.info(f"[SEARCH] Capgemini Search: {keyword}")
             logger.info(f"{'='*60}")
             
             listings = self._perform_search(keyword)
@@ -261,7 +261,7 @@ class CapgeminiStrategy(BaseStrategy):
                             
                             if existing:
                                 if existing.status in ['applied', 'success']:
-                                    logger.info(f"  ⏭️ Found job already applied: {title} ({external_id})")
+                                    logger.info(f"   Found job already applied: {title} ({external_id})")
                                     # Note: We still append to listings so the run loop sees it for dry-run context
                             else:
                                 job_listing = JobListing(
@@ -273,9 +273,9 @@ class CapgeminiStrategy(BaseStrategy):
                                 )
                                 self.db_session.add(job_listing)
                                 self.db_session.commit()
-                                logger.info(f"  💾 Saved to DB: {title} ({external_id})")
+                                logger.info(f"   Saved to DB: {title} ({external_id})")
                         except Exception as db_err:
-                            logger.warning(f"  ⚠️ DB save failed for {title}: {db_err}")
+                            logger.warning(f"  [WARNING] DB save failed for {title}: {db_err}")
                             self.db_session.rollback()
                     
                     listings.append(job_data)
@@ -298,7 +298,7 @@ class CapgeminiStrategy(BaseStrategy):
     def apply(self, listing):
         """
         Apply to a specific job listing.
-        Handles multi-step flow: Capgemini → SuccessFactors → Login → Application
+        Handles multi-step flow: Capgemini  SuccessFactors  Login  Application
         """
         # Support both dictionary and object inputs
         if isinstance(listing, dict):
@@ -327,14 +327,14 @@ class CapgeminiStrategy(BaseStrategy):
                     self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", card_element)
                     time.sleep(1)
                     self.human.human_click(card_element)
-                    logger.info("  ✓ Clicked job card")
+                    logger.info("  [YES] Clicked job card")
                     time.sleep(3)
                 except Exception as e:
                     logger.warning(f"Could not click card: {e}, navigating directly")
                     self.driver.get(job_url)
                     time.sleep(3)
             else:
-                logger.info(f"  → Navigating to {job_url}")
+                logger.info(f"   Navigating to {job_url}")
                 self.driver.get(job_url)
                 time.sleep(3)
             
@@ -368,7 +368,7 @@ class CapgeminiStrategy(BaseStrategy):
             
             # Check if a new window/tab opened
             if len(self.driver.window_handles) > 1:
-                logger.info("  → Switching to new window/tab")
+                logger.info("   Switching to new window/tab")
                 self.driver.switch_to.window(self.driver.window_handles[-1])
                 
             try:
@@ -376,7 +376,7 @@ class CapgeminiStrategy(BaseStrategy):
                     lambda d: "successfactors" in d.current_url.lower() or "sfcareer" in d.current_url.lower()
                 )
             except Exception as e:
-                logger.warning(f"  ⚠️ Timeout waiting for SuccessFactors URL. Current URL: {self.driver.current_url}")
+                logger.warning(f"  [WARNING] Timeout waiting for SuccessFactors URL. Current URL: {self.driver.current_url}")
                 # Check again if another window appeared late
                 if len(self.driver.window_handles) > 1:
                     self.driver.switch_to.window(self.driver.window_handles[-1])
@@ -433,10 +433,10 @@ class CapgeminiStrategy(BaseStrategy):
         """Helper to handle SuccessFactors custom dropdowns with iframe support."""
         selector = self.get_sel('application', 'form_fields', field_name, required=False)
         if not selector:
-            logger.debug(f"  ⏭️ No selector for {field_name}")
+            logger.debug(f"   No selector for {field_name}")
             return False
             
-        logger.info(f"  📝 Selecting '{option_text}' for {field_name} (Sel: {selector})")
+        logger.info(f"   Selecting '{option_text}' for {field_name} (Sel: {selector})")
         
         # Helper to find and click trigger in current context
         def find_and_click_trigger(ctx):
@@ -480,7 +480,7 @@ class CapgeminiStrategy(BaseStrategy):
                         self.driver.switch_to.default_content()
                 
                 if not found_in_iframe:
-                    logger.warning(f"  ⚠️ Could not find trigger for {field_name}")
+                    logger.warning(f"  [WARNING] Could not find trigger for {field_name}")
                     return False
 
             time.sleep(1.5)
@@ -504,14 +504,14 @@ class CapgeminiStrategy(BaseStrategy):
                         EC.element_to_be_clickable((By.XPATH, xpath))
                     )
                     option.click()
-                    logger.info(f"  ✓ Set {field_name} to '{option_text}'")
+                    logger.info(f"  [YES] Set {field_name} to '{option_text}'")
                     option_found = True
                     break
                 except:
                     continue
             
             if not option_found:
-                logger.warning(f"  ⚠️ Could not find option '{option_text}' for {field_name}")
+                logger.warning(f"  [WARNING] Could not find option '{option_text}' for {field_name}")
                 self.driver.save_screenshot(f"/Users/bavishsaireddy/project-job-application-engine/logs/error_option_{field_name}.png")
                 return False
                 
@@ -519,7 +519,7 @@ class CapgeminiStrategy(BaseStrategy):
             return True
             
         except Exception as e:
-            logger.warning(f"  ⚠️ Failed to handle dropdown {field_name}: {e}")
+            logger.warning(f"  [WARNING] Failed to handle dropdown {field_name}: {e}")
             self.driver.save_screenshot(f"/Users/bavishsaireddy/project-job-application-engine/logs/error_dropdown_{field_name}.png")
             return False
         finally:
@@ -539,7 +539,7 @@ class CapgeminiStrategy(BaseStrategy):
                     # Check for phone field or any other common form field
                     already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
                     if already_on_form and already_on_form[0].is_displayed():
-                        logger.info("  ✓ Already logged in and on application form")
+                        logger.info("  [YES] Already logged in and on application form")
                         return True
                 except:
                     pass
@@ -550,7 +550,7 @@ class CapgeminiStrategy(BaseStrategy):
                 # Try finding it multiple ways
                 cookie_btns = self.driver.find_elements(By.CSS_SELECTOR, cookie_btn_sel)
                 if cookie_btns:
-                    logger.info("  🍪 Dismissing cookie banner using JS")
+                    logger.info("   Dismissing cookie banner using JS")
                     self.driver.execute_script("arguments[0].click();", cookie_btns[0])
                     # Wait for it to disappear
                     WebDriverWait(self.driver, 5).until(
@@ -564,7 +564,7 @@ class CapgeminiStrategy(BaseStrategy):
             email_input = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, email_sel))
             )
-            logger.info(f"  ⌨️ Entering email: {self.email}")
+            logger.info(f"   Entering email: {self.email}")
             
             # Clear field multiple ways to ensure it's empty
             self.driver.execute_script("arguments[0].value = '';", email_input)
@@ -597,7 +597,7 @@ class CapgeminiStrategy(BaseStrategy):
                 # Trigger input events then send ENTER as a primary submission attempt
                 password_input.send_keys(Keys.END)
                 password_input.send_keys(Keys.ENTER)
-                logger.info("  ⌨️ Sent ENTER to password field")
+                logger.info("   Sent ENTER to password field")
             except Exception as pe:
                 logger.debug(f"  Password ENTER failed: {pe}")
             time.sleep(2)
@@ -614,7 +614,7 @@ class CapgeminiStrategy(BaseStrategy):
                 buttons = self.driver.find_elements(By.ID, "fbqa_signin")
                 for btn in buttons:
                     if btn.is_displayed():
-                        logger.info("  🚀 Found visible Sign In button by ID")
+                        logger.info("  [START] Found visible Sign In button by ID")
                         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                         time.sleep(1)
                         try:
@@ -634,7 +634,7 @@ class CapgeminiStrategy(BaseStrategy):
                     buttons = self.driver.find_elements(By.CSS_SELECTOR, "#fbqa_signin")
                     for btn in buttons:
                         if btn.is_displayed():
-                            logger.info("  🚀 Found visible Sign In button by CSS selector")
+                            logger.info("  [START] Found visible Sign In button by CSS selector")
                             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                             try:
                                 btn.click()
@@ -649,7 +649,7 @@ class CapgeminiStrategy(BaseStrategy):
             if not sign_in_clicked:
                 try:
                     submit_btn = self.driver.find_element(By.NAME, "fbqa_signin")
-                    logger.info("  🚀 Found Sign In button by NAME")
+                    logger.info("  [START] Found Sign In button by NAME")
                     self.driver.execute_script("arguments[0].click();", submit_btn)
                     sign_in_clicked = True
                 except Exception as e3:
@@ -668,10 +668,10 @@ class CapgeminiStrategy(BaseStrategy):
                         return 'not_found';
                     """)
                     if result and 'clicked' in result:
-                        logger.info(f"  🚀 Clicked Sign In via JS ({result})")
+                        logger.info(f"  [START] Clicked Sign In via JS ({result})")
                         sign_in_clicked = True
                     else:
-                        logger.warning(f"  ⚠️ JS result: {result}")
+                        logger.warning(f"  [WARNING] JS result: {result}")
                 except Exception as e4:
                     logger.debug(f"  JS lookup failed: {e4}")
             
@@ -679,7 +679,7 @@ class CapgeminiStrategy(BaseStrategy):
             if not sign_in_clicked:
                 try:
                     submit_btn = self.driver.find_element(By.XPATH, "//button[contains(text(),'Sign In')]")
-                    logger.info("  🚀 Found Sign In button by XPath text")
+                    logger.info("  [START] Found Sign In button by XPath text")
                     self.driver.execute_script("arguments[0].click();", submit_btn)
                     sign_in_clicked = True
                 except Exception as e5:
@@ -688,12 +688,12 @@ class CapgeminiStrategy(BaseStrategy):
             # Strategy 6: Check iframes
             if not sign_in_clicked:
                 iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
-                logger.info(f"  🔍 Checking {len(iframes)} iframe(s) for Sign In button")
+                logger.info(f"  [SEARCH] Checking {len(iframes)} iframe(s) for Sign In button")
                 for i, iframe in enumerate(iframes):
                     try:
                         self.driver.switch_to.frame(iframe)
                         btn = self.driver.find_element(By.ID, "fbqa_signin")
-                        logger.info(f"  🚀 Found Sign In in iframe {i}")
+                        logger.info(f"  [START] Found Sign In in iframe {i}")
                         self.driver.execute_script("arguments[0].click();", btn)
                         sign_in_clicked = True
                         self.driver.switch_to.default_content()
@@ -702,15 +702,15 @@ class CapgeminiStrategy(BaseStrategy):
                         self.driver.switch_to.default_content()
             
             if not sign_in_clicked:
-                logger.error("  ❌ Could NOT find Sign In button with ANY strategy")
+                logger.error("  [ERROR] Could NOT find Sign In button with ANY strategy")
                 # Dump page source snippet for debugging
                 try:
                     src = self.driver.page_source
                     if 'fbqa_signin' in src:
                         idx = src.index('fbqa_signin')
-                        logger.info(f"  📄 Button IS in page source: ...{src[max(0,idx-100):idx+100]}...")
+                        logger.info(f"   Button IS in page source: ...{src[max(0,idx-100):idx+100]}...")
                     else:
-                        logger.warning("  📄 'fbqa_signin' NOT in page source at all")
+                        logger.warning("   'fbqa_signin' NOT in page source at all")
                 except:
                     pass
             else:
@@ -726,12 +726,12 @@ class CapgeminiStrategy(BaseStrategy):
                 error_msg = self.driver.find_elements(By.CSS_SELECTOR, ".error-message, .alert-danger, #loginError")
                 if error_msg and any(e.is_displayed() for e in error_msg):
                     active_error = next(e.text for e in error_msg if e.is_displayed())
-                    logger.warning(f"  ⚠️ Login error detected: {active_error}")
+                    logger.warning(f"  [WARNING] Login error detected: {active_error}")
                     self.driver.save_screenshot("/Users/bavishsaireddy/project-job-application-engine/logs/login_error_visible.png")
             except:
                 pass
                 
-            logger.info("  ✓ Login attempt finished")
+            logger.info("  [YES] Login attempt finished")
             
         except Exception as e:
             self.driver.save_screenshot("/Users/bavishsaireddy/project-job-application-engine/logs/login_exception.png")
@@ -749,11 +749,11 @@ class CapgeminiStrategy(BaseStrategy):
             'phone': applicant.get('phone')
         }
         
-        logger.info("  ℹ️ First name, last name, and email are pre-filled from profile")
+        logger.info("  [INFO] First name, last name, and email are pre-filled from profile")
         
         for field, value in fields_map.items():
             if not value:
-                logger.debug(f"  ⏭️ Skipping {field}: no value provided")
+                logger.debug(f"   Skipping {field}: no value provided")
                 continue
                 
             try:
@@ -765,16 +765,16 @@ class CapgeminiStrategy(BaseStrategy):
                     # Check if field is already filled
                     current_value = elem.get_attribute('value')
                     if current_value:
-                        logger.info(f"  ℹ️ {field} already filled with: {current_value}")
+                        logger.info(f"  [INFO] {field} already filled with: {current_value}")
                         continue
                     
                     self.human.fill_text_field(elem, value)
                     time.sleep(random.uniform(0.7, 1.2))
-                    logger.info(f"  ✓ Filled {field}")
+                    logger.info(f"  [YES] Filled {field}")
                 else:
-                    logger.debug(f"  ⏭️ No selector found for {field}")
+                    logger.debug(f"   No selector found for {field}")
             except Exception as e:
-                logger.warning(f"  ⚠️ Could not fill {field}: {e}")
+                logger.warning(f"  [WARNING] Could not fill {field}: {e}")
 
     def _handle_work_authorization(self):
         """
@@ -785,7 +785,7 @@ class CapgeminiStrategy(BaseStrategy):
             answers = self.selectors.get('application', {}).get('questionnaire_answers', {})
             
             if not answers:
-                logger.warning("  ⚠️ No questionnaire_answers found in database configuration")
+                logger.warning("  [WARNING] No questionnaire_answers found in database configuration")
                 return
                 
             for field, answer in answers.items():
@@ -793,9 +793,9 @@ class CapgeminiStrategy(BaseStrategy):
                 # Small delay between selections for stability
                 time.sleep(random.uniform(0.5, 1.0))
             
-            logger.info("  ✓ All questionnaire fields handled from database config")
+            logger.info("  [YES] All questionnaire fields handled from database config")
         except Exception as e:
-            logger.warning(f"  ⚠️ Error in handle_work_authorization loop: {e}")
+            logger.warning(f"  [WARNING] Error in handle_work_authorization loop: {e}")
 
     def _upload_resume(self):
         """
@@ -807,7 +807,7 @@ class CapgeminiStrategy(BaseStrategy):
         resume_selector = self.get_sel('application', 'form_fields', 'resume_upload', required=False)
         
         if not resume_selector:
-            logger.warning("  ⚠️ No resume upload selector found")
+            logger.warning("  [WARNING] No resume upload selector found")
             return
         
         try:
@@ -825,8 +825,8 @@ class CapgeminiStrategy(BaseStrategy):
             has_existing_resume = any(indicator in page_text for indicator in resume_indicators)
             
             if has_existing_resume:
-                logger.info("  ℹ️ Resume appears to be already uploaded")
-                logger.info("  ℹ️ Skipping resume upload (using existing resume)")
+                logger.info("  [INFO] Resume appears to be already uploaded")
+                logger.info("  [INFO] Skipping resume upload (using existing resume)")
                 # If you want to force upload a new resume, you can add logic here
                 # For now, we'll use the existing resume
                 return
@@ -834,7 +834,7 @@ class CapgeminiStrategy(BaseStrategy):
             # No existing resume found, proceed with upload
             resume_path = self.get_resume_path()
             if not resume_path:
-                logger.warning("  ⚠️ No resume path configured")
+                logger.warning("  [WARNING] No resume path configured")
                 return
                 
             file_input = self.driver.find_element(By.CSS_SELECTOR, resume_selector)
@@ -844,12 +844,12 @@ class CapgeminiStrategy(BaseStrategy):
                 file_input
             )
             file_input.send_keys(resume_path)
-            logger.info(f"  ✓ Resume uploaded: {os.path.basename(resume_path)}")
+            logger.info(f"  [YES] Resume uploaded: {os.path.basename(resume_path)}")
             time.sleep(2)
             
         except Exception as e:
-            logger.warning(f"  ⚠️ Resume upload check/upload failed: {e}")
-            logger.info("  ℹ️ Continuing with application (may use existing resume)")
+            logger.warning(f"  [WARNING] Resume upload check/upload failed: {e}")
+            logger.info("  [INFO] Continuing with application (may use existing resume)")
 
     def _submit_application(self, listing, job_url, job_title):
         """Submit the application form."""
@@ -910,17 +910,17 @@ class CapgeminiStrategy(BaseStrategy):
             
             # Check URL change
             if "success" in self.driver.current_url.lower() or "confirmation" in self.driver.current_url.lower():
-                logger.info("  ✓ Verified via URL redirection")
+                logger.info("  [YES] Verified via URL redirection")
                 return True
             
             # Check page content
             page_text = self.driver.find_element(By.TAG_NAME, "body").text
             for indicator in success_indicators:
                 if indicator.lower() in page_text.lower():
-                    logger.info(f"  ✓ Verified via confirmation text: '{indicator}'")
+                    logger.info(f"  [YES] Verified via confirmation text: '{indicator}'")
                     return True
             
-            logger.warning("  ⚠️ Submission verification could not find success indicators")
+            logger.warning("  [WARNING] Submission verification could not find success indicators")
             return False
         except Exception as e:
             logger.error(f"Verification error: {e}")
@@ -952,7 +952,7 @@ class CapgeminiStrategy(BaseStrategy):
                         db_listing.updated_at = datetime.now()
                         self.db_session.flush()
                     except Exception as db_err:
-                        logger.warning(f"  ⚠️ Could not update job_listing status (DB quirk?): {db_err}")
+                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
                         self.db_session.rollback()
                         # Get ID again
                         db_listing = self.db_session.query(JobListing).filter(
@@ -961,14 +961,14 @@ class CapgeminiStrategy(BaseStrategy):
                         listing_id = db_listing.id if db_listing else None
                         self.db_session.flush()
                     except Exception as db_err:
-                        logger.warning(f"  ⚠️ Could not update job_listing status (DB quirk?): {db_err}")
+                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
                         self.db_session.rollback()
                         # Refetch to ensure session is clean
                         db_listing = self.db_session.query(JobListing).filter(JobListing.job_url == job_url).first()
                         listing_id = db_listing.id if db_listing else None
                         self.db_session.flush()
                     except Exception as db_err:
-                        logger.warning(f"  ⚠️ Could not update job_listing status (DB quirk?): {db_err}")
+                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
                         self.db_session.rollback()
                         # Refetch to ensure session is clean
                         db_listing = self.db_session.query(JobListing).filter(JobListing.job_url == job_url).first()
@@ -998,7 +998,7 @@ class CapgeminiStrategy(BaseStrategy):
                     self.db_session.add(app)
                 
                 self.db_session.commit()
-                logger.info(f"  📊 Application record updated in database ({status})")
+                logger.info(f"  [STATS] Application record updated in database ({status})")
             except Exception as e:
                 logger.error(f"Failed to record application in DB: {e}")
                 self.db_session.rollback()

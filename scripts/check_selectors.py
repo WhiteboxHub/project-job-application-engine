@@ -25,20 +25,20 @@ def check_selectors():
         site = cursor.fetchone()
         
         if not site:
-            print("❌ Infosys site not found in job_sites table.")
+            print("[ERROR] Infosys site not found in job_sites table.")
             return
 
         site_id = site['id']
-        print(f"✅ Found Infosys Site ID: {site_id}")
+        print(f"[OK] Found Infosys Site ID: {site_id}")
         
         # Get Selectors
         cursor.execute(f"SELECT selector_name, selector_value, selector_type FROM site_selectors WHERE job_site_id = {site_id}")
         rows = cursor.fetchall()
         
         if not rows:
-            print("❌ No selectors found in DB for Infosys.")
+            print("[ERROR] No selectors found in DB for Infosys.")
         else:
-            print(f"✅ Found {len(rows)} selectors:")
+            print(f"[OK] Found {len(rows)} selectors:")
             for row in rows:
                 print(f"  - {row['selector_name']} ({row['selector_type']}): {row['selector_value']}")
                 
@@ -46,7 +46,7 @@ def check_selectors():
         conn.close()
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
 
 if __name__ == "__main__":
     check_selectors()

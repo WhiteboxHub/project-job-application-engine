@@ -40,9 +40,9 @@ class KForceStrategy(BaseStrategy):
         
         # Initial log
         if self.db_session:
-            logger.info("✅ KForce: Database session available")
+            logger.info("[OK] KForce: Database session available")
         else:
-            logger.warning("⚠️ KForce: No database session - strategy may fail if selectors not pre-loaded")
+            logger.warning("[WARNING] KForce: No database session - strategy may fail if selectors not pre-loaded")
 
     def _load_selectors(self):
         """
@@ -53,7 +53,7 @@ class KForceStrategy(BaseStrategy):
         application = self.selectors.get('application', {})
         
         if not listing or not application:
-            logger.error("❌ KForce: Missing critical selectors in database!")
+            logger.error("[ERROR] KForce: Missing critical selectors in database!")
             # We still return the dict, but major methods should check for keys
         
         return {
@@ -74,7 +74,7 @@ class KForceStrategy(BaseStrategy):
             
         if not val:
             if required:
-                msg = f"❌ KForce: Critical selector '{key}'" + (f"['{subkey}']" if subkey else "") + f" missing in database '{category}' config!"
+                msg = f"[ERROR] KForce: Critical selector '{key}'" + (f"['{subkey}']" if subkey else "") + f" missing in database '{category}' config!"
                 logger.error(msg)
                 raise RuntimeError(msg)
             return None
@@ -108,15 +108,15 @@ class KForceStrategy(BaseStrategy):
         Iterates through search configurations, performs search, and applies to each unique job.
         Returns the number of successful applications.
         """
-        logger.info("🔍 KForce: Starting combined find-and-apply workflow")
+        logger.info("[SEARCH] KForce: Starting combined find-and-apply workflow")
         
         # Strictly database-driven keywords
         keywords = self.selectors.get('listing', {}).get('search_keywords')
         if not keywords:
-            logger.error("❌ KForce: Critically missing 'search_keywords' in database configuration!")
+            logger.error("[ERROR] KForce: Critically missing 'search_keywords' in database configuration!")
             return 0
             
-        logger.info(f"  📊 Using {len(keywords)} keywords from database")
+        logger.info(f"  [STATS] Using {len(keywords)} keywords from database")
         location = None # Removed location search as per user request
         
         total_applied = 0
@@ -124,7 +124,7 @@ class KForceStrategy(BaseStrategy):
         
         for keyword in keywords:
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Search: {keyword} (Location: {location})")
+            logger.info(f"[SEARCH] Search: {keyword} (Location: {location})")
             logger.info(f"{'='*60}")
             
             # 1. Search for jobs
@@ -137,11 +137,11 @@ class KForceStrategy(BaseStrategy):
                     seen_urls.add(url)
                     
                     # We have a listing, now apply
-                    logger.info(f"\n🚀 Applying to: {listing.get('job_title')}")
+                    logger.info(f"\n[START] Applying to: {listing.get('job_title')}")
                     if self.apply(listing):
                         total_applied += 1
                         # Human Behavior: Pause after submission before next job
-                        logger.info("  ✓ Human Behavior: Pausing for 3 seconds...")
+                        logger.info("  [YES] Human Behavior: Pausing for 3 seconds...")
                         time.sleep(3)
                 else:
                     logger.debug(f"KForce: Skipping duplicate job: {listing.get('job_title')}")
@@ -150,7 +150,7 @@ class KForceStrategy(BaseStrategy):
             if len(keywords) > 1:
                 time.sleep(random.uniform(3, 6))
                 
-        logger.info(f"\n✅ KForce: Combined workflow finished. Total applications: {total_applied}")
+        logger.info(f"\n[OK] KForce: Combined workflow finished. Total applications: {total_applied}")
         return total_applied
 
     def find_jobs(self):
@@ -168,7 +168,7 @@ class KForceStrategy(BaseStrategy):
         
         for keyword in keywords:
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 KForce Search: {keyword} (Location: {location})")
+            logger.info(f"[SEARCH] KForce Search: {keyword} (Location: {location})")
             logger.info(f"{'='*60}")
             
             listings = self._perform_search(keyword, location)
@@ -194,7 +194,7 @@ class KForceStrategy(BaseStrategy):
         return all_listings
 
     def _perform_search(self, keyword, location=None):
-        """Internal method for a single search iteration — uses multi-fallback selectors."""
+        """Internal method for a single search iteration  uses multi-fallback selectors."""
 
         # ------------------------------------------------------------------ #
         # Candidate input selectors (try them in order until one works)       #
@@ -249,21 +249,21 @@ class KForceStrategy(BaseStrategy):
                 time.sleep(0.5)
                 success = self.human.fill_text_field(input_el, keyword)
                 if success:
-                    logger.info(f"  ✓ Entered keyword: {keyword}")
+                    logger.info(f"  [YES] Entered keyword: {keyword}")
             else:
                 # Fallback: navigate directly to search URL with query param
                 encoded = keyword.replace(' ', '+')
                 fallback_url = f"https://www.kforce.com/find-work/search-jobs/?keyword={encoded}&location=United+States"
-                logger.warning(f"  ⚠️ Could not find search input — navigating to URL: {fallback_url}")
+                logger.warning(f"  [WARNING] Could not find search input  navigating to URL: {fallback_url}")
                 self.driver.get(fallback_url)
                 time.sleep(4)
 
-            # Try to click search button (optional — some React sites search live)
+            # Try to click search button (optional  some React sites search live)
             btn_el, _ = _find_first(BUTTON_SELECTORS, timeout=3)
             if btn_el:
                 try:
                     self.human.human_click(btn_el)
-                    logger.info("  ✓ Clicked search button")
+                    logger.info("  [YES] Clicked search button")
                     time.sleep(5)
                 except Exception as be:
                     logger.debug(f"KForce: Button click failed (OK): {be}")
@@ -273,7 +273,7 @@ class KForceStrategy(BaseStrategy):
                     from selenium.webdriver.common.keys import Keys
                     if input_el:
                         input_el.send_keys(Keys.RETURN)
-                        logger.info("  ✓ Pressed ENTER to search")
+                        logger.info("  [YES] Pressed ENTER to search")
                         time.sleep(5)
                 except Exception:
                     time.sleep(3)
@@ -301,7 +301,7 @@ class KForceStrategy(BaseStrategy):
                 logger.info(f"KForce: Found {len(listings)} job(s) for keyword '{keyword}'")
                 csv_tracker.add_discovered_jobs('kforce', listings)
             else:
-                logger.warning(f"KForce: No jobs found for '{keyword}' — selectors may need updating for current site layout")
+                logger.warning(f"KForce: No jobs found for '{keyword}'  selectors may need updating for current site layout")
 
             return listings
 
@@ -355,7 +355,7 @@ class KForceStrategy(BaseStrategy):
             initiator = WebDriverWait(self.driver, 20).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, apply_initiator))
             )
-            logger.info("  ✓ Found initiator, clicking...")
+            logger.info("  [YES] Found initiator, clicking...")
             self.human.human_click(initiator)
             time.sleep(2)
             
@@ -365,7 +365,7 @@ class KForceStrategy(BaseStrategy):
             apply_link = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, apply_link_sel))
             )
-            logger.info("  ✓ Found dropdown option, clicking...")
+            logger.info("  [YES] Found dropdown option, clicking...")
             self.human.human_click(apply_link)
             
             # Wait for application form to load
@@ -395,7 +395,7 @@ class KForceStrategy(BaseStrategy):
                     self.human.fill_text_field(elem, value)
                     time.sleep(random.uniform(0.7, 1.2))
                 else:
-                    logger.warning(f"  ⚠️ Skipping field '{field}': missing selector or value")
+                    logger.warning(f"  [WARNING] Skipping field '{field}': missing selector or value")
             
             # 5. Handle State dropdown
             state_val = applicant.get('state')
@@ -417,17 +417,17 @@ class KForceStrategy(BaseStrategy):
             resume_selector = self.get_sel('application', 'form_fields', 'resume_upload')
             
             if resume_path and resume_selector:
-                logger.info(f"  ✓ Found resume: {os.path.basename(resume_path)}")
+                logger.info(f"  [YES] Found resume: {os.path.basename(resume_path)}")
                 try:
                     file_input = self.driver.find_element(By.CSS_SELECTOR, resume_selector)
                     # Unhide if necessary
                     self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';", file_input)
                     file_input.send_keys(resume_path)
-                    logger.info("  ✓ Resume attached successfully")
+                    logger.info("  [YES] Resume attached successfully")
                 except Exception as e:
-                    logger.error(f"  ❌ Resume upload failed: {e}")
+                    logger.error(f"  [ERROR] Resume upload failed: {e}")
             else:
-                logger.warning("  ⚠️ Skipping resume upload: path or selector missing")
+                logger.warning("  [WARNING] Skipping resume upload: path or selector missing")
             
             # 7. Questionnaire / Eligibility Radios
             answers = self.selectors.get('application', {}).get('questionnaire_answers', {})
@@ -479,9 +479,9 @@ class KForceStrategy(BaseStrategy):
                         selected = True
                         
                     if selected:
-                        logger.info(f"  ✓ Selected '{target_val}' for {field}")
+                        logger.info(f"  [YES] Selected '{target_val}' for {field}")
                 except Exception as e:
-                    logger.warning(f"  ⚠️ Could not handle {field}: {e}")
+                    logger.warning(f"  [WARNING] Could not handle {field}: {e}")
 
             # 8. Click 'Next' if it exists (Multi-step form support)
             next_sel = self.get_sel('application', 'form_fields', 'next_btn', required=False)
@@ -561,17 +561,17 @@ class KForceStrategy(BaseStrategy):
             
             # 1. Check URL change (common in KForce/ATS)
             if "Success" in self.driver.current_url or "confirmation" in self.driver.current_url.lower():
-                logger.info("  ✓ Verified via URL redirection")
+                logger.info("  [YES] Verified via URL redirection")
                 return True
             
             # 2. Check page content
             page_text = self.driver.find_element(By.TAG_NAME, "body").text
             for indicator in success_indicators:
                 if indicator.lower() in page_text.lower():
-                    logger.info(f"  ✓ Verified via confirmation text: '{indicator}'")
+                    logger.info(f"  [YES] Verified via confirmation text: '{indicator}'")
                     return True
             
-            logger.warning("  ⚠️ Submission verification could not find success indicators")
+            logger.warning("  [WARNING] Submission verification could not find success indicators")
             return False
         except Exception as e:
             logger.error(f"Verification error: {e}")
@@ -617,9 +617,9 @@ class KForceStrategy(BaseStrategy):
                         break
                     except Exception as commit_error:
                         if i == 2: raise
-                        logger.warning(f"  ⚠️ Database commit failed (attempt {i+1}), retrying... {commit_error}")
+                        logger.warning(f"  [WARNING] Database commit failed (attempt {i+1}), retrying... {commit_error}")
                         time.sleep(1)
-                logger.info(f"  📊 Application record saved to database ({status})")
+                logger.info(f"  [STATS] Application record saved to database ({status})")
             except Exception as e:
                 logger.error(f"Failed to record application in DB: {e}")
                 self.db_session.rollback()

@@ -1,5 +1,5 @@
 """
-Candidate Loader — Merges parsed_resume.json + guest_form_data.json
+Candidate Loader  Merges parsed_resume.json + guest_form_data.json
 into a single dict used by the scheduler to drive form filling.
 
 Priority order: guest_form_data.json OVERRIDES parsed_resume.json
@@ -41,7 +41,7 @@ class CandidateLoader:
         guest_data  = CandidateLoader._load_json(_GUEST_JSON,  "guest_form_data.json")
 
         if not resume_data and not guest_data:
-            logger.error("❌ Both JSON files missing — cannot load candidate data")
+            logger.error("[ERROR] Both JSON files missing  cannot load candidate data")
             return {}
 
         # --- Build unified candidate dict ---
@@ -126,7 +126,7 @@ class CandidateLoader:
             candidate["applicant"] = applicant
 
         logger.info(
-            f"✅ CandidateLoader: loaded {candidate.get('first_name')} {candidate.get('last_name')} "
+            f"[OK] CandidateLoader: loaded {candidate.get('first_name')} {candidate.get('last_name')} "
             f"| keywords={candidate.get('search', {}).get('keywords', [])}"
         )
 
@@ -143,5 +143,5 @@ class CandidateLoader:
             logger.warning(f"CandidateLoader: {label} not found at {path}")
             return {}
         except json.JSONDecodeError as e:
-            logger.error(f"CandidateLoader: {label} is invalid JSON — {e}")
+            logger.error(f"CandidateLoader: {label} is invalid JSON  {e}")
             return {}

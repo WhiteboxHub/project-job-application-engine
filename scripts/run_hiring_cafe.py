@@ -46,7 +46,7 @@ def main():
         )
         
         if jobs:
-            logger.info(f"✅ Successfully scraped and saved {len(jobs)} jobs to {args.output}")
+            logger.info(f"[OK] Successfully scraped and saved {len(jobs)} jobs to {args.output}")
         else:
             logger.warning("No jobs were found.")
             

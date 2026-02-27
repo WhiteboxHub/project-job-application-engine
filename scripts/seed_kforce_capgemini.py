@@ -13,7 +13,7 @@ conn = duckdb.connect(settings.DUCKDB_PATH)
 print("Seeding KForce and Capgemini into DuckDB...")
 
 # ===========================================================================
-# KForce — Platform + Site
+# KForce  Platform + Site
 # ===========================================================================
 conn.execute("""
     INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
@@ -77,10 +77,10 @@ conn.execute("""
     VALUES (6, 5, 'application', ?, CURRENT_TIMESTAMP)
 """, [json.dumps(kforce_application)])
 
-print("✅ KForce seeded (id=5, is_active=false — enable manually when ready)")
+print("[OK] KForce seeded (id=5, is_active=false  enable manually when ready)")
 
 # ===========================================================================
-# Capgemini — Platform + Site
+# Capgemini  Platform + Site
 # ===========================================================================
 conn.execute("""
     INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
@@ -139,7 +139,7 @@ conn.execute("""
     VALUES (8, 6, 'application', ?, CURRENT_TIMESTAMP)
 """, [json.dumps(capgemini_application)])
 
-print("✅ Capgemini seeded (id=6, is_active=false — needs CAPGEMINI_EMAIL + PASSWORD in .env)")
+print("[OK] Capgemini seeded (id=6, is_active=false  needs CAPGEMINI_EMAIL + PASSWORD in .env)")
 
 # ===========================================================================
 # Verify
@@ -153,7 +153,7 @@ rows = conn.execute("""
     ORDER BY js.id
 """).fetchall()
 for r in rows:
-    active = "✅ ACTIVE" if r[3] else "💤 inactive"
+    active = "[OK] ACTIVE" if r[3] else " inactive"
     print(f"  [{r[0]}] {r[1]:<20} | {r[4]} selectors | {active}")
 
 conn.close()

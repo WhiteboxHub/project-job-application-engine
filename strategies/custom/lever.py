@@ -94,7 +94,7 @@ class LeverStrategy(BaseStrategy):
             with open(path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             jobs = data.get('jobs', [])
-            logger.info(f"Lever: Loaded hiring_cafe_output.json — {len(jobs)} total jobs")
+            logger.info(f"Lever: Loaded hiring_cafe_output.json  {len(jobs)} total jobs")
             return jobs
         except Exception as e:
             logger.error(f"Lever: Failed to load hiring_cafe_output.json: {e}")
@@ -105,7 +105,7 @@ class LeverStrategy(BaseStrategy):
     # ------------------------------------------------------------------ #
 
     def login(self):
-        """Lever apply pages are public — no login required."""
+        """Lever apply pages are public  no login required."""
         logger.info("Lever: No login required (public apply pages)")
         return True
 
@@ -148,7 +148,7 @@ class LeverStrategy(BaseStrategy):
         return lever_jobs
 
     def apply(self, listing):
-        """BaseStrategy interface — delegates to _apply_to_lever_job()."""
+        """BaseStrategy interface  delegates to _apply_to_lever_job()."""
         if isinstance(listing, dict):
             job = listing
         else:
@@ -176,7 +176,7 @@ class LeverStrategy(BaseStrategy):
         logger.info("=" * 60)
 
         if not self.config_data:
-            logger.error("Lever: No applicant config available — aborting")
+            logger.error("Lever: No applicant config available  aborting")
             return 0
 
         lever_jobs = self.find_jobs()
@@ -212,7 +212,7 @@ class LeverStrategy(BaseStrategy):
                 time.sleep(delay)
 
         logger.info(f"\n{'=' * 60}")
-        logger.info(f"Lever: Done — {total_applied}/{len(lever_jobs)} applications submitted")
+        logger.info(f"Lever: Done  {total_applied}/{len(lever_jobs)} applications submitted")
         logger.info(f"{'=' * 60}")
         return total_applied
 
@@ -229,9 +229,9 @@ class LeverStrategy(BaseStrategy):
           - email       (email address)
           - phone       (phone number)
           - org         (current company)
-          - resume      (file upload — hidden input)
-          - urls        (LinkedIn, GitHub, Portfolio — optional)
-          - custom Q&A  (textareas / dropdowns — best-effort)
+          - resume      (file upload  hidden input)
+          - urls        (LinkedIn, GitHub, Portfolio  optional)
+          - custom Q&A  (textareas / dropdowns  best-effort)
           - submit btn
 
         Args:
@@ -269,7 +269,7 @@ class LeverStrategy(BaseStrategy):
         resume_path = self.get_resume_path()
 
         try:
-            # ── Step 1: Navigate ──────────────────────────────────────────
+            # -- Step 1: Navigate ------------------------------------------
             logger.info(f"  Navigating to: {apply_url}")
             self.driver.get(apply_url)
             WebDriverWait(self.driver, 20).until(
@@ -278,7 +278,7 @@ class LeverStrategy(BaseStrategy):
             time.sleep(2)
             logger.info("  Page loaded")
 
-            # ── Step 2: Fill standard Lever fields ────────────────────────
+            # -- Step 2: Fill standard Lever fields ------------------------
             self._fill_field(
                 ['input[name="name"]', 'input[placeholder*="name" i]', '#name'],
                 full_name, label="Full Name"
@@ -298,20 +298,20 @@ class LeverStrategy(BaseStrategy):
                     company, label="Current Company", required=False
                 )
 
-            # ── Step 3: Upload resume ─────────────────────────────────────
+            # -- Step 3: Upload resume -------------------------------------
             if resume_path:
                 self._upload_resume(resume_path)
             else:
-                logger.warning("  Resume not found — skipping upload")
+                logger.warning("  Resume not found  skipping upload")
 
-            # ── Step 4: Handle specific sections (USA Forms) ──────────────
+            # -- Step 4: Handle specific sections (USA Forms) --------------
             self._handle_usa_form_section()
             self._handle_general_usa_form_section()
             
-            # ── Step 5: Handle other custom questions (best-effort) ────────
+            # -- Step 5: Handle other custom questions (best-effort) --------
             self._handle_custom_questions()
 
-            # ── Step 5: Dry run guard ─────────────────────────────────────
+            # -- Step 5: Dry run guard -------------------------------------
             if guards.is_dry_run():
                 logger.info("\n" + "!" * 60)
                 logger.info("! DRY RUN: Would submit Lever application now")
@@ -321,10 +321,10 @@ class LeverStrategy(BaseStrategy):
                 self._track_application(job, status='dry_run')
                 return True  # Counts as success in dry-run
 
-            # ── Step 6: Submit form ────────────────────────────────────────
+            # -- Step 6: Submit form ----------------------------------------
             submitted = self._submit_form()
 
-            # ── Step 7: Record result ──────────────────────────────────────
+            # -- Step 7: Record result --------------------------------------
             status = 'applied' if submitted else 'failed'
             self._track_application(job, status=status)
             return submitted
@@ -375,7 +375,7 @@ class LeverStrategy(BaseStrategy):
 
     def _upload_resume(self, resume_full_path):
         """
-        Lever uses a hidden <input type="file"> — use send_keys directly
+        Lever uses a hidden <input type="file">  use send_keys directly
         (after making it visible via JS).
         """
         selectors = [
@@ -708,7 +708,7 @@ class LeverStrategy(BaseStrategy):
                         logger.info(f"  Submission confirmed (signal: '{signal}')")
                         return True
 
-                logger.info("  Submit clicked — treating as success")
+                logger.info("  Submit clicked  treating as success")
                 return True
 
             except (TimeoutException, NoSuchElementException):

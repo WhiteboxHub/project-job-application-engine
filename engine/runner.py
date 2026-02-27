@@ -142,7 +142,7 @@ class EngineRunner:
                 logger.info("=" * 60)
 
             finally:
-                # DuckDB connection is a singleton — no need to close
+                # DuckDB connection is a singleton  no need to close
                 pass
 
         except Exception as e:
@@ -182,6 +182,7 @@ class EngineRunner:
 
             # Get strategy class path
             strategy_path = site.platform.class_handler
+            
             logger.info(f"Strategy: {strategy_path}")
 
             # Instantiate strategy via factory
@@ -191,7 +192,7 @@ class EngineRunner:
                     self.browser,
                     site,
                     selectors,
-                    None,            # db_session not needed — DuckDB singleton handles tracking
+                    None,            # db_session not needed  DuckDB singleton handles tracking
                     candidate_data
                 )
             except Exception as e:
@@ -243,7 +244,7 @@ class EngineRunner:
 
                 logger.info(f"\n[OK] Completed {site.company_name}: {applied_count} applications")
             else:
-                logger.info("ℹ️ No jobs found to apply to")
+                logger.info("INFO No jobs found to apply to")
 
         except Exception as e:
             logger.error(f"[ERROR] Error processing {site.company_name}: {e}")

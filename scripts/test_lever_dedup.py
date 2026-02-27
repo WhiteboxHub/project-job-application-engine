@@ -52,9 +52,9 @@ def test_duplicate_prevention():
     logger.info(f"Jobs found: {found_ids}")
     
     if "test_job_456" in found_ids and job_id not in found_ids:
-        logger.info("✅ SUCCESS: Duplicate job filtered out correctly.")
+        logger.info("[OK] SUCCESS: Duplicate job filtered out correctly.")
     else:
-        logger.error(f"❌ FAILURE: Expected only ['test_job_456'], got {found_ids}")
+        logger.error(f"[ERROR] FAILURE: Expected only ['test_job_456'], got {found_ids}")
 
 if __name__ == "__main__":
     test_duplicate_prevention()

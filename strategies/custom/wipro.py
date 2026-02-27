@@ -143,6 +143,23 @@ class WiproStrategy(BaseStrategy):
             )
             time.sleep(2)
             
+            # Accept cookies if banner present
+            try:
+                cookie_selectors = self.selectors_config.get('cookie_accept_button', '').split(', ')
+                for selector in cookie_selectors:
+                    if not selector: continue
+                    try:
+                        cookie_btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        if cookie_btn.is_displayed():
+                            cookie_btn.click()
+                            logger.info("  [+] Accepted cookies")
+                            time.sleep(1)
+                            break
+                    except:
+                        continue
+            except Exception as e:
+                logger.debug(f"Cookie acceptance skipped: {e}")
+
             # Fill search form
             try:
                 # Enter keyword
@@ -197,7 +214,7 @@ class WiproStrategy(BaseStrategy):
                     except:
                         self.driver.execute_script("arguments[0].click();", search_btn)
                     logger.info("  [+] Clicked search button")
-                    time.sleep(6)  # Wait for results to load
+                    time.sleep(10)  # Wait for results to load
                 
             except Exception as e:
                 logger.error(f"Error filling search form: {e}")
@@ -292,25 +309,50 @@ class WiproStrategy(BaseStrategy):
                     except Exception as e:
                         logger.debug(f"  Error extracting job: {e}")
                         continue
-                
                 # Try to go to next page
                 try:
                     next_btn = self._find_element_by_selectors(
                         self.selectors_config['next_page'],
-                        timeout=3
+                        timeout=5
                     )
                     
-                    if next_btn and next_btn.is_displayed() and next_btn.is_enabled():
-                        self.human.human_click(next_btn)
+                    if next_btn and next_btn.is_displayed():
+                        # SAP sometimes uses custom attributes or classes to disable buttons
+                        is_disabled = next_btn.get_attribute("aria-disabled") == "true" or "sapMBtnDisabled" in next_btn.get_attribute("class")
+                        
+                        if is_disabled:
+                            logger.info("  - No more pages (Next button disabled)")
+                            break
+                            
+                        # Wait for any loading overlays to disappear before clicking
+                        try:
+                            WebDriverWait(self.driver, 10).until(
+                                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".sapUiLocalBusyIndicator, #busyIndicator, .sapMBusyDialog"))
+                            )
+                        except:
+                            pass # If it times out waiting for overlay to disappear, try clicking anyway
+                            
+                        # Try standard click first, fallback to JS
+                        try:
+                            # Scroll into view safely
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
+                            time.sleep(1)
+                            self.human.human_click(next_btn)
+                        except Exception as e:
+                            logger.debug(f"  Standard click failed, attempting JS click: {e}")
+                            self.driver.execute_script("arguments[0].click();", next_btn)
+                            
                         logger.info(f"  > Navigating to page {page_num + 1}...")
-                        time.sleep(3)  # Wait for new results to load
+                        
+                        # Wait longer for the next page of results to actually load
+                        time.sleep(5) 
                         page_num += 1
                     else:
-                        logger.info("  - No more pages")
+                        logger.info("  - No more pages (Next button not found or not visible)")
                         break
                         
-                except Exception:
-                    logger.info("  - Pagination complete")
+                except Exception as e:
+                    logger.debug(f"  - Pagination error (stopping): {e}")
                     break
             
             logger.info(f"\n{'='*60}")
@@ -735,7 +777,7 @@ class WiproStrategy(BaseStrategy):
             # Save application (Disabled as it may clear fields)
             # try:
             #     save_btn = self._find_element_by_selectors(
-            #         self.selectors_config['save_draft_button'].split(', ')
+            #         self.selectors_config['save_draft_button']
             #     )
             #     if save_btn:
             #         self.human.human_click(save_btn)
@@ -759,7 +801,7 @@ class WiproStrategy(BaseStrategy):
             
             # Find and click submit button
             submit_btn = self._find_element_by_selectors(
-                self.selectors_config['submit_button'].split(', ')
+                self.selectors_config['submit_button']
             )
             
             
@@ -1118,19 +1160,21 @@ class WiproStrategy(BaseStrategy):
                     continue
                     
             # Step 2b: Partial match with guards
-            for opt in all_options:
-                try:
-                    opt_text = opt.text.strip()
-                    if value.lower() in opt_text.lower() or opt_text.lower() in value.lower():
-                        # Guard: 'Male' should not match 'Female'
-                        if value.lower() == 'male' and 'female' in opt_text.lower():
-                            continue
-                        logger.info(f"  [+] Found partial match: '{opt_text}'")
-                        self.human.human_click(opt)
-                        time.sleep(1)
-                        return True
-                except:
-                    continue
+            # Do not use partial match for very short strings ("No", "Yes") which easily collide
+            if len(value) > 3:
+                for opt in all_options:
+                    try:
+                        opt_text = opt.text.strip()
+                        if value.lower() in opt_text.lower() or opt_text.lower() in value.lower():
+                            # Guard: 'Male' should not match 'Female'
+                            if value.lower() == 'male' and 'female' in opt_text.lower():
+                                continue
+                            logger.info(f"  [+] Found partial match: '{opt_text}'")
+                            self.human.human_click(opt)
+                            time.sleep(1)
+                            return True
+                    except:
+                        continue
 
             # 3. Final Fallback: Arrow Down + Enter
             logger.info(f"  [+] Using keyboard fallback (ARROW_DOWN + ENTER) for {selector_key}")

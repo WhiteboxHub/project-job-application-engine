@@ -64,7 +64,7 @@ def seed_lever():
             VALUES (?, ?, ?, ?, ?)
         """, [7, 5, 5, 'application', json.dumps(app_selectors)])
 
-        logger.info("✅ Lever data seeded successfully.")
+        logger.info("[OK] Lever data seeded successfully.")
 
     except Exception as e:
         logger.error(f"Error seeding Lever data: {e}")

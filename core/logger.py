@@ -22,7 +22,15 @@ def setup_logger(name="job_engine", level=logging.INFO, json_format=False):
     logger.setLevel(level)
     
     if not logger.handlers:
+        # Use errors='replace' to prevent crashes on non-UTF-8 terminals
         handler = logging.StreamHandler(sys.stdout)
+        if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding:
+            # Note: logging.StreamHandler doesn't take encoding/errors in older Python versions
+            # but we can wrap the stream or just rely on the fact that we'll remove emojis anyway.
+            # However, for robustness:
+            handler.stream = open(sys.stdout.fileno(), mode='w', encoding=sys.stdout.encoding, 
+                                 errors='replace', buffering=1)
+        
         if json_format:
             handler.setFormatter(JsonFormatter())
         else:

@@ -1,4 +1,4 @@
-﻿from strategies.base import BaseStrategy
+from strategies.base import BaseStrategy
 from core.logger import logger
 from core.human_behavior import HumanBehavior
 from core.captcha_handler import CaptchaHandler
@@ -42,13 +42,13 @@ class InfosysStrategy(BaseStrategy):
         # Initialize ConfigManager for database-driven configuration
         if self.db_session and job_site:
             self.config = ConfigManager(db_session, job_site.id)
-            logger.info("✅ ConfigManager initialized - using database-driven configuration")
+            logger.info("[OK] ConfigManager initialized - using database-driven configuration")
         else:
             self.config = None
-            logger.warning("⚠️ ConfigManager not available - falling back to hardcoded values")
+            logger.warning("[WARNING] ConfigManager not available - falling back to hardcoded values")
 
         if self.db_session:
-            logger.info("✅ Database session available - tracking enabled.")
+            logger.info("[OK] Database session available - tracking enabled.")
 
         # State for multi-pass sequential search
         self._current_keyword_index = 0
@@ -61,7 +61,7 @@ class InfosysStrategy(BaseStrategy):
         """Load configuration from candidate_data (database) or fallback to JSON file"""
         # Priority 1: Use candidate_data from database
         if self.candidate_data:
-            logger.info("✅ Using candidate data from database")
+            logger.info("[OK] Using candidate data from database")
             return self.candidate_data
         
         # Priority 2: Fallback to JSON file for backward compatibility
@@ -72,7 +72,7 @@ class InfosysStrategy(BaseStrategy):
                 "guest_form_data.json",
             )
             if os.path.exists(config_path):
-                logger.info("⚠️ Using fallback config from guest_form_data.json")
+                logger.info("[WARNING] Using fallback config from guest_form_data.json")
                 with open(config_path, "r") as f:
                     return json.load(f)
             return {}
@@ -199,7 +199,7 @@ class InfosysStrategy(BaseStrategy):
         """
         from engine.guards import guards
         
-        logger.info("🔍 Starting Infosys single-phase workflow...")
+        logger.info("[SEARCH] Starting Infosys single-phase workflow...")
         
         if not self.config_data:
             logger.error("No configuration data available")
@@ -214,29 +214,29 @@ class InfosysStrategy(BaseStrategy):
         loc = search.get("location", "USA")
         dist = search.get("distance", "50")
         
-        logger.info(f"📋 Keywords: {keywords}")
-        logger.info(f"📍 Location: {loc}")
+        logger.info(f" Keywords: {keywords}")
+        logger.info(f" Location: {loc}")
         
         total_applied = 0
         
         for kw in keywords:
             if not guards.can_apply():
-                logger.warning(f"⛔ Application limit reached. Skipping remaining keywords.")
+                logger.warning(f" Application limit reached. Skipping remaining keywords.")
                 break
                 
             logger.info(f"\n{'='*60}")
-            logger.info(f"🔍 Processing Keyword: '{kw}'")
+            logger.info(f"[SEARCH] Processing Keyword: '{kw}'")
             logger.info(f"{'='*60}")
             
             try:
                 # 1. Search for jobs for THIS keyword
                 urls = self._search_jobs(kw, loc, dist)
-                logger.info(f"✅ Found {len(urls)} job(s) for '{kw}'")
+                logger.info(f"[OK] Found {len(urls)} job(s) for '{kw}'")
                 
                 # 2. Apply to each found job immediately
                 for idx, u in enumerate(urls, 1):
                     if not guards.can_apply():
-                        logger.warning(f"⛔ Application limit reached during processing of '{kw}'")
+                        logger.warning(f" Application limit reached during processing of '{kw}'")
                         return total_applied
                         
                     job_id = u.split("/")[-1] if u else None
@@ -250,7 +250,7 @@ class InfosysStrategy(BaseStrategy):
                         logger.debug(f"Skipping {job_id} (already applied)")
                         continue
                     
-                    logger.info(f"\n📝 Job {idx}/{len(urls)}: {job_id}")
+                    logger.info(f"\n Job {idx}/{len(urls)}: {job_id}")
                     try:
                         success = self._apply_to_job(u)
                         if success:
@@ -258,11 +258,11 @@ class InfosysStrategy(BaseStrategy):
                             total_applied += 1
                             if job_id:
                                 self._record_applied_job(job_id)
-                            logger.info(f"✅ Application #{total_applied} successful")
+                            logger.info(f"[OK] Application #{total_applied} successful")
                         else:
-                            logger.warning("⚠️ Application failed")
+                            logger.warning("[WARNING] Application failed")
                     except Exception as apply_err:
-                        logger.error(f"❌ Error applying to job {u}: {apply_err}")
+                        logger.error(f"[ERROR] Error applying to job {u}: {apply_err}")
                         continue
                         
                 # Small delay between keywords
@@ -270,11 +270,11 @@ class InfosysStrategy(BaseStrategy):
                     time.sleep(random.uniform(3, 5))
                     
             except Exception as e:
-                logger.error(f"❌ Processing for keyword '{kw}' failed: {e}")
+                logger.error(f"[ERROR] Processing for keyword '{kw}' failed: {e}")
                 continue
         
         logger.info(f"\n{'='*60}")
-        logger.info(f"✅ Infosys workflow complete: {total_applied} applications submitted")
+        logger.info(f"[OK] Infosys workflow complete: {total_applied} applications submitted")
         logger.info(f"{'='*60}\n")
         
         return total_applied
@@ -287,11 +287,11 @@ class InfosysStrategy(BaseStrategy):
             if not self._all_keywords:
                 self._all_keywords = [search.get("keyword", "AI")]
             
-            logger.info(f"≡ƒôï Multi-Pass Setup: {len(self._all_keywords)} keywords found: {self._all_keywords}")
+            logger.info(f" Multi-Pass Setup: {len(self._all_keywords)} keywords found: {self._all_keywords}")
 
         # Check if we have more keywords to process
         if self._current_keyword_index >= len(self._all_keywords):
-            logger.info("≡ƒÅü All keywords processed.")
+            logger.info(" All keywords processed.")
             return []
 
         kw = self._all_keywords[self._current_keyword_index]
@@ -301,7 +301,7 @@ class InfosysStrategy(BaseStrategy):
         loc = search.get("location", "USA")
         dist = search.get("distance", "50")
         
-        logger.info(f"≡ƒöì Search Pass for: '{kw}' (Keyword {self._current_keyword_index}/{len(self._all_keywords)})")
+        logger.info(f" Search Pass for: '{kw}' (Keyword {self._current_keyword_index}/{len(self._all_keywords)})")
         
         all_job_listings = []
         seen_urls = set()
@@ -324,7 +324,7 @@ class InfosysStrategy(BaseStrategy):
                     seen_urls.add(u)
                     all_job_listings.append({"job_url": u, "job_title": f"Infosys Job ({kw})"})
         except Exception as e:
-            logger.error(f"Γ¥î Search for keyword '{kw}' failed: {e}")
+            logger.error(f" Search for keyword '{kw}' failed: {e}")
             # We return [] for this pass to let Runner know nothing was found for THIS kw, 
             # but next call to find_jobs will move to the next kw.
         
@@ -335,7 +335,7 @@ class InfosysStrategy(BaseStrategy):
         job_id = url.split("/")[-1] if url else None
         
         if job_id and self._is_already_applied(job_id):
-            logger.info(f"ΓÅ⌐ Skipping {job_id} - already applied (found in JSON tracker).")
+            logger.info(f" Skipping {job_id} - already applied (found in JSON tracker).")
             return True # Treat as success to proceed in loop
             
         success = self._apply_to_job(url)
@@ -349,7 +349,7 @@ class InfosysStrategy(BaseStrategy):
     # Job Search
     # -------------------------
     def _search_jobs(self, keyword, location, distance):
-        # Normalize location → Infosys URL only accepts "USA"
+        # Normalize location  Infosys URL only accepts "USA"
         _loc_map = {
             "united states": "USA",
             "united states of america": "USA",
@@ -554,7 +554,7 @@ class InfosysStrategy(BaseStrategy):
             ]
             logger.info("Using hardcoded Apply button selectors (database empty)")
         
-        logger.info(f"🔍 Testing {len(apply_selectors)} Apply button selectors...")
+        logger.info(f"[SEARCH] Testing {len(apply_selectors)} Apply button selectors...")
         logger.info(f"Selectors: {apply_selectors}")
         
         # Wait longer for page to fully load
@@ -729,7 +729,7 @@ class InfosysStrategy(BaseStrategy):
                 for sel in form_indicators:
                     elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
                     if any(e.is_displayed() for e in elems):
-                        logger.info(f"✔ Form detected via: {sel}")
+                        logger.info(f" Form detected via: {sel}")
                         return True
                 # Check inside iframes
                 iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
@@ -739,7 +739,7 @@ class InfosysStrategy(BaseStrategy):
                         for sel in form_indicators:
                             elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
                             if any(e.is_displayed() for e in elems):
-                                logger.info(f"✔ Form detected in iframe via: {sel}")
+                                logger.info(f" Form detected in iframe via: {sel}")
                                 self.driver.switch_to.default_content()
                                 return True
                         self.driver.switch_to.default_content()
@@ -786,7 +786,7 @@ class InfosysStrategy(BaseStrategy):
                 applied_data["applied_ids"].append(job_id)
                 with open(tracker_path, "w") as f:
                     json.dump(applied_data, f, indent=4)
-                logger.info(f"≡ƒÆ╛ Job {job_id} recorded in applied_jobs.json")
+                logger.info(f" Job {job_id} recorded in applied_jobs.json")
         except Exception as e:
             logger.error(f"Failed to record applied job: {e}")
 
@@ -875,7 +875,7 @@ class InfosysStrategy(BaseStrategy):
                 "#rdoFirstTime",
             ]
         if self._click_any(selectors):
-            logger.info("✔ Selected 'Applying for first time'")
+            logger.info(" Selected 'Applying for first time'")
             time.sleep(2)
             return True
         return False
@@ -899,7 +899,7 @@ class InfosysStrategy(BaseStrategy):
                 "//button[contains(text(), 'Proceed')]",
             ]
         if self._click_any(consent_selectors):
-            logger.info("✔ Clicked Proceed/Consent button")
+            logger.info(" Clicked Proceed/Consent button")
             time.sleep(3)
         else:
             logger.warning("Could not find Proceed button.")
@@ -1323,7 +1323,7 @@ class InfosysStrategy(BaseStrategy):
             # EDUCATION
             edu_keywords = self._get_section_keywords("education", ["education", "school", "institution", "university", "college", "degree", "qualification", "major"])
             if "education" not in filled_sections and self._page_has_any_field(edu_keywords):
-                logger.info("Detected Education section by fields ΓåÆ filling...")
+                logger.info("Detected Education section by fields  filling...")
                 self._fill_education_parsed()
                 filled_sections.add("education")
                 did_something = True
@@ -1331,7 +1331,7 @@ class InfosysStrategy(BaseStrategy):
             # EXPERIENCE
             exp_keywords = self._get_section_keywords("experience", ["work", "experience", "employer", "company", "designation", "job_title", "position", "responsibilities"])
             if "experience" not in filled_sections and self._page_has_any_field(exp_keywords):
-                logger.info("Detected Experience section by fields ΓåÆ filling...")
+                logger.info("Detected Experience section by fields  filling...")
                 self._fill_experience_parsed()
                 filled_sections.add("experience")
                 did_something = True
@@ -1339,7 +1339,7 @@ class InfosysStrategy(BaseStrategy):
             # SKILLS
             skills_keywords = self._get_section_keywords("skills", ["skills", "technologies", "tool", "stack"])
             if "skills" not in filled_sections and self._page_has_any_field(skills_keywords):
-                logger.info("Detected Skills section by fields ΓåÆ filling...")
+                logger.info("Detected Skills section by fields  filling...")
                 self._fill_skills_parsed()
                 filled_sections.add("skills")
                 did_something = True
@@ -1350,7 +1350,7 @@ class InfosysStrategy(BaseStrategy):
             # but share similar field types/keywords.
             eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "race category", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
             if self._page_has_any_field(eeo_keywords):
-                logger.info("Detected EEO / Other Info section by fields ΓåÆ filling...")
+                logger.info("Detected EEO / Other Info section by fields  filling...")
                 applicant = self.config_data.get("applicant", {})
                 full_name = f"{applicant.get('first_name', '')} {applicant.get('last_name', '')}"
                 
@@ -1381,19 +1381,19 @@ class InfosysStrategy(BaseStrategy):
                         "three years of relevant", "work experience in lieu", "degree or foreign"
                     ]), "Yes"),
                     # "Are you subject to contractual restrictions (non-compete etc.) that could prevent you from working here?"
-                    # Default: No — answering Yes would flag/reject the application
+                    # Default: No  answering Yes would flag/reject the application
                     (self._get_keywords("contractual_restrictions", [
                         "contractual", "non-competition", "non-compete", "restrictive covenant",
                         "prevent you from working", "obligations that could prevent", "prior employer"
                     ]), "No"),
                 ]
 
-                # Race category — use dedicated method for robust dropdown matching
+                # Race category  use dedicated method for robust dropdown matching
                 if self._fill_race_dropdown():
                     did_something = True
-                    logger.info("✅ Race category filled via dedicated method")
+                    logger.info("[OK] Race category filled via dedicated method")
                 else:
-                    logger.warning("⚠️ Race category dropdown not found or not filled — trying enterprise_fill fallback")
+                    logger.warning("[WARNING] Race category dropdown not found or not filled  trying enterprise_fill fallback")
                     if self._enterprise_fill(
                         self._get_keywords("race", ["race", "race category", "diversity", "ethni"]), race_val
                     ):
@@ -1404,14 +1404,14 @@ class InfosysStrategy(BaseStrategy):
                     if self._enterprise_fill(keywords, val):
                         did_something = True
 
-                # Direct XPath click: form_application/div[6] label[1] → "No"
+                # Direct XPath click: form_application/div[6] label[1]  "No"
                 # This is a specific radio button the enterprise_fill cannot reliably detect
                 _div6_xpath = '//*[@id="form_application"]/div[6]/div/div/div[3]/label[1]'
                 if self._click_any([_div6_xpath]):
-                    logger.info("✅ Clicked form_application div[6] label[1] (No)")
+                    logger.info("[OK] Clicked form_application div[6] label[1] (No)")
                     did_something = True
                 else:
-                    logger.warning("⚠️ Could not click form_application div[6] label[1] — may not be on page")
+                    logger.warning("[WARNING] Could not click form_application div[6] label[1]  may not be on page")
 
                 filled_sections.add("eeo")
 
@@ -1421,16 +1421,16 @@ class InfosysStrategy(BaseStrategy):
 
             logger.info("Attempting to move forward (Next/Save/Continue)...")
             if not self._click_next_best_effort():
-                logger.info("No Next/Save/Continue found ΓåÆ stopping dynamic section loop.")
+                logger.info("No Next/Save/Continue found  stopping dynamic section loop.")
                 break
 
             time.sleep(4)
 
             page_after = self.driver.page_source
             if page_after == page_before:
-                logger.warning("Page did not change after Next ΓåÆ retrying once...")
+                logger.warning("Page did not change after Next  retrying once...")
                 if not self._click_next_best_effort():
-                    logger.warning("Retry failed ΓåÆ stopping.")
+                    logger.warning("Retry failed  stopping.")
                     break
                 time.sleep(5)
 
@@ -1502,7 +1502,7 @@ class InfosysStrategy(BaseStrategy):
                         for avail in available:
                             if opt_text.lower() in avail.lower() or avail.lower() in opt_text.lower():
                                 select_obj.select_by_visible_text(avail)
-                                logger.info(f"✅ Race selected: '{avail}'")
+                                logger.info(f"[OK] Race selected: '{avail}'")
                                 return True
 
                     # Last resort: select first non-empty option
@@ -1528,7 +1528,7 @@ class InfosysStrategy(BaseStrategy):
         if not edu_list:
             cfg_edu = self.config_data.get("applicant", {}).get("education", [])
             if cfg_edu:
-                logger.info("Education not in resume_data — falling back to guest_form_data.json")
+                logger.info("Education not in resume_data  falling back to guest_form_data.json")
                 # Normalize guest_form_data keys to standard keys
                 edu_list = []
                 for e in cfg_edu:
@@ -1541,7 +1541,7 @@ class InfosysStrategy(BaseStrategy):
                         "gpa": e.get("gpa", ""),
                     })
             else:
-                logger.info("No education data available anywhere — skipping education fill")
+                logger.info("No education data available anywhere  skipping education fill")
                 return
 
         edu = edu_list[0]
@@ -1584,7 +1584,7 @@ class InfosysStrategy(BaseStrategy):
                     match.group(1),
                 )
 
-        # GPA fill (best effort — many forms don't have it)
+        # GPA fill (best effort  many forms don't have it)
         gpa_val = edu.get("gpa", "")
         if gpa_val:
             self._enterprise_fill(
@@ -1830,7 +1830,7 @@ class InfosysStrategy(BaseStrategy):
                         "//button[contains(., 'Import fields')]"
                     ]
                     if self._click_any(import_selectors):
-                        logger.info("Γ£ô Clicked 'Import fields' button.")
+                        logger.info(" Clicked 'Import fields' button.")
                         time.sleep(5) # Wait for import to process
                     else:
                         logger.info("Did not find 'Import fields' button (might be auto-imported or not present).")
@@ -1856,7 +1856,7 @@ class InfosysStrategy(BaseStrategy):
                 logger.warning(f"{method.__name__} failed: {e}")
 
 
-        logger.error("❌ All resume upload methods failed or could not be verified.")
+        logger.error("[ERROR] All resume upload methods failed or could not be verified.")
         return False
 
     def _verify_upload_success(self):
@@ -1886,7 +1886,7 @@ class InfosysStrategy(BaseStrategy):
                 elems = self.driver.find_elements(by, sel)
                 for e in elems:
                     if e.is_displayed():
-                        logger.info(f"Γ£ô Upload verified via indicator: {sel}")
+                        logger.info(f" Upload verified via indicator: {sel}")
                         return True
             except Exception:
                 continue
@@ -2061,7 +2061,7 @@ class InfosysStrategy(BaseStrategy):
             ]
         )
         if success:
-            logger.info("Γ£à Application Submitted!")
+            logger.info(" Application Submitted!")
             csv_tracker.update_job_status("infosys", job_url, "success")
             
             # User requirement: Wait 20s after submission
@@ -2080,7 +2080,7 @@ if __name__ == "__main__":
     from core.browser import browser_service
 
     try:
-        logger.info("≡ƒÜÇ Starting Infosys Strategy Standalone Launch...")
+        logger.info(" Starting Infosys Strategy Standalone Launch...")
         driver = browser_service.start_browser()
 
         class MockSite:
@@ -2094,14 +2094,14 @@ if __name__ == "__main__":
             applied_count = 0
             failed_count = 0
             for i, job_url in enumerate(jobs):
-                logger.info(f"≡ƒöä Processing job {i+1}/{len(jobs)}: {job_url}")
+                logger.info(f" Processing job {i+1}/{len(jobs)}: {job_url}")
                 try:
                     success = strategy.apply(job_url)
                     if success:
-                        logger.info(f"Γ£ô Successfully applied to {job_url}")
+                        logger.info(f" Successfully applied to {job_url}")
                         applied_count += 1
                     else:
-                        logger.warning(f"├ù Failed to apply to {job_url}")
+                        logger.warning(f" Failed to apply to {job_url}")
                         failed_count += 1
                 except Exception as e:
                     logger.error(f"Error applying to {job_url}: {e}")
@@ -2111,7 +2111,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             logger.info("=" * 60)
-            logger.info(f"≡ƒÅü Execution Summary: Applied to {applied_count} jobs, {failed_count} failed.")
+            logger.info(f" Execution Summary: Applied to {applied_count} jobs, {failed_count} failed.")
             logger.info("=" * 60)
         else:
             logger.info("No target jobs found.")

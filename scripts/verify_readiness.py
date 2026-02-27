@@ -17,9 +17,9 @@ if candidate:
     if marketing:
         print(f"Marketing Row: ID={marketing[0]}, Flag={marketing[2]}, Processed={marketing[3]}, Status={marketing[4]}")
     else:
-        print("❌ No entry in candidate_marketing for this candidate!")
+        print("[ERROR] No entry in candidate_marketing for this candidate!")
 else:
-    print("❌ Candidate 'Ghazal Sultan' not found in candidate table!")
+    print("[ERROR] Candidate 'Ghazal Sultan' not found in candidate table!")
 
 print("\n--- Checking Target Sites Status ---")
 target_sites = ['LanceSoft', 'Infosys', 'Wipro', 'KForce']
@@ -29,6 +29,6 @@ for site in target_sites:
     if res:
         print(f"Site '{site}': ID={res[0]}, Active={res[1]}")
     else:
-        print(f"❌ Site '{site}' not found!")
+        print(f"[ERROR] Site '{site}' not found!")
 
 conn.close()

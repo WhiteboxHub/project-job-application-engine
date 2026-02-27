@@ -1,5 +1,5 @@
 """
-Initialize DuckDB — applies schema.sql and seeds all site data.
+Initialize DuckDB  applies schema.sql and seeds all site data.
 Run this once before using main.py or scheduler_worker.py.
 
 Usage:
@@ -155,7 +155,7 @@ def init_db():
         CREATE SEQUENCE IF NOT EXISTS scheduler_runs_seq START 1
     """)
 
-    logger.info("Tables created ✅")
+    logger.info("Tables created [OK]")
 
     # -----------------------------------------------------------------------
     # Seed: Insight Global
@@ -245,7 +245,7 @@ def init_db():
         "JOIN ats_platforms ap ON js.ats_platform_id = ap.id ORDER BY js.id"
     ).fetchall()
     for (name, level) in sites:
-        icon = "🤖" if level == "full" else "👤"
+        icon = "" if level == "full" else ""
         logger.info(f"  {icon}  {name} ({level})")
 
     conn.close()
