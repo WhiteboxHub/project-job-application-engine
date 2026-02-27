@@ -42,20 +42,29 @@ kforce_application = {
     "apply_initiator":    "button.apply-action__btn",
     "apply_link_option":  "a.dropdown-item[href*='apply']",
     "form_fields": {
-        "first_name":    "input#ctl00_ctl00_MainContent_FullWidth_txtFirstName",
-        "last_name":     "input#ctl00_ctl00_MainContent_FullWidth_txtLastName",
-        "email":         "input#ctl00_ctl00_MainContent_FullWidth_txtEmail",
-        "email_verify":  "input#ctl00_ctl00_MainContent_FullWidth_txtEmailConfirm",
-        "phone":         "input#ctl00_ctl00_MainContent_FullWidth_txtPhone",
-        "zip_code":      "input#ctl00_ctl00_MainContent_FullWidth_txtZip",
-        "state":         "select#ctl00_ctl00_MainContent_FullWidth_ddlState",
-        "resume_upload": "input[type='file']",
-        "submit_btn":    "input#ctl00_ctl00_MainContent_FullWidth_btnSubmit",
-        "next_btn":      "input#ctl00_ctl00_MainContent_FullWidth_btnNext",
-        "eligibility_auth": "input[name*='Authorization']"
+        "first_name":    "input#firstName",
+        "last_name":     "input#lastName",
+        "email":         "input#emailAddress",
+        "email_verify":  "input#emailAddressVerify",
+        "phone":         "input#phoneNumberAll",
+        "zip_code":      "input#postalCode",
+        "country":       "select#countryID",
+        "state":         "select#state",
+        "resume_upload": "input#uploadFileSystemResume, input[type='file']",
+        "submit_btn":    "input#SubmitButton, button[type='submit'], input[type='submit']",
+        "next_btn":      "button#btnNext, input#btnNext",
+        "eligibility_auth": "input[name*='Authorization'], input[name*='auth']"
     },
     "questionnaire_answers": {
         "eligibility_auth": "AuthorizedForAny"
+    },
+    "delays": {
+        "between_steps_min": 0.7,
+        "between_steps_max": 1.5,
+        "after_click_min": 1.0,
+        "after_click_max": 2.0,
+        "form_fill_min": 0.5,
+        "form_fill_max": 1.2
     },
     "success_indicators": [
         "Thank you for applying",
@@ -92,31 +101,65 @@ conn.execute("""
     VALUES (
         6, 'Capgemini', 'capgemini.com', 6, 'Consulting firm',
         'https://www.capgemini.com/us-en/careers/join-capgemini/job-search/?country_code=us-en&country_name=United%20States&size=15',
-        false
+        true
     )
 """)
 
 # Capgemini Listing Selectors
 capgemini_listing = {
-    "search_input":    "input.search-input",
-    "job_cards":       "a.job-card__link",
-    "search_keywords": ["AI Engineer", "Python Developer", "Data Engineer"]
+    "search_input":    "input#searchsubmit",
+    "job_cards":       "a.joblink",
+    "search_keywords": ["AI Engineer", "Python Developer", "Software Engineer", "Data Engineer"]
 }
 
 # Capgemini Application Selectors
 capgemini_application = {
-    "apply_button_main":  "a.btn--primary[href*='apply'], button.btn-apply",
-    "sign_in_button":     "//button[contains(text(),'Sign In')] | //a[contains(text(),'Sign In')]",
-    "login_email":        "input#username, input[name='username'], input[type='email']",
-    "login_password":     "input#password, input[name='password'], input[type='password']",
-    "login_submit":       "button#fbqa_signin, button[type='submit']",
+    "apply_button_main":  "a.cta-link, a.btn--primary[href*='apply'], button.btn-apply",
+    "sign_in_button":     "a[onclick*='openSignInModal']",
+    "login_email":        "input#username",
+    "login_password":     "input#password",
+    "login_submit":       "button#fbqa_signin, button[name='fbqa_signin']",
     "form_fields": {
-        "phone":          "input[id*='phoneNumber'], input[placeholder*='phone' i]",
-        "work_auth":      "input[id*='workAuth'], select[id*='workAuth']",
-        "country":        "input[id*='country'], select[id*='country']"
+        "phone":             "input[id*='phoneNumber'], input[placeholder*='phone' i]",
+        "legally_entitled":  "input[aria-label*='legally entitled to work']",
+        "sponsorship":       "input[aria-label*='require sponsorship']",
+        "agreement":         "input[aria-label*='entered into any agreement']",
+        "ethnicity":         "input[aria-label='Ethnicity']",
+        "veteran":           "input[aria-label='Veteran Status']",
+        "disability":        "input[aria-label*='believe you have a disability']",
+        "previously_employed": "input[aria-label*='employed by Capgemini Group before']",
+        "gender_consent":    "input[aria-label*='explicit consent for Capgemini Group to collect and process information about my gender']",
+        "gender":            "input[aria-label='How do you identify?']",
+        "sms_consent":       "input[aria-label*='receive communications via SMS']",
+        "country":           "input[id*='country'], select[id*='country']",
+        "submit_btn":        "button#fbqa_apply"
     },
     "questionnaire_answers": {
-        "work_auth": "I am authorized to work in the United States for any employer"
+        "legally_entitled":  "Yes",
+        "sponsorship":       "No",
+        "agreement":         "No",
+        "ethnicity":         "South Asian",
+        "veteran":           "Non-Veteran",
+        "disability":        "No, I don’t have a disability",
+        "previously_employed": "No",
+        "gender_consent":    "Yes",
+        "gender":            "Female",
+        "sms_consent":       "Yes"
+    },
+    "delays": {
+        "between_steps_min": 1.0,
+        "between_steps_max": 2.5,
+        "after_login_click": 15.0,
+        "form_fill_min": 0.7,
+        "form_fill_max": 1.5,
+        "dropdown_select_min": 0.5,
+        "dropdown_select_max": 1.0,
+        "page_load_min": 3.0,
+        "page_load_max": 15.0,
+        "short_delay_min": 1.0,
+        "click_min": 2.0,
+        "scroll_min": 1.0,
+        "dropdown_open_min": 1.5
     },
     "success_indicators": [
         "Application submitted",

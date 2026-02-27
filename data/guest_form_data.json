@@ -8,11 +8,11 @@
         "distance": "0"
     },
     "applicant": {
-        "first_name": "",
-        "last_name": "",
-        "email": "candidate_gmail@gmail.com",
+        "first_name": "Ghazal",
+        "last_name": "Sultan",
+        "email": "ghazal.sultan1616@gmail.com",
         "gender": "Female",
-        "phone": "6692133xxx",
+        "phone": "6692133034",
         "street_address": "440 Oceanside dr",
         "address": "440 Oceanside dr",
         "city": "Mountain House",
@@ -40,7 +40,7 @@
             {
                 "degree": "BA",
                 "University": "University of Sindh",
-                "major": "Political Science",
+                "major": "Computer Science",
                 "education_type": "University",
                 "country": "Pakistan",
                 "state": "Pakistan",
@@ -66,5 +66,5 @@
         "email": "candiategmail.com",
         "password": "password"
     },
-    "resume_path": "resume/resume_path.pdf"
+    "resume_path": "resume/candidate_resume.pdf"
 }

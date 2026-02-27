@@ -26,41 +26,65 @@ SITE_MAP = {
     'wipro':     'Wipro',
     'kforce':    'KForce',
     'insight':   'Insight Global',  # kept for reference
+    'capgemini': 'Capgemini',
 }
 
+class DummyCandidate:
+    pass
+
 def get_first_candidate(session):
-    """Get first active flagged candidate"""
-    result = session.execute(text("""
-        SELECT cm.id as cm_id, cm.candidate_id, cm.run_parameters,
-               c.full_name, c.email
-        FROM candidate_marketing cm
-        JOIN candidate c ON cm.candidate_id = c.id
-        WHERE cm.marketing_flag = 1
-          AND cm.is_processed = 0
-          AND cm.status = 'active'
-        LIMIT 1
-    """))
-    return result.fetchone()
+    """Get candidate from guest_form_data.json instead of db"""
+    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "guest_form_data.json")
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+
+    app = data.get("applicant", {})
+    full_name = f"{app.get('first_name', '')} {app.get('last_name', '')}".strip()
+    
+    cand = DummyCandidate()
+    cand.cm_id = 999
+    cand.candidate_id = 999
+    cand.run_parameters = json.dumps(data)
+    cand.full_name = full_name
+    cand.email = app.get("email", "")
+    return cand
+
+class DummySite:
+    pass
 
 def get_site(session, company_name):
     """Get site + platform info"""
-    result = session.execute(text("""
+    result = session.execute("""
         SELECT s.id, s.company_name, s.domain, s.search_url_template,
                p.id as platform_id, p.name as platform_name,
                p.class_handler, p.automation_level
         FROM job_sites s
         JOIN ats_platforms p ON s.ats_platform_id = p.id
-        WHERE s.company_name = :name AND s.is_active = 1
-    """), {'name': company_name})
-    return result.fetchone()
+        WHERE s.company_name = ? AND s.is_active = 1
+    """, [company_name])
+    row = result.fetchone()
+    if row:
+        s = DummySite()
+        s.id = row[0]
+        s.company_name = row[1]
+        s.domain = row[2]
+        s.search_url_template = row[3]
+        s.platform_id = row[4]
+        s.platform_name = row[5]
+        s.class_handler = row[6]
+        s.automation_level = row[7]
+        return s
+    return None
 
 def main():
     parser = argparse.ArgumentParser(description="Test a single job site")
     parser.add_argument('--site', required=True,
-                        choices=['lancesoft', 'infosys', 'wipro', 'kforce', 'insight'],
+                        choices=['lancesoft', 'infosys', 'wipro', 'kforce', 'insight', 'capgemini'],
                         help='Which site to test')
     parser.add_argument('--live', action='store_true',
                         help='Run LIVE (actually submits). Default is dry-run.')
+    parser.add_argument('--keywords', type=str,
+                        help='Override search keywords (comma-separated)')
     args = parser.parse_args()
 
     dry_run = not args.live
@@ -117,6 +141,14 @@ def main():
     # Set dry_run mode via settings
     from config.settings import settings
     settings.DRY_RUN = dry_run
+    
+    if args.keywords:
+        logger.info(f"🔑 Overriding keywords with: {args.keywords}")
+        # Generic keyword override for strategy search/apply methods
+        # Most strategies check config_data['search']['keywords']
+        if 'search' not in candidate_data:
+            candidate_data['search'] = {}
+        candidate_data['search']['keywords'] = [k.strip() for k in args.keywords.split(',')]
 
     try:
         runner = EngineRunner()

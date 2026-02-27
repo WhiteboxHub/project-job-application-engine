@@ -154,6 +154,15 @@ class InfosysStrategy(BaseStrategy):
             selectors = self.config.get_selectors(key)
             if selectors:
                 return selectors
+        
+        # Fallback to pre-loaded self.selectors (populated by EngineRunner)
+        # Check both top-level keys in listing and application
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if key in cat_dict:
+                val = cat_dict[key]
+                return val if isinstance(val, list) else [val]
+                
         return fallback or []
 
     def _get_keywords(self, field_name, fallback=None):
@@ -162,6 +171,13 @@ class InfosysStrategy(BaseStrategy):
             keywords = self.config.get_field_keywords(field_name)
             if keywords:
                 return keywords
+        
+        # Fallback to pre-loaded self.selectors
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if field_name in cat_dict:
+                return cat_dict[field_name]
+                
         return fallback or []
 
     def _get_value(self, field_name, context=None, fallback=None):
@@ -178,7 +194,30 @@ class InfosysStrategy(BaseStrategy):
             keywords = self.config.get_section_keywords(section_name)
             if keywords:
                 return keywords
+        
+        # Fallback to pre-loaded self.selectors
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if section_name in cat_dict:
+                return cat_dict[section_name]
+                
         return fallback or []
+
+    def _get_delay(self, key, fallback=2.0):
+        """Get delay value from database 'delays' config"""
+        if self.config:
+            delays = self.config.get_selectors('delays')
+            if delays and isinstance(delays, list) and isinstance(delays[0], dict):
+                return delays[0].get(key, fallback)
+            elif delays and isinstance(delays, dict):
+                return delays.get(key, fallback)
+        
+        # Fallback to pre-loaded self.selectors
+        delays = self.selectors.get('listing', {}).get('delays') or self.selectors.get('application', {}).get('delays')
+        if delays and isinstance(delays, dict):
+            return delays.get(key, fallback)
+            
+        return fallback
 
     # -------------------------
     # Base hooks
@@ -207,7 +246,7 @@ class InfosysStrategy(BaseStrategy):
         
         # Get all keywords
         search = self.config_data.get("search", {})
-        keywords = search.get("keywords", [])
+        keywords = self._get_selectors("search_keywords", search.get("keywords", []))
         if not keywords:
             keywords = [search.get("keyword", "AI")]
         
@@ -267,7 +306,10 @@ class InfosysStrategy(BaseStrategy):
                         
                 # Small delay between keywords
                 if len(keywords) > 1:
-                    time.sleep(random.uniform(3, 5))
+                    time.sleep(random.uniform(
+                        self._get_delay("between_keywords_min", 3.0),
+                        self._get_delay("between_keywords_max", 5.0)
+                    ))
                     
             except Exception as e:
                 logger.error(f"❌ Processing for keyword '{kw}' failed: {e}")
@@ -283,7 +325,7 @@ class InfosysStrategy(BaseStrategy):
         # Initialize keywords on first pass
         if not self._all_keywords:
             search = self.config_data.get("search", {})
-            self._all_keywords = search.get("keywords", [])
+            self._all_keywords = self._get_selectors("search_keywords", search.get("keywords", []))
             if not self._all_keywords:
                 self._all_keywords = [search.get("keyword", "AI")]
             
@@ -349,6 +391,10 @@ class InfosysStrategy(BaseStrategy):
     # Job Search
     # -------------------------
     def _search_jobs(self, keyword, location, distance):
+        """
+        Refined search: Prioritizes interactive searching (typing + clicking)
+        to ensure filters are correctly applied, falling back to URL-based search.
+        """
         # Normalize location → Infosys URL only accepts "USA"
         _loc_map = {
             "united states": "USA",
@@ -357,14 +403,13 @@ class InfosysStrategy(BaseStrategy):
             "u.s.": "USA",
             "u.s.a.": "USA",
             "america": "USA",
+            "united kingdom": "UK",
+            "uk": "UK",
+            "india": "IND",
         }
         loc_param = _loc_map.get((location or "").strip().lower(), location or "USA")
         
-        # Build URL with keyword directly in query string
-        # Format: https://digitalcareers.infosys.com/infosys/global-careers?location=USA&keyword=AI
-        import urllib.parse
-        keyword_encoded = urllib.parse.quote_plus(keyword)
-        
+        # 1. Navigate to base search URL
         if self.config:
             base_url = self.config.get_url('search_base', location=loc_param)
             if not base_url:
@@ -372,19 +417,52 @@ class InfosysStrategy(BaseStrategy):
         else:
             base_url = f"https://digitalcareers.infosys.com/infosys/global-careers?location={loc_param}"
 
-        # Strip any existing keyword param and add fresh one
-        if "keyword=" in base_url:
-            base_url = base_url.split("&keyword=")[0].split("?keyword=")[0]
-        
-        search_url = f"{base_url}&keyword={keyword_encoded}"
-        
-        logger.info(f"Searching Infosys: {keyword} in {loc_param}")
-        logger.info(f"Opening URL: {search_url}")
-        self.driver.get(search_url)
-        time.sleep(6)
-        logger.info(f"Current URL after navigation: {self.driver.current_url}")
+        logger.info(f"Navigating to search base URL: {base_url}")
+        self.driver.get(base_url)
+        time.sleep(self._get_delay("page_load_min", 6.0))
         self._close_common_popups()
-        time.sleep(3)
+
+        # 2. Try interactive search
+        search_input_selectors = self._get_selectors("search_input", ["input#keyword", "input[name='keyword']", "input.search-keyword"])
+        search_button_selectors = self._get_selectors("search_button", ["button#search", "button.search-btn", "input[type='submit']"])
+        
+        search_input = self._find_element_safe(search_input_selectors)
+        if search_input:
+            logger.info(f"Performing interactive search for: {keyword}")
+            try:
+                # Clear and type humanly
+                search_input.clear()
+                self.human.human_type(search_input, keyword)
+                time.sleep(self._get_delay("form_fill_min", 0.5))
+                
+                search_btn = self._find_element_safe(search_button_selectors)
+                if search_btn:
+                    self.human.human_click(search_btn)
+                else:
+                    logger.info("Search button not found, pressing ENTER...")
+                    search_input.send_keys(Keys.ENTER)
+                
+                time.sleep(self._get_delay("after_click_min", 3.0))
+                logger.info("Search submitted successfully.")
+            except Exception as e:
+                logger.warning(f"Interactive search failed: {e}. Falling back to URL-based search.")
+                import urllib.parse
+                keyword_encoded = urllib.parse.quote_plus(keyword)
+                search_url = f"{base_url}&keyword={keyword_encoded}"
+                logger.info(f"Navigating to URL: {search_url}")
+                self.driver.get(search_url)
+        else:
+            # Fallback to URL-based search if no input found
+            import urllib.parse
+            keyword_encoded = urllib.parse.quote_plus(keyword)
+            search_url = f"{base_url}&keyword={keyword_encoded}"
+            logger.info(f"Search input not found. Using URL: {search_url}")
+            self.driver.get(search_url)
+
+        # Ensure page is loaded
+        time.sleep(self._get_delay("page_load_min", 6.0))
+        self._close_common_popups()
+        time.sleep(self._get_delay("after_click_min", 3.0))
 
         try:
 
@@ -425,7 +503,13 @@ class InfosysStrategy(BaseStrategy):
                     if next_btn and "disabled" not in (next_btn.get_attribute("class") or ""):
                         logger.info("Moving to next page...")
                         self.human.human_click(next_btn)
-                        time.sleep(5) # More time for page load
+                        time.sleep(self._get_delay("form_fill_min", 2.0)) # Brief pause for UI
+                        
+                        # 40s wait for virus scan - configurable
+                        scan_delay = self._get_delay("backend_processing", 40.0)
+                        logger.info(f"Waiting {scan_delay} seconds for backend processing/virus scan...")
+                        time.sleep(scan_delay)
+                        time.sleep(self._get_delay("page_load_min", 5.0)) # More time for page load
                     else:
                         logger.info("No more pages found.")
                         break
@@ -509,7 +593,7 @@ class InfosysStrategy(BaseStrategy):
 
         logger.info(f"--- Applying to: {job_url} ---")
         self.driver.get(job_url)
-        time.sleep(3)
+        time.sleep(self._get_delay("after_click_min", 3.0))
         self._close_common_popups()
 
         # Capture job description for DuckDB before starting apply flow
@@ -533,7 +617,7 @@ class InfosysStrategy(BaseStrategy):
                 self.db_session.rollback()
 
         # 1) Apply - Get selectors from database (with proper fallback)
-        db_selectors = self.config.get_selectors('apply_button') if self.config else []
+        db_selectors = self._get_selectors('apply_button')
         
         # Use database selectors if available, otherwise use hardcoded fallback
         if db_selectors:
@@ -558,7 +642,7 @@ class InfosysStrategy(BaseStrategy):
         logger.info(f"Selectors: {apply_selectors}")
         
         # Wait longer for page to fully load
-        time.sleep(5)
+        time.sleep(self._get_delay("page_load_min", 5.0))
         
         # Try to scroll to find the button
         try:
@@ -573,7 +657,7 @@ class InfosysStrategy(BaseStrategy):
             logger.error(f"Page Title: {self.driver.title}")
             return False
 
-        time.sleep(10) # Wait for new window to fully open and stabilize
+        time.sleep(self._get_delay("page_load_max", 10.0)) # Wait for new window to fully open and stabilize
         
         # Robust window switching
         try:
@@ -1807,17 +1891,19 @@ class InfosysStrategy(BaseStrategy):
                 if method(resume_path):
                     # Infosys Double Popup Logic (User Request)
                     logger.info("Closing 1st popup (Immediate post-upload)...")
-                    time.sleep(2) # Brief pause for UI
+                    time.sleep(self._get_delay("after_upload_popup_wait", 2.0)) # Brief pause for UI
                     self._close_common_popups()
                     
-                    logger.info("Waiting for processing 'on their end' (2nd popup trigger)...")
-                    time.sleep(40) # Wait for backend processing/virus scan (User requested 40s)
+                    # 40s wait for virus scan - configurable
+                    scan_delay = self._get_delay("backend_processing", 40.0)
+                    logger.info(f"Waiting {scan_delay} seconds for backend processing/virus scan...")
+                    time.sleep(scan_delay)
                     
                     logger.info("Closing 2nd popup (Post-save/processing)...")
                     # Poll for the popup for 10 seconds to ensure we catch it
-                    for _ in range(10):
+                    for _ in range(int(self._get_delay("second_popup_poll_duration", 10))):
                         self._close_common_popups()
-                        time.sleep(1)
+                        time.sleep(self._get_delay("second_popup_poll_interval", 1))
                     
                     # Verify for all methods
                     is_verified = self._verify_upload_success()
@@ -1831,7 +1917,7 @@ class InfosysStrategy(BaseStrategy):
                     ]
                     if self._click_any(import_selectors):
                         logger.info("Γ£ô Clicked 'Import fields' button.")
-                        time.sleep(5) # Wait for import to process
+                        time.sleep(self._get_delay("after_import_fields_wait", 5.0)) # Wait for import to process
                     else:
                         logger.info("Did not find 'Import fields' button (might be auto-imported or not present).")
 
@@ -1842,7 +1928,7 @@ class InfosysStrategy(BaseStrategy):
                         logger.info("Clicking Next/Proceed after resume section...")
                         # More aggressive click and wait
                         self._click_any(["a#forward-navigation", "button#next", "//button[contains(text(), 'Next')]", "//a[contains(text(), 'Next')]", "//span[contains(text(), 'Proceed')]"])
-                        time.sleep(5)
+                        time.sleep(self._get_delay("after_resume_next_wait", 5.0))
                         return True
 
                     if is_verified:

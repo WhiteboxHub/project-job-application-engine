@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Capgemini credentials (SuccessFactors login required)
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
+    CAPGEMINI_KEYWORDS: str = "AI,Python,Machine Learning"
 
     model_config = SettingsConfigDict(
         env_file=".env",

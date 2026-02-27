@@ -8,6 +8,7 @@ from strategies.custom.wipro import WiproStrategy
 from strategies.custom.hiring_cafe import HiringCafeStrategy
 from strategies.custom.kforce import KForceStrategy
 from strategies.custom.capgemini import CapgeminiStrategy
+from strategies.custom.infosys import InfosysStrategy
 
 __all__ = [
     'InsightGlobalStrategy', 
@@ -15,6 +16,7 @@ __all__ = [
     'WiproStrategy', 
     'HiringCafeStrategy',
     'KForceStrategy',
-    'CapgeminiStrategy'
+    'CapgeminiStrategy',
+    'InfosysStrategy'
 ]
 

@@ -41,6 +41,17 @@ class CapgeminiStrategy(BaseStrategy):
         # Initialize selectors from database
         self.selectors_config = self._load_selectors()
         
+        # Load delays from database
+        self.delays = self.selectors_config.get('application', {}).get('delays', {
+            "between_steps_min": 1.0,
+            "between_steps_max": 2.5,
+            "after_login_click": 10.0,
+            "form_fill_min": 0.5,
+            "form_fill_max": 1.2,
+            "dropdown_select_min": 0.5,
+            "dropdown_select_max": 1.0
+        })
+        
         # Get credentials from settings
         self.email = settings.CAPGEMINI_EMAIL
         self.password = settings.CAPGEMINI_PASSWORD
@@ -350,7 +361,7 @@ class CapgeminiStrategy(BaseStrategy):
                 EC.element_to_be_clickable((By.CSS_SELECTOR, apply_btn_sel))
             )
             self.human.human_click(apply_btn)
-            time.sleep(3)
+            time.sleep(self.delays.get('page_load_min', 3))
             
             # 3. Click second "Apply now" button (on careers subdomain)
             logger.info("Capgemini [Step 3]: Clicking 'Apply now' on careers page")
@@ -359,29 +370,32 @@ class CapgeminiStrategy(BaseStrategy):
                     EC.element_to_be_clickable((By.CSS_SELECTOR, apply_btn_sel))
                 )
                 self.human.human_click(apply_btn2)
-                time.sleep(3)
+                time.sleep(self.delays.get('page_load_min', 3))
             except:
                 logger.debug("Second apply button not found, continuing...")
             
             # 4. Wait for SuccessFactors page to load (and handle new windows)
             logger.info("Capgemini [Step 4]: Waiting for SuccessFactors page")
             
-            # Check if a new window/tab opened
-            if len(self.driver.window_handles) > 1:
-                logger.info("  → Switching to new window/tab")
-                self.driver.switch_to.window(self.driver.window_handles[-1])
-                
-            try:
-                WebDriverWait(self.driver, 30).until(
-                    lambda d: "successfactors" in d.current_url.lower() or "sfcareer" in d.current_url.lower()
-                )
-            except Exception as e:
-                logger.warning(f"  ⚠️ Timeout waiting for SuccessFactors URL. Current URL: {self.driver.current_url}")
-                # Check again if another window appeared late
-                if len(self.driver.window_handles) > 1:
-                    self.driver.switch_to.window(self.driver.window_handles[-1])
+            # More robust window switching: find the window that is SuccessFactors and not devtools
+            start_time = time.time()
+            sf_window_found = False
+            while time.time() - start_time < 30:
+                for handle in self.driver.window_handles:
+                    self.driver.switch_to.window(handle)
+                    curr_url = self.driver.current_url.lower()
+                    if ("successfactors" in curr_url or "sfcareer" in curr_url) and "devtools" not in curr_url:
+                        logger.info(f"  → Switched to SuccessFactors window: {curr_url}")
+                        sf_window_found = True
+                        break
+                if sf_window_found:
+                    break
+                time.sleep(self.delays.get('short_delay_min', 1))
             
-            time.sleep(3)
+            if not sf_window_found:
+                logger.warning(f"  ⚠️ Could not identify SuccessFactors window. Current URL: {self.driver.current_url}")
+            
+            time.sleep(self.delays.get('page_load_min', 3))
             
             # 5. Click "Sign In" button
             logger.info("Capgemini [Step 5]: Clicking 'Sign In' button")
@@ -398,7 +412,7 @@ class CapgeminiStrategy(BaseStrategy):
                             EC.element_to_be_clickable((By.CSS_SELECTOR, sign_in_sel))
                         )
                     self.human.human_click(sign_in_btn)
-                    time.sleep(2)
+                    time.sleep(self.delays.get('click_min', 2))
                 except Exception as e:
                     logger.debug(f"Sign in button not found or already on login page: {e}")
             
@@ -453,7 +467,7 @@ class CapgeminiStrategy(BaseStrategy):
                 try:
                     trigger = WebDriverWait(ctx, 3).until(EC.element_to_be_clickable((by, val)))
                     ctx.execute_script("arguments[0].scrollIntoView({block: 'center'});", trigger)
-                    time.sleep(1)
+                    time.sleep(self.delays.get('scroll_min', 1))
                     try:
                         trigger.click()
                     except:
@@ -467,7 +481,7 @@ class CapgeminiStrategy(BaseStrategy):
             # 1. Try finding in main document
             if not find_and_click_trigger(self.driver):
                 # 2. Scan iframes
-                iframes = self.driver.find_elements(By.TAG_MACHINE_NAME, "iframe")
+                iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
                 found_in_iframe = False
                 for iframe in iframes:
                     try:
@@ -483,7 +497,7 @@ class CapgeminiStrategy(BaseStrategy):
                     logger.warning(f"  ⚠️ Could not find trigger for {field_name}")
                     return False
 
-            time.sleep(1.5)
+            time.sleep(self.delays.get('dropdown_open_min', 1.5))
             
             # 3. Find and click the option (options often appear at bottom of main body)
             # Switch back to default content as SuccessFactors often puts listbox at top level
@@ -498,24 +512,48 @@ class CapgeminiStrategy(BaseStrategy):
             ]
             
             option_found = False
+            # 1. Try exact matches first
             for xpath in option_strategies:
                 try:
-                    option = WebDriverWait(self.driver, 4).until(
+                    option = WebDriverWait(self.driver, 2).until(
                         EC.element_to_be_clickable((By.XPATH, xpath))
                     )
-                    option.click()
+                    self.human.human_click(option)
+                    time.sleep(random.uniform(
+                        self.delays.get('dropdown_select_min', 0.5), 
+                        self.delays.get('dropdown_select_max', 1.0)
+                    ))
                     logger.info(f"  ✓ Set {field_name} to '{option_text}'")
                     option_found = True
                     break
                 except:
                     continue
             
+            # 2. Try case-insensitive and partial matches if exact failed
+            if not option_found:
+                logger.info(f"  🔍 Attempting case-insensitive match for '{option_text}'")
+                try:
+                    # SuccessFactors often uses <li> for dropdown options
+                    options = self.driver.find_elements(By.TAG_NAME, "li")
+                    for opt in options:
+                        if opt.is_displayed() and option_text.lower() in opt.text.lower():
+                            logger.info(f"  ✓ Found case-insensitive match: '{opt.text}'")
+                            self.human.human_click(opt)
+                            time.sleep(random.uniform(
+                                self.delays.get('dropdown_select_min', 0.5), 
+                                self.delays.get('dropdown_select_max', 1.0)
+                            ))
+                            option_found = True
+                            break
+                except:
+                    pass
+            
             if not option_found:
                 logger.warning(f"  ⚠️ Could not find option '{option_text}' for {field_name}")
                 self.driver.save_screenshot(f"/Users/bavishsaireddy/project-job-application-engine/logs/error_option_{field_name}.png")
                 return False
                 
-            time.sleep(1)
+            time.sleep(self.delays.get('short_delay_min', 1))
             return True
             
         except Exception as e:
@@ -534,13 +572,23 @@ class CapgeminiStrategy(BaseStrategy):
 
         try:
             # Check if we are already logged in/on the application page
+            # We must be very careful not to skip if the fields are visible but disabled (behind a login modal)
+            apply_btn_sel = self.selectors_config.get('application', {}).get('submit_btn')
             if phone_sel:
                 try:
-                    # Check for phone field or any other common form field
+                    # Check for phone field AND if it's actually visible and enabled
                     already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
-                    if already_on_form and already_on_form[0].is_displayed():
-                        logger.info("  ✓ Already logged in and on application form")
-                        return True
+                    if already_on_form and already_on_form[0].is_displayed() and already_on_form[0].is_enabled():
+                        # Also check if an apply/submit button is visible
+                        if apply_btn_sel:
+                            submit_btn = self.driver.find_elements(By.CSS_SELECTOR, apply_btn_sel)
+                            if submit_btn and submit_btn[0].is_displayed():
+                                logger.info("  ✓ Already logged in and on application form (Submit button visible)")
+                                return True
+                        else:
+                            # Fallback if no specific submit_btn configured but phone is ready
+                            logger.info("  ✓ Already on application form (Phone field ready)")
+                            return True
                 except:
                     pass
 
@@ -556,17 +604,28 @@ class CapgeminiStrategy(BaseStrategy):
                     WebDriverWait(self.driver, 5).until(
                         EC.invisibility_of_element_located((By.ID, "cookieManagerModal"))
                     )
-                    time.sleep(1)
+                    time.sleep(self.delays.get('dropdown_select_min', 1))
             except Exception as ce:
                 logger.debug(f"  Cookie banner interaction issue: {ce}")
 
-            # 1. Enter email
-            email_input = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, email_sel))
-            )
+            # Check for email field presence first
+            try:
+                email_input = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, email_sel))
+                )
+            except:
+                # If email field not found, maybe we are ALREADY logged in (multi-job flow)
+                logger.info("  ℹ️ Login field not found, checking if already logged in...")
+                if self._check_if_logged_in_on_form(phone_sel):
+                    return True
+                raise Exception("Login fields not found and not detected as logged in")
+
+            # 1. Fill Email
             logger.info(f"  ⌨️ Entering email: {self.email}")
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", email_input)
+            time.sleep(self.delays.get('scroll_min', 1))
             
-            # Clear field multiple ways to ensure it's empty
+            # Clear thoroughly
             self.driver.execute_script("arguments[0].value = '';", email_input)
             email_input.clear()
             try:
@@ -574,25 +633,25 @@ class CapgeminiStrategy(BaseStrategy):
                 email_input.send_keys(Keys.BACKSPACE)
             except:
                 pass
-            time.sleep(0.5)
+            time.sleep(self.delays.get('short_delay_min', 0.5))
             
             # Use JS to set the value, then send a key to trigger events
             self.driver.execute_script("arguments[0].value = arguments[1];", email_input, self.email)
-            time.sleep(0.5)
+            time.sleep(self.delays.get('short_delay_min', 0.5))
             try:
                 email_input.send_keys(Keys.END)
                 email_input.send_keys(" ")
                 email_input.send_keys(Keys.BACKSPACE)
             except:
                 pass
-            time.sleep(1)
+            time.sleep(self.delays.get('form_fill_min', 1))
             
             # 2. Enter password
             password_input = self.driver.find_element(By.CSS_SELECTOR, password_sel)
             self.driver.execute_script("arguments[0].value = '';", password_input)
             password_input.clear()
             self.driver.execute_script("arguments[0].value = arguments[1];", password_input, self.password)
-            time.sleep(0.5)
+            time.sleep(self.delays.get('short_delay_min', 0.5))
             try:
                 # Trigger input events then send ENTER as a primary submission attempt
                 password_input.send_keys(Keys.END)
@@ -600,33 +659,58 @@ class CapgeminiStrategy(BaseStrategy):
                 logger.info("  ⌨️ Sent ENTER to password field")
             except Exception as pe:
                 logger.debug(f"  Password ENTER failed: {pe}")
-            time.sleep(2)
+            time.sleep(self.delays.get('form_fill_min', 2))
             
             # Debug: take screenshot before sign-in click
             self.driver.save_screenshot("/Users/bavishsaireddy/project-job-application-engine/logs/before_login_click.png")
             
             # 3. Click submit button
-            time.sleep(2)
+            time.sleep(self.delays.get('form_fill_min', 2))
             sign_in_clicked = False
             
-            # Strategy 1: Find all buttons with ID and click the visible one
+            # Strategy 1: Find by ID or CSS from database
             try:
-                buttons = self.driver.find_elements(By.ID, "fbqa_signin")
-                for btn in buttons:
-                    if btn.is_displayed():
-                        logger.info("  🚀 Found visible Sign In button by ID")
-                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
-                        time.sleep(1)
-                        try:
-                            # Try standard click first to trigger juic events
-                            btn.click()
-                        except:
-                            # Fallback to JS click
-                            self.driver.execute_script("arguments[0].click();", btn)
-                        sign_in_clicked = True
-                        break
+                submit_sel = self.get_sel('application', 'login_submit', required=False)
+                if submit_sel:
+                    logger.info(f"  🚀 Attempting login submission with selector: {submit_sel}")
+                    # Handle comma-separated selectors
+                    selectors = [s.strip() for s in submit_sel.split(',')]
+                    for sel in selectors:
+                        elements = []
+                        if sel.startswith('#'):
+                            elements = self.driver.find_elements(By.ID, sel[1:])
+                        if not elements:
+                            elements = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        
+                        for btn in elements:
+                            if btn.is_displayed():
+                                logger.info(f"  ✓ Found visible submit button: {sel}")
+                                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                                time.sleep(self.delays.get('scroll_min', 1))
+                                try:
+                                    btn.click()
+                                except:
+                                    self.driver.execute_script("arguments[0].click();", btn)
+                                sign_in_clicked = True
+                                break
+                        if sign_in_clicked: break
             except Exception as e1:
-                logger.debug(f"  Visible ID lookup failed: {e1}")
+                logger.debug(f"  Selector-based lookup failed: {e1}")
+            
+            if not sign_in_clicked:
+                # Fallback to legacy hardcoded ID if needed
+                try:
+                    buttons = self.driver.find_elements(By.ID, "fbqa_signin")
+                    for btn in buttons:
+                        if btn.is_displayed():
+                            logger.info("  🚀 Found visible Sign In button by legacy ID")
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                            time.sleep(self.delays.get('scroll_min', 1))
+                            self.driver.execute_script("arguments[0].click();", btn)
+                            sign_in_clicked = True
+                            break
+                except:
+                    pass
             
             # Strategy 2: Find all buttons with CSS and click the visible one
             if not sign_in_clicked:
@@ -701,25 +785,13 @@ class CapgeminiStrategy(BaseStrategy):
                     except:
                         self.driver.switch_to.default_content()
             
-            if not sign_in_clicked:
-                logger.error("  ❌ Could NOT find Sign In button with ANY strategy")
-                # Dump page source snippet for debugging
-                try:
-                    src = self.driver.page_source
-                    if 'fbqa_signin' in src:
-                        idx = src.index('fbqa_signin')
-                        logger.info(f"  📄 Button IS in page source: ...{src[max(0,idx-100):idx+100]}...")
-                    else:
-                        logger.warning("  📄 'fbqa_signin' NOT in page source at all")
-                except:
-                    pass
             else:
                 # Debug: take screenshot after click
-                time.sleep(2)
+                time.sleep(self.delays.get('click_min', 2))
                 self.driver.save_screenshot("/Users/bavishsaireddy/project-job-application-engine/logs/after_login_click.png")
 
             # Wait for login to complete and verify redirect
-            time.sleep(15)
+            time.sleep(self.delays.get('page_load_max', 15))
             
             # Check for error message on page
             try:
@@ -1002,3 +1074,17 @@ class CapgeminiStrategy(BaseStrategy):
             except Exception as e:
                 logger.error(f"Failed to record application in DB: {e}")
                 self.db_session.rollback()
+
+    def _check_if_logged_in_on_form(self, phone_sel=None):
+        """Helper to verify if we are already authenticated and on the application questionnaire."""
+        if not phone_sel:
+            return False
+            
+        try:
+            # Check for phone field AND if it's actually visible and enabled
+            already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
+            if already_on_form and already_on_form[0].is_displayed() and already_on_form[0].is_enabled():
+                return True
+        except:
+            pass
+        return False

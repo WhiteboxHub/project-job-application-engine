@@ -38,6 +38,16 @@ class KForceStrategy(BaseStrategy):
         # Initialize selectors from database only
         self.selectors_config = self._load_selectors()
         
+        # Load delays from database
+        self.delays = self.selectors_config.get('application', {}).get('delays', {
+            "between_steps_min": 1.0,
+            "between_steps_max": 2.5,
+            "after_click_min": 1.5,
+            "after_click_max": 3.0,
+            "form_fill_min": 0.5,
+            "form_fill_max": 1.2
+        })
+        
         # Initial log
         if self.db_session:
             logger.info("✅ KForce: Database session available")
@@ -140,15 +150,19 @@ class KForceStrategy(BaseStrategy):
                     logger.info(f"\n🚀 Applying to: {listing.get('job_title')}")
                     if self.apply(listing):
                         total_applied += 1
-                        # Human Behavior: Pause after submission before next job
-                        logger.info("  ✓ Human Behavior: Pausing for 3 seconds...")
-                        time.sleep(3)
+                    # Human Behavior: Pause after submission before next job
+                    delay = self.delays.get('after_click_min', 3)
+                    logger.info(f"  ✓ Human Behavior: Pausing for {delay} seconds...")
+                    time.sleep(delay)
                 else:
                     logger.debug(f"KForce: Skipping duplicate job: {listing.get('job_title')}")
             
             # Delay between searches
             if len(keywords) > 1:
-                time.sleep(random.uniform(3, 6))
+                time.sleep(random.uniform(
+                    self.delays.get('between_steps_min', 3), 
+                    self.delays.get('between_steps_max', 6)
+                ))
                 
         logger.info(f"\n✅ KForce: Combined workflow finished. Total applications: {total_applied}")
         return total_applied
@@ -239,7 +253,7 @@ class KForceStrategy(BaseStrategy):
             search_url = "https://www.kforce.com/find-work/search-jobs/"
             logger.info(f"KForce: Navigating to {search_url}")
             self.driver.get(search_url)
-            time.sleep(4)
+            time.sleep(self.delays.get('after_click_min', 4))
 
             # Try to find and fill the search input
             input_el, used_sel = _find_first(INPUT_SELECTORS, timeout=5)
@@ -250,6 +264,13 @@ class KForceStrategy(BaseStrategy):
                 success = self.human.fill_text_field(input_el, keyword)
                 if success:
                     logger.info(f"  ✓ Entered keyword: {keyword}")
+                    try:
+                        from selenium.webdriver.common.keys import Keys
+                        input_el.send_keys(Keys.RETURN)
+                        logger.info("  ✓ Pressed ENTER to execute search immediately")
+                        time.sleep(5)
+                    except Exception as e:
+                        logger.warning(f"  ⚠️ Could not press ENTER: {e}")
             else:
                 # Fallback: navigate directly to search URL with query param
                 encoded = keyword.replace(' ', '+')
@@ -339,7 +360,10 @@ class KForceStrategy(BaseStrategy):
             for attempt in range(2):
                 try:
                     self.driver.get(job_url)
-                    WebDriverWait(self.driver, 20).until(
+                    # Force a refresh to ensure SPA resets correctly and doesn't stick to old job details
+                    time.sleep(2)
+                    self.driver.refresh()
+                    WebDriverWait(self.driver, 25).until(
                         EC.presence_of_element_located((By.TAG_NAME, "body"))
                     )
                     break
@@ -348,13 +372,43 @@ class KForceStrategy(BaseStrategy):
                     logger.warning(f"Navigation to {job_url} failed, retrying... ({e})")
                     time.sleep(5)
 
-            time.sleep(3)
+            time.sleep(5) # Give it extra time to stabilize
             
             # 2. Click 'Apply Today' initiator
             logger.info("KForce [Step 2]: Searching for Apply initiator")
-            initiator = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, apply_initiator))
-            )
+            initiator = None
+            try:
+                initiator = WebDriverWait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, apply_initiator))
+                )
+            except Exception:
+                pass
+                
+            if not initiator:
+                logger.warning("  ⚠️ Default initiator not found, trying fallbacks...")
+                fallbacks = [
+                    (By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'apply')]"),
+                    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'apply')]"),
+                    (By.CSS_SELECTOR, ".applyButton"),
+                    (By.CSS_SELECTOR, ".apply-btn"),
+                    (By.CSS_SELECTOR, ".btn-apply"),
+                    (By.XPATH, "//button[contains(@class, 'apply')]"),
+                    (By.XPATH, "//a[contains(@class, 'apply')]")
+                ]
+                for by, sel in fallbacks:
+                    try:
+                        initiator = WebDriverWait(self.driver, 3).until(
+                            EC.element_to_be_clickable((by, sel))
+                        )
+                        if initiator:
+                            logger.info(f"  ✓ Found fallback initiator via {sel}")
+                            break
+                    except Exception:
+                        pass
+                        
+            if not initiator:
+                raise Exception("Could not find Apply initiator with default or fallback selectors")
+                
             logger.info("  ✓ Found initiator, clicking...")
             self.human.human_click(initiator)
             time.sleep(2)
@@ -362,11 +416,39 @@ class KForceStrategy(BaseStrategy):
             # 3. Click 'Apply Today' dropdown option (KForce specific)
             logger.info("KForce [Step 3]: Searching for 'Apply Today' dropdown option")
             apply_link_sel = self.get_sel('application', 'apply_link_option')
-            apply_link = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, apply_link_sel))
-            )
-            logger.info("  ✓ Found dropdown option, clicking...")
-            self.human.human_click(apply_link)
+            apply_link = None
+            try:
+                apply_link = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, apply_link_sel))
+                )
+            except Exception:
+                pass
+                
+            if not apply_link:
+                logger.warning("  ⚠️ Default dropdown option not found, trying fallbacks...")
+                dropdown_fallbacks = [
+                    (By.CSS_SELECTOR, "img[title='Form']"),
+                    (By.CSS_SELECTOR, "a.dropdown-item[href*='apply' i]:not([href*='indeed' i])"),
+                    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'apply') and not(contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'indeed'))]"),
+                    (By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'apply') and not(contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'indeed'))]")
+                ]
+                for by, sel in dropdown_fallbacks:
+                    try:
+                        apply_link = WebDriverWait(self.driver, 3).until(
+                            EC.element_to_be_clickable((by, sel))
+                        )
+                        if apply_link:
+                            logger.info(f"  ✓ Found fallback dropdown option via {sel}")
+                            break
+                    except Exception:
+                        pass
+            
+            if apply_link:
+                logger.info("  ✓ Found dropdown option, clicking...")
+                self.human.human_click(apply_link)
+                time.sleep(2)
+            else:
+                logger.warning("  ⚠️ No secondary apply link found, proceeding hoping Step 2 was enough...")
             
             # Wait for application form to load
             first_field_sel = self.get_sel('application', 'form_fields', 'first_name')
@@ -376,12 +458,21 @@ class KForceStrategy(BaseStrategy):
             logger.info("KForce: Application form loaded")
             
             # 4. Fill personal details
+            phone_raw = applicant.get('phone', '')
+            # Try plain 10-digit number for better compatibility with auto-formatters
+            # format: 6692133034
+            digits_only = "".join(filter(str.isdigit, phone_raw))
+            if len(digits_only) == 10:
+                formatted_phone = digits_only
+            else:
+                formatted_phone = phone_raw
+            
             fields_map = {
                 'first_name': applicant.get('first_name'),
                 'last_name': applicant.get('last_name'),
                 'email': applicant.get('email'),
                 'email_verify': applicant.get('email'),
-                'phone': applicant.get('phone'),
+                'phone': formatted_phone,
                 'zip_code': applicant.get('zip_code')
             }
             
@@ -393,7 +484,10 @@ class KForceStrategy(BaseStrategy):
                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                     )
                     self.human.fill_text_field(elem, value)
-                    time.sleep(random.uniform(0.7, 1.2))
+                    time.sleep(random.uniform(
+                        self.delays.get('form_fill_min', 0.7), 
+                        self.delays.get('form_fill_max', 1.2)
+                    ))
                 else:
                     logger.warning(f"  ⚠️ Skipping field '{field}': missing selector or value")
             
@@ -401,15 +495,40 @@ class KForceStrategy(BaseStrategy):
             state_val = applicant.get('state')
             state_selector = self.get_sel('application', 'form_fields', 'state')
             if state_val and state_selector:
-                state_dropdown = self.driver.find_element(By.CSS_SELECTOR, state_selector)
-                from selenium.webdriver.support.ui import Select
-                select = Select(state_dropdown)
+                logger.info(f"KForce [Step 5]: Selecting state '{state_val}'")
                 try:
-                    select.select_by_visible_text(state_val)
-                except:
-                    # Fallback to value if text fails
-                    select.select_by_value(state_val)
-                logger.debug(f"Selected state: {state_val}")
+                    state_dropdown = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, state_selector))
+                    )
+                    self.human.scroll_to_element(state_dropdown)
+                    
+                    # Robust JS selection to ensure 'change' event fires
+                    # We'll try to find the option by text first to get the value
+                    js_select = """
+                    var select = arguments[0];
+                    var textToFind = arguments[1];
+                    for (var i = 0; i < select.options.length; i++) {
+                        if (select.options[i].text.toLowerCase() === textToFind.toLowerCase() || 
+                            select.options[i].value.toLowerCase() === textToFind.toLowerCase()) {
+                            select.value = select.options[i].value;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            return true;
+                        }
+                    }
+                    return false;
+                    """
+                    success = self.driver.execute_script(js_select, state_dropdown, state_val)
+                    if not success:
+                        # Fallback to standard Select if JS fails
+                        from selenium.webdriver.support.ui import Select
+                        select = Select(state_dropdown)
+                        try: select.select_by_visible_text(state_val)
+                        except: select.select_by_value(state_val)
+                    
+                    logger.debug(f"Selected state: {state_val}")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.warning(f"  ⚠️ Could not select state '{state_val}': {e}")
             
             # 6. Upload Resume
             logger.info("KForce [Step 6]: Resolving resume path")
@@ -518,13 +637,16 @@ class KForceStrategy(BaseStrategy):
                         logger.info("\n" + "!" * 60)
                         logger.info("! DRY RUN SIMULATION: FOUND SUBMIT BUTTON")
                         logger.info("! NO REAL SUBMISSION WILL BE PERFORMED IN THIS MODE")
+                        logger.info("! Waiting 15 seconds as requested...")
                         logger.info("!" * 60 + "\n")
+                        time.sleep(15)
                         self._record_application(listing, job_url, job_title, "success", "Dry run simulation")
                         return True
                     else:
                         submit_btn = WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, submit_sel)))
                         self.human.human_click(submit_btn)
-                        logger.info("KForce: Application submitted, waiting for verification...")
+                        logger.info("KForce: Application submitted, waiting 15 seconds as requested...")
+                        time.sleep(15)
                         
                         # 9. Verify Submission
                         success = self._verify_submission()
