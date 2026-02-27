@@ -8,7 +8,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import duckdb
 from config.settings import settings
 
-conn = duckdb.connect(settings.DUCKDB_PATH)
+if settings.DUCKDB_PATH.startswith("md:"):
+    conn = duckdb.connect(f"{settings.DUCKDB_PATH}?token={settings.MOTHERDUCK_TOKEN}")
+else:
+    conn = duckdb.connect(settings.DUCKDB_PATH)
 
 # Wipro job_site id = 3 (from init_db.py)
 WIPRO_SITE_ID = 3

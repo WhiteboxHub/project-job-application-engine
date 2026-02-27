@@ -144,8 +144,10 @@ class WiproStrategy(BaseStrategy):
                 f"https://careers.wipro.com/search/?q={encoded_keyword}"
                 + (f"&locationsearch={encoded_location}" if encoded_location else "")
             )
-
-            time.sleep(2)
+            
+            logger.info(f"Navigating to search URL: {search_results_url}")
+            self.driver.get(search_results_url)
+            time.sleep(5)
             
             # Accept cookies if banner present
             try:
@@ -177,7 +179,59 @@ class WiproStrategy(BaseStrategy):
                     except:
                         continue
 
+                if keyword_input:
+                    self.human.fill_text_field(keyword_input, keyword)
+                    logger.info(f"  [+] Entered keyword: {keyword}")
+                else:
+                    logger.warning("  [-] Could not find keyword input")
+                    
+                # Enter location
+                location_selectors = self.selectors_config.get('location_input', '').split(', ')
+                location_input = None
                 
+                if location and location_selectors:
+                    for selector in location_selectors:
+                        if not selector: continue
+                        try:
+                            location_input = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            break
+                        except:
+                            continue
+
+                    if location_input:
+                        self.human.fill_text_field(location_input, location)
+                        logger.info(f"  [+] Entered location: {location}")
+                    else:
+                        logger.warning("  [-] Could not find location input")
+
+                try:
+                    search_btn_selectors = self.selectors_config.get('search_button', '').split(', ')
+                    search_btn = None
+                    for selector in search_btn_selectors:
+                        if not selector: continue
+                        try:
+                            search_btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            break
+                        except:
+                            continue
+
+                    if search_btn:
+                        try:
+                            search_btn.click()
+                        except:
+                            self.driver.execute_script("arguments[0].click();", search_btn)
+                        logger.info("  [+] Clicked search button")
+                        time.sleep(10)  # Wait for results to load
+                except Exception as e:
+                    logger.debug(f"Search button issue: {e}")
+
+            except Exception as e:
+                logger.error(f"Error filling search form: {e}")
+
+            # Define JavaScript for extraction
+            EXTRACT_JOBS_JS = """
+            return (function() {
+                var results = [];
                 // Strategy 1: Look for anchor tags inside the document (light DOM)
                 // SAP SF j2w pages render <a class="jobTitle"> in the LIGHT DOM
                 var anchors = document.querySelectorAll('a.jobTitle, a[class*="jobTitle"]');
@@ -252,18 +306,8 @@ class WiproStrategy(BaseStrategy):
                     return {strategy: 'shadow-dom-a[href*="/job/"]', jobs: results};
                 }
                 
-
-                if search_btn:
-                    try:
-                        search_btn.click()
-                    except:
-                        self.driver.execute_script("arguments[0].click();", search_btn)
-                    logger.info("  [+] Clicked search button")
-                    time.sleep(10)  # Wait for results to load
-
-                
                 return {strategy: 'none', jobs: []};
-            })()
+            })();
             """
             
             # Poll with JS until jobs appear or timeout (max 40s)
@@ -297,7 +341,7 @@ class WiproStrategy(BaseStrategy):
                 return all_jobs
 
             # ------------------------------------------------------------------ #
-            # Process extracted job data                                          #
+            # Process extracted job data
             # ------------------------------------------------------------------ #
             for idx, job_raw in enumerate(job_data_raw):
                 try:
@@ -307,51 +351,21 @@ class WiproStrategy(BaseStrategy):
                     if not title or not job_url:
                         continue
 
-                # Try to go to next page
-                try:
-                    next_btn = self._find_element_by_selectors(
-                        self.selectors_config['next_page'],
-                        timeout=5
-                    )
+                    if job_url in seen_urls:
+                        continue
+                        
+                    seen_urls.add(job_url)
                     
-                    if next_btn and next_btn.is_displayed():
-                        # SAP sometimes uses custom attributes or classes to disable buttons
-                        is_disabled = next_btn.get_attribute("aria-disabled") == "true" or "sapMBtnDisabled" in next_btn.get_attribute("class")
-                        
-                        if is_disabled:
-                            logger.info("  - No more pages (Next button disabled)")
-                            break
-                            
-                        # Wait for any loading overlays to disappear before clicking
-                        try:
-                            WebDriverWait(self.driver, 10).until(
-                                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".sapUiLocalBusyIndicator, #busyIndicator, .sapMBusyDialog"))
-                            )
-                        except:
-                            pass # If it times out waiting for overlay to disappear, try clicking anyway
-                            
-                        # Try standard click first, fallback to JS
-                        try:
-                            # Scroll into view safely
-                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_btn)
-                            time.sleep(1)
-                            self.human.human_click(next_btn)
-                        except Exception as e:
-                            logger.debug(f"  Standard click failed, attempting JS click: {e}")
-                            self.driver.execute_script("arguments[0].click();", next_btn)
-                            
-                        logger.info(f"  > Navigating to page {page_num + 1}...")
-                        
-                        # Wait longer for the next page of results to actually load
-                        time.sleep(5) 
-                        page_num += 1
-                    else:
-                        logger.info("  - No more pages (Next button not found or not visible)")
-                        break
-                        
+                    # Generate a simple external ID based on index since wipro URL hashes can be long
+                    external_id = f"wipro_{len(all_jobs) + 1}"
+                    
+                    all_jobs.append({
+                        'job_title': title,
+                        'external_id': external_id,
+                        'job_url': job_url
+                    })
                 except Exception as e:
-                    logger.debug(f"  - Pagination error (stopping): {e}")
-                    break            
+                    logger.debug(f"Failed to extract info from raw job card: {e}")
 
             logger.info(f"\n{'='*60}")
             logger.info(f"[OK] Job Discovery Complete: {len(all_jobs)} jobs found")
