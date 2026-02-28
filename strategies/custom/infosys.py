@@ -1496,8 +1496,9 @@ class InfosysStrategy(BaseStrategy):
                     # Default: No — answering Yes would flag/reject the application
                     (self._get_keywords("contractual_restrictions", [
                         "contractual", "non-competition", "non-compete", "restrictive covenant",
-                        "prevent you from working", "obligations that could prevent", "prior employer"
-                    ]), "No"),
+                        "prevent you from working", "obligations that could prevent", "prior employer",
+                        "contract_restriction"
+                    ]), applicant.get("contract_restriction") or "No"),
                 ]
 
                 # Race category — use dedicated method for robust dropdown matching

@@ -74,6 +74,7 @@
         "race": "Asian",
         "veteran": "No",
         "disability": "No",
+        "contract_restriction": "No",
         "employed_before_wipro": "No",
         "wipro_employee_id": ""
     },
