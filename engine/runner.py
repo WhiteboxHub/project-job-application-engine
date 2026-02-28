@@ -14,6 +14,7 @@ from engine.guards import guards
 from core.browser import browser_service
 from core.logger import logger
 from core.candidate_loader import CandidateLoader
+from data.csv_tracker import tracker as csv_tracker
 
 
 class _SiteRow:
@@ -69,88 +70,89 @@ class EngineRunner:
 
             # 2. Get Active Sites from DuckDB
             conn = db.get_connection()
-            try:
-                # When --site is given explicitly, bypass is_active so inactive sites
-                # can still be run on-demand (e.g. KForce, Capgemini set is_active=false)
-                params = []
+            
+            # When --site is given explicitly, bypass is_active so inactive sites
+            # can still be run on-demand (e.g. KForce, Capgemini set is_active=false)
+            params = []
+            if site_filter:
+                sql = """
+                    SELECT
+                        js.id,
+                        js.company_name,
+                        js.domain,
+                        js.search_url_template,
+                        js.apply_url_template,
+                        js.max_applications_per_run,
+                        ap.class_handler,
+                        ap.automation_level
+                    FROM job_sites js
+                    JOIN ats_platforms ap ON js.ats_platform_id = ap.id
+                    WHERE LOWER(js.company_name) LIKE LOWER(?)
+                """
+                params.append(f"%{site_filter}%")
+                logger.info(f"[SEARCH] Filtering for site: {site_filter}")
+            else:
+                sql = """
+                    SELECT
+                        js.id,
+                        js.company_name,
+                        js.domain,
+                        js.search_url_template,
+                        js.apply_url_template,
+                        js.max_applications_per_run,
+                        ap.class_handler,
+                        ap.automation_level
+                    FROM job_sites js
+                    JOIN ats_platforms ap ON js.ats_platform_id = ap.id
+                    WHERE js.is_active = true
+                """
+
+            rows = conn.execute(sql, params).fetchall()
+            active_sites = [_SiteRow(r) for r in rows]
+
+            if not active_sites:
                 if site_filter:
-                    sql = """
-                        SELECT
-                            js.id,
-                            js.company_name,
-                            js.domain,
-                            js.search_url_template,
-                            js.apply_url_template,
-                            js.max_applications_per_run,
-                            ap.class_handler,
-                            ap.automation_level
-                        FROM job_sites js
-                        JOIN ats_platforms ap ON js.ats_platform_id = ap.id
-                        WHERE LOWER(js.company_name) LIKE LOWER(?)
-                    """
-                    params.append(f"%{site_filter}%")
-                    logger.info(f"[SEARCH] Filtering for site: {site_filter}")
+                    logger.warning(f"[WARNING] No active job site found matching '{site_filter}'")
+                    logger.info("Tip: check job_sites table in DuckDB or run scripts/init_db.py")
                 else:
-                    sql = """
-                        SELECT
-                            js.id,
-                            js.company_name,
-                            js.domain,
-                            js.search_url_template,
-                            js.apply_url_template,
-                            js.max_applications_per_run,
-                            ap.class_handler,
-                            ap.automation_level
-                        FROM job_sites js
-                        JOIN ats_platforms ap ON js.ats_platform_id = ap.id
-                        WHERE js.is_active = true
-                    """
+                    logger.warning("[WARNING] No active job sites found in DuckDB.")
+                return
 
-                rows = conn.execute(sql, params).fetchall()
-                active_sites = [_SiteRow(r) for r in rows]
+            logger.info(f"\n[LIST] Found {len(active_sites)} active job site(s):")
+            for site in active_sites:
+                logger.info(f"   - {site.company_name} ({site.domain}) [{site.platform.automation_level}]")
 
-                if not active_sites:
-                    if site_filter:
-                        logger.warning(f"[WARNING] No active job site found matching '{site_filter}'")
-                        logger.info("Tip: check job_sites table in DuckDB or run scripts/init_db.py")
-                    else:
-                        logger.warning("[WARNING] No active job sites found in DuckDB.")
-                    return
+            # 3. Load candidate data (from JSON if not passed directly)
+            if not candidate_data:
+                candidate_data = CandidateLoader.load()
 
-                logger.info(f"\n[LIST] Found {len(active_sites)} active job site(s):")
-                for site in active_sites:
-                    logger.info(f"   - {site.company_name} ({site.domain}) [{site.platform.automation_level}]")
+            # 4. Process each site
+            for site in active_sites:
+                if not guards.can_apply():
+                    logger.warning("Application limit reached. Stopping.")
+                    break
+                self._process_site(conn, site, candidate_data)
 
-                # 3. Load candidate data (from JSON if not passed directly)
-                if not candidate_data:
-                    candidate_data = CandidateLoader.load()
-
-                # 4. Process each site
-                for site in active_sites:
-                    if not guards.can_apply():
-                        logger.warning("Application limit reached. Stopping.")
-                        break
-                    self._process_site(conn, site, candidate_data)
-
-                # 5. Final report
-                stats = guards.get_stats()
-                logger.info("\n" + "=" * 60)
-                logger.info("ENGINE RUN COMPLETE")
-                logger.info("=" * 60)
-                logger.info(f"Applications submitted: {stats['applications_submitted']}/{stats['max_applications']}")
-                logger.info(f"Dry run mode: {stats['dry_run_mode']}")
-                logger.info("=" * 60)
-
-            finally:
-                # DuckDB connection is a singleton  no need to close
-                pass
-
+        except KeyboardInterrupt:
+            logger.warning("\n[STOP] Script stopped by user (Ctrl+C).")
         except Exception as e:
             logger.critical(f"[ERROR] Engine crashed: {e}")
             import traceback
             traceback.print_exc()
 
         finally:
+            # --- Final report (Always show) ---
+            try:
+                stats = guards.get_stats()
+                logger.info("\n" + "=" * 60)
+                logger.info("ENGINE RUN SUMMARY")
+                logger.info("=" * 60)
+                logger.info(f"Applications submitted: {stats['applications_submitted']}/{stats['max_applications']}")
+                logger.info(f"Dry run mode: {stats['dry_run_mode']}")
+                logger.info("=" * 60)
+            except Exception as re:
+                logger.debug(f"Could not print final report: {re}")
+
             if self.browser:
                 try:
                     from config.settings import settings
@@ -217,8 +219,15 @@ class EngineRunner:
             logger.info("Discovering jobs...")
             jobs = strategy.find_jobs()
             logger.info(f"Found {len(jobs)} job(s)")
-
+            
             if jobs:
+                # Save discovered jobs to tracker
+                try:
+                    new_count = csv_tracker.add_discovered_jobs(site.company_name.lower(), jobs)
+                    logger.info(f"Added {new_count} new job(s) to tracker for {site.company_name}")
+                except Exception as e:
+                    logger.warning(f"Failed to save discovered jobs to CSV: {e}")
+
                 logger.info("\n[APPLY] Starting application process...")
                 applied_count = 0
 
@@ -226,10 +235,29 @@ class EngineRunner:
                     if not guards.can_apply():
                         logger.warning("[WARNING] Application limit reached")
                         break
+                    
+                    # 4a. SESSION HEALTH CHECK: Before applying, ensure browser is still alive
                     try:
-                        logger.info(f"\nApplying to: {job.get('job_title', 'Unknown Title')}")
+                        _ = self.browser.current_url 
+                    except Exception as se:
+                        logger.error(f"[FATAL] Browser session lost before applying: {se}")
+                        break
+                        
+                    try:
+                        # Pre-check: skip already applied
+                        job_url = job.get('job_url', '')
+                        job_title = job.get('job_title', 'Unknown')
+                        status_info = csv_tracker.get_job_status(site.company_name.lower(), job_url)
+                        if status_info and status_info.get('status') == 'applied':
+                            logger.info(f"Skipping already applied job: {job_title}")
+                            continue
+
+                        logger.info(f"\nApplying to: {job_title}")
                         success = strategy.apply(job)
                         if success:
+                            # Verify if it was actually applied or just skipped (e.g. already applied detection)
+                            # We check the tracker again. If it's 'applied', and it wasn't 'applied' before, 
+                            # we count it. If the strategy itself handles the quota, even better.
                             guards.increment_counter()
                             applied_count += 1
                             logger.info(f"Application #{applied_count} successful")

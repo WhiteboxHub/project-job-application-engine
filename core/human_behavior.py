@@ -57,12 +57,13 @@ class HumanBehavior:
             time.sleep(self.typing_delay())
         logger.debug(f"Typed text with human-like delays: {text[:20]}...")
     
-    def human_click(self, element):
+    def human_click(self, element, delay_after=True):
         """
         Click with slight delay and mouse movement
         
         Args:
             element: WebElement to click
+            delay_after: Whether to add a random delay after clicking (default: True)
         """
         try:
             # Move to element first (simulates mouse movement)
@@ -73,14 +74,16 @@ class HumanBehavior:
             actions.perform()
             
             # Random delay after click
-            self.random_delay(0.5, 1.5)
+            if delay_after:
+                self.random_delay(0.5, 1.5)
             logger.debug("Human-like click performed")
             
         except Exception as e:
             # Fallback to direct click if ActionChains fails
             logger.warning(f"ActionChains click failed, using direct click: {e}")
             element.click()
-            self.random_delay(0.5, 1.5)
+            if delay_after:
+                self.random_delay(0.5, 1.5)
     
     def scroll_to_element(self, element, smooth=True):
         """

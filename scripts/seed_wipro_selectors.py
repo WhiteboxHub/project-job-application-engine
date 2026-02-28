@@ -40,15 +40,20 @@ wipro_listing = {
 wipro_application = {
     # Apply button flow (two-step - SuccessFactors Horizon)
     "apply_button_dropdown":  ["#unifyApplyNowTopButton", "button[title*='Apply' i]", "button.apply-action"],
-    "apply_button_menu_item": ["#applyOption--manual", "li a[href*='apply']", "div.dropdown-menu a[title*='Apply Now' i]"],
+    "apply_button_menu_item": ["#applyOption--manual", "li a[href*='apply']", "div.dropdown-menu a[title*='Apply Now' i]", "li[role='menuitem'] a", "a[id*='applyOption']", "[id$='_applyNowTopButton-applyOption--manual']"],
 
     # Login (SuccessFactors Horizon)
-    "login_email_input":    ["#username", "input[type='email']", "input[id*='email']"],
+    "login_email_input":    ["#username", "input[id*='username']", "input[id*='email']:not([name='firstName']):not([name='lastName'])"],
     "login_password_input": ["#password", "input[type='password']", "input[id*='password']"],
-    "login_submit_button":  ["button[onclick*='validateFields']", "button[type='submit']", "input[type='submit']"],
+    "login_submit_button":  ["button[onclick*='validateFields']", "button[type='submit']", "input[type='submit']", "button[id*='login']"],
 
     # Form navigation & expansion
-    "expand_all_sections":  ["[id$=':_expandAllSections']", ".expandCollapseTxt:contains('Expand')"],
+    "expand_all_sections":  [
+        "[id$=':_expandAllSections']", 
+        "//button[.//span[contains(text(), 'Expand All')]]",
+        "//span[contains(@class, 'expandCollapseTxt')][contains(text(), 'Expand')]",
+        ".expandCollapseTxt"
+    ],
     "section_trigger_profile": ["//button[.//span[contains(text(),'Profile')]]", "[id*=':topBar']"],
     "section_trigger_experience": ["//button[.//span[contains(text(),'Experience')]]", "[id*=':topBar']"],
     "section_trigger_education": ["//button[.//span[contains(text(),'Education')]]", "[id*=':topBar']"],

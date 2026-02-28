@@ -11,6 +11,12 @@ class CSVTracker:
     def _file(self, site_name: str) -> Path:
         return self.directory / f"{site_name}_jobs.csv"
 
+    def _normalize_url(self, url: str) -> str:
+        """Strip trailing slashes and common tracking parameters."""
+        if not url: return ""
+        url = url.split('?')[0].split('#')[0]
+        return url.rstrip('/')
+
     def _headers(self):
         return [
             "external_id",
@@ -57,12 +63,13 @@ class CSVTracker:
     def add_discovered_jobs(self, site_name: str, jobs: list) -> int:
         """Appends new jobs that are not already present. Returns number of new rows added."""
         self.ensure_file(site_name)
-        existing = {r['job_url'] for r in self._read(site_name)}
+        existing = {self._normalize_url(r['job_url']) for r in self._read(site_name)}
         to_append = []
         now = datetime.utcnow().isoformat()
         for job in jobs:
             url = job.get('job_url')
-            if not url or url in existing:
+            norm_url = self._normalize_url(url)
+            if not url or norm_url in existing:
                 continue
             to_append.append({
                 'external_id': job.get('external_id', ''),
@@ -96,8 +103,9 @@ class CSVTracker:
         rows = self._read(site_name)
         changed = False
         now = datetime.utcnow().isoformat()
+        norm_job_url = self._normalize_url(job_url)
         for r in rows:
-            if r.get('job_url') == job_url:
+            if self._normalize_url(r.get('job_url')) == norm_job_url:
                 # update attempts
                 try:
                     current_attempts = int(r.get('attempts', '0'))
@@ -123,8 +131,9 @@ class CSVTracker:
     def get_job_status(self, site_name: str, job_url: str) -> dict | None:
         """Returns the full row for a specific job_url if it exists."""
         rows = self._read(site_name)
+        norm_job_url = self._normalize_url(job_url)
         for r in rows:
-            if r.get('job_url') == job_url:
+            if self._normalize_url(r.get('job_url')) == norm_job_url:
                 return r
         return None
 

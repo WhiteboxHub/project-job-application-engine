@@ -79,13 +79,15 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
-                # Force ChromeDriver to match your Chrome version (144)
+                # User is on version 145; explicitly set it to avoid v146 mismatch
+                # use_subprocess=False fixes 'blank chrome' / 'window not found' on some Windows setups
                 self.driver = uc.Chrome(
                     options=options, 
-                    use_subprocess=True,
-                    version_main=144  # Match your Chrome version
+                    use_subprocess=False,
+                    version_main=145
                 )
-                logger.info("Browser started successfully (undetected-chromedriver).")
+                time.sleep(5) # Give the window handle time to stabilize
+                logger.info("Browser started successfully (undetected-chromedriver v145).")
             except Exception as e:
                 logger.warning(f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager.")
 
@@ -96,10 +98,12 @@ class BrowserService:
                 from selenium.webdriver.chrome.service import Service as ChromeService
                 from webdriver_manager.chrome import ChromeDriverManager
 
-                service = ChromeService(ChromeDriverManager().install())
-                # options is already selenium ChromeOptions when uc was None
+                # Force version 145 in fallback as well
+                driver_path = ChromeDriverManager(driver_version="145.0.7632.117").install()
+                service = ChromeService(driver_path)
                 self.driver = webdriver.Chrome(service=service, options=options)
-                logger.info("Browser started successfully (webdriver-manager fallback).")
+                time.sleep(2)
+                logger.info("Browser started successfully (webdriver-manager fallback v145).")
             except Exception as e2:
                 logger.error(f"Failed to start browser with fallback: {e2}")
                 self._release_lock()
@@ -107,9 +111,22 @@ class BrowserService:
 
         if self.driver and not settings.HEADLESS:
             try:
-                self.driver.maximize_window()
+                # Re-check if window still exists before maximizing
+                if self.driver.window_handles:
+                    self.driver.maximize_window()
             except Exception as e:
-                logger.warning(f"Could not maximize window: {e}")
+                logger.warning(f"Could not maximize window (non-fatal): {e}")
+
+        # Final health check - verify session is actually responsive
+        if self.driver:
+            try:
+                # Simple call to verify session is active
+                _ = self.driver.current_url
+                logger.info("Browser health check passed.")
+            except Exception as e:
+                logger.error(f"Browser health check failed: {e}")
+                self.stop_browser()
+                raise RuntimeError("Started browser but session is unresponsive (zombie).")
 
         return self.driver
 
