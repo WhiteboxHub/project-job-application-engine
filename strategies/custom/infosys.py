@@ -58,13 +58,16 @@ class InfosysStrategy(BaseStrategy):
     # Config loaders
     # -------------------------
     def _load_config(self):
-        """Load configuration from candidate_data (database) or fallback to JSON file"""
-        # Priority 1: Use candidate_data from database
-        if self.candidate_data:
-            logger.info("[OK] Using candidate data from database")
-            return self.candidate_data
+
+
+        """
+        [USER_DIRECTIVE]: Prioritize guest_form_data.json as the single source of truth.
+        Fallback to database (candidate_data) only if JSON is unavailable or incomplete.
+        """
+        config_data = {}
+
         
-        # Priority 2: Fallback to JSON file for backward compatibility
+        # Priority 1: Load from guest_form_data.json
         try:
             config_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -72,44 +75,58 @@ class InfosysStrategy(BaseStrategy):
                 "guest_form_data.json",
             )
             if os.path.exists(config_path):
-                logger.info("[WARNING] Using fallback config from guest_form_data.json")
+
+                logger.info("✅ Using primary candidate data from guest_form_data.json")
+
                 with open(config_path, "r") as f:
-                    return json.load(f)
-            return {}
+                    config_data = json.load(f)
         except Exception as e:
-            logger.error(f"Failed to load config: {e}")
-            return {}
+            logger.error(f"Failed to load guest_form_data.json: {e}")
+
+        # Priority 2: Merge with database data (if available)
+        if self.candidate_data:
+            logger.info("🔄 Merging with candidate data from database")
+            # Deep merge or simple update? Let's do a simple update for missing keys
+            for key, value in self.candidate_data.items():
+                if key not in config_data:
+                    config_data[key] = value
+                elif isinstance(value, dict) and isinstance(config_data[key], dict):
+                    # Shallow merge for first level dictionaries
+                    for sub_key, sub_val in value.items():
+                        if sub_key not in config_data[key]:
+                            config_data[key][sub_key] = sub_val
+
+        return config_data
 
     def _load_resume_json(self):
-        try:
-            resume_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                "resume"
-            )
-            # Try both names
-            for name in ["parsed_resume.json", "resume.json"]:
-                path = os.path.join(resume_dir, name)
-                if os.path.exists(path):
-                    with open(path, "r") as f:
-                        data = json.load(f)
-                        logger.info(f"Loaded resume data from {name}")
-                        return self._normalize_resume_data(data)
-            return {}
-        except Exception as e:
-            logger.error(f"Failed to load resume JSON: {e}")
-            
-        # Priority 3: Synthesize from config_data (Always check if data is empty or missing sections)
-        if not data or not data.get("education") or not data.get("work"):
-            if self.config_data and "applicant" in self.config_data:
-                applicant = self.config_data["applicant"]
-                if "education" in applicant or "experience" in applicant:
-                    logger.info("Synthesizing missing sections from config_data['applicant']")
-                    synth_data = data or {}
-                    if not synth_data.get("education"): synth_data["education"] = applicant.get("education", [])
-                    if not synth_data.get("work"): synth_data["work"] = applicant.get("experience", [])
-                    return self._normalize_resume_data(synth_data)
+        """
+        [USER_DIRECTIVE]: Strictly using guest_form_data.json (config_data) 
+        as the single source of truth for experience and education.
+        """
+        applicant = self.config_data.get("applicant", {})
+        data = {
+            "education": [{
+                "institution": e.get("institution", ""),
+                "studyType": e.get("degree", ""),
+                "area": e.get("major", ""),
+                "endDate": e.get("end_date", ""),
+                "startDate": e.get("start_date", ""),
+                "gpa": e.get("gpa", ""),
+            } for e in applicant.get("education", [])],
+            "work": [{
+                "company": j.get("company", ""),
+                "position": j.get("position", ""),
+                "startDate": j.get("start_date", ""),
+                "endDate": j.get("end_date", ""),
+                "summary": j.get("description", ""),
+            } for j in applicant.get("experience", [])]
+        }
         
-        return data or {}
+        if data.get("work") or data.get("education"):
+            logger.info("✅ Sourcing all career data strictly from guest_form_data.json")
+            return self._normalize_resume_data(data)
+            
+        return {}
 
     def _normalize_resume_data(self, data):
         """Standardizes structure between different parser outputs"""
@@ -154,6 +171,15 @@ class InfosysStrategy(BaseStrategy):
             selectors = self.config.get_selectors(key)
             if selectors:
                 return selectors
+        
+        # Fallback to pre-loaded self.selectors (populated by EngineRunner)
+        # Check both top-level keys in listing and application
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if key in cat_dict:
+                val = cat_dict[key]
+                return val if isinstance(val, list) else [val]
+                
         return fallback or []
 
     def _get_keywords(self, field_name, fallback=None):
@@ -162,6 +188,13 @@ class InfosysStrategy(BaseStrategy):
             keywords = self.config.get_field_keywords(field_name)
             if keywords:
                 return keywords
+        
+        # Fallback to pre-loaded self.selectors
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if field_name in cat_dict:
+                return cat_dict[field_name]
+                
         return fallback or []
 
     def _get_value(self, field_name, context=None, fallback=None):
@@ -178,7 +211,30 @@ class InfosysStrategy(BaseStrategy):
             keywords = self.config.get_section_keywords(section_name)
             if keywords:
                 return keywords
+        
+        # Fallback to pre-loaded self.selectors
+        for category in ['listing', 'application']:
+            cat_dict = self.selectors.get(category, {})
+            if section_name in cat_dict:
+                return cat_dict[section_name]
+                
         return fallback or []
+
+    def _get_delay(self, key, fallback=2.0):
+        """Get delay value from database 'delays' config"""
+        if self.config:
+            delays = self.config.get_selectors('delays')
+            if delays and isinstance(delays, list) and isinstance(delays[0], dict):
+                return delays[0].get(key, fallback)
+            elif delays and isinstance(delays, dict):
+                return delays.get(key, fallback)
+        
+        # Fallback to pre-loaded self.selectors
+        delays = self.selectors.get('listing', {}).get('delays') or self.selectors.get('application', {}).get('delays')
+        if delays and isinstance(delays, dict):
+            return delays.get(key, fallback)
+            
+        return fallback
 
     # -------------------------
     # Base hooks
@@ -207,7 +263,7 @@ class InfosysStrategy(BaseStrategy):
         
         # Get all keywords
         search = self.config_data.get("search", {})
-        keywords = search.get("keywords", [])
+        keywords = self._get_selectors("search_keywords", search.get("keywords", []))
         if not keywords:
             keywords = [search.get("keyword", "AI")]
         
@@ -267,7 +323,10 @@ class InfosysStrategy(BaseStrategy):
                         
                 # Small delay between keywords
                 if len(keywords) > 1:
-                    time.sleep(random.uniform(3, 5))
+                    time.sleep(random.uniform(
+                        self._get_delay("between_keywords_min", 3.0),
+                        self._get_delay("between_keywords_max", 5.0)
+                    ))
                     
             except Exception as e:
                 logger.error(f"[ERROR] Processing for keyword '{kw}' failed: {e}")
@@ -283,7 +342,7 @@ class InfosysStrategy(BaseStrategy):
         # Initialize keywords on first pass
         if not self._all_keywords:
             search = self.config_data.get("search", {})
-            self._all_keywords = search.get("keywords", [])
+            self._all_keywords = self._get_selectors("search_keywords", search.get("keywords", []))
             if not self._all_keywords:
                 self._all_keywords = [search.get("keyword", "AI")]
             
@@ -349,7 +408,7 @@ class InfosysStrategy(BaseStrategy):
     # Job Search
     # -------------------------
     def _search_jobs(self, keyword, location, distance):
-        # Normalize location  Infosys URL only accepts "USA"
+
         _loc_map = {
             "united states": "USA",
             "united states of america": "USA",
@@ -357,14 +416,13 @@ class InfosysStrategy(BaseStrategy):
             "u.s.": "USA",
             "u.s.a.": "USA",
             "america": "USA",
+            "united kingdom": "UK",
+            "uk": "UK",
+            "india": "IND",
         }
         loc_param = _loc_map.get((location or "").strip().lower(), location or "USA")
         
-        # Build URL with keyword directly in query string
-        # Format: https://digitalcareers.infosys.com/infosys/global-careers?location=USA&keyword=AI
-        import urllib.parse
-        keyword_encoded = urllib.parse.quote_plus(keyword)
-        
+        # 1. Navigate to base search URL
         if self.config:
             base_url = self.config.get_url('search_base', location=loc_param)
             if not base_url:
@@ -372,19 +430,52 @@ class InfosysStrategy(BaseStrategy):
         else:
             base_url = f"https://digitalcareers.infosys.com/infosys/global-careers?location={loc_param}"
 
-        # Strip any existing keyword param and add fresh one
-        if "keyword=" in base_url:
-            base_url = base_url.split("&keyword=")[0].split("?keyword=")[0]
-        
-        search_url = f"{base_url}&keyword={keyword_encoded}"
-        
-        logger.info(f"Searching Infosys: {keyword} in {loc_param}")
-        logger.info(f"Opening URL: {search_url}")
-        self.driver.get(search_url)
-        time.sleep(6)
-        logger.info(f"Current URL after navigation: {self.driver.current_url}")
+        logger.info(f"Navigating to search base URL: {base_url}")
+        self.driver.get(base_url)
+        time.sleep(self._get_delay("page_load_min", 6.0))
         self._close_common_popups()
-        time.sleep(3)
+
+        # 2. Try interactive search
+        search_input_selectors = self._get_selectors("search_input", ["input#keyword", "input[name='keyword']", "input.search-keyword"])
+        search_button_selectors = self._get_selectors("search_button", ["button#search", "button.search-btn", "input[type='submit']"])
+        
+        search_input = self._find_element_safe(search_input_selectors)
+        if search_input:
+            logger.info(f"Performing interactive search for: {keyword}")
+            try:
+                # Clear and type humanly
+                search_input.clear()
+                self.human.human_type(search_input, keyword)
+                time.sleep(self._get_delay("form_fill_min", 0.5))
+                
+                search_btn = self._find_element_safe(search_button_selectors)
+                if search_btn:
+                    self.human.human_click(search_btn)
+                else:
+                    logger.info("Search button not found, pressing ENTER...")
+                    search_input.send_keys(Keys.ENTER)
+                
+                time.sleep(self._get_delay("after_click_min", 3.0))
+                logger.info("Search submitted successfully.")
+            except Exception as e:
+                logger.warning(f"Interactive search failed: {e}. Falling back to URL-based search.")
+                import urllib.parse
+                keyword_encoded = urllib.parse.quote_plus(keyword)
+                search_url = f"{base_url}&keyword={keyword_encoded}"
+                logger.info(f"Navigating to URL: {search_url}")
+                self.driver.get(search_url)
+        else:
+            # Fallback to URL-based search if no input found
+            import urllib.parse
+            keyword_encoded = urllib.parse.quote_plus(keyword)
+            search_url = f"{base_url}&keyword={keyword_encoded}"
+            logger.info(f"Search input not found. Using URL: {search_url}")
+            self.driver.get(search_url)
+
+        # Ensure page is loaded
+        time.sleep(self._get_delay("page_load_min", 6.0))
+        self._close_common_popups()
+        time.sleep(self._get_delay("after_click_min", 3.0))
 
         try:
 
@@ -425,7 +516,13 @@ class InfosysStrategy(BaseStrategy):
                     if next_btn and "disabled" not in (next_btn.get_attribute("class") or ""):
                         logger.info("Moving to next page...")
                         self.human.human_click(next_btn)
-                        time.sleep(5) # More time for page load
+                        time.sleep(self._get_delay("form_fill_min", 2.0)) # Brief pause for UI
+                        
+                        # 40s wait for virus scan - configurable
+                        scan_delay = self._get_delay("backend_processing", 40.0)
+                        logger.info(f"Waiting {scan_delay} seconds for backend processing/virus scan...")
+                        time.sleep(scan_delay)
+                        time.sleep(self._get_delay("page_load_min", 5.0)) # More time for page load
                     else:
                         logger.info("No more pages found.")
                         break
@@ -509,7 +606,7 @@ class InfosysStrategy(BaseStrategy):
 
         logger.info(f"--- Applying to: {job_url} ---")
         self.driver.get(job_url)
-        time.sleep(3)
+        time.sleep(self._get_delay("after_click_min", 3.0))
         self._close_common_popups()
 
         # Capture job description for DuckDB before starting apply flow
@@ -533,7 +630,7 @@ class InfosysStrategy(BaseStrategy):
                 self.db_session.rollback()
 
         # 1) Apply - Get selectors from database (with proper fallback)
-        db_selectors = self.config.get_selectors('apply_button') if self.config else []
+        db_selectors = self._get_selectors('apply_button')
         
         # Use database selectors if available, otherwise use hardcoded fallback
         if db_selectors:
@@ -558,7 +655,7 @@ class InfosysStrategy(BaseStrategy):
         logger.info(f"Selectors: {apply_selectors}")
         
         # Wait longer for page to fully load
-        time.sleep(5)
+        time.sleep(self._get_delay("page_load_min", 5.0))
         
         # Try to scroll to find the button
         try:
@@ -573,7 +670,7 @@ class InfosysStrategy(BaseStrategy):
             logger.error(f"Page Title: {self.driver.title}")
             return False
 
-        time.sleep(10) # Wait for new window to fully open and stabilize
+        time.sleep(self._get_delay("page_load_max", 10.0)) # Wait for new window to fully open and stabilize
         
         # Robust window switching
         try:
@@ -1350,7 +1447,25 @@ class InfosysStrategy(BaseStrategy):
             # but share similar field types/keywords.
             eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "race category", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
             if self._page_has_any_field(eeo_keywords):
-                logger.info("Detected EEO / Other Info section by fields  filling...")
+
+                logger.info("Detected EEO / Other Info section by fields ΓåÆ filling...")
+                
+                # DEBUG: Log all inputs/selects in this section
+                try:
+                    all_int = self.driver.find_elements(By.CSS_SELECTOR, "input, select, textarea")
+                    logger.info(f"EEO Debug: Found {len(all_int)} total interactive elements")
+                    for i, el in enumerate(all_int):
+                        if el.is_displayed():
+                            tag = el.tag_name
+                            typ = el.get_attribute("type") or ""
+                            val = el.get_attribute("value") or ""
+                            nm = el.get_attribute("name") or ""
+                            id_ = el.get_attribute("id") or ""
+                            logger.info(f"EEO Debug [{i}]: {tag} type={typ} name='{nm}' id='{id_}' value='{val}'")
+                except:
+                    pass
+
+
                 applicant = self.config_data.get("applicant", {})
                 full_name = f"{applicant.get('first_name', '')} {applicant.get('last_name', '')}"
                 
@@ -1440,9 +1555,11 @@ class InfosysStrategy(BaseStrategy):
     def _fill_race_dropdown(self):
         """
         Finds the Race Category dropdown on the Infosys EEO page and selects
-        the Decline/Opt-Out option. Tries all known option text variations.
+        the user's race or the Decline/Opt-Out option. 
         """
-        # All known Infosys race dropdown option texts for Decline/Opt-Out
+        applicant = self.config_data.get("applicant", {})
+        preferred_race = applicant.get("race", "Asian")
+        
         decline_options = [
             "Decline to Self-Identify",
             "Decline to self identify",
@@ -1452,68 +1569,74 @@ class InfosysStrategy(BaseStrategy):
             "Choose not to provide",
             "Prefer not to say",
             "Not Specified",
-            "Two or more races",  # last resort if decline not available
         ]
 
         try:
             selects = self.driver.find_elements(By.CSS_SELECTOR, "select")
-            for sel_elem in selects:
+            logger.info(f"EEO: Found {len(selects)} selects in section.")
+            
+            for i, sel_elem in enumerate(selects):
                 if not sel_elem.is_displayed():
                     continue
                 try:
-                    # Check if this select is label-associated with "race"
                     sel_id = sel_elem.get_attribute("id") or ""
                     sel_name = sel_elem.get_attribute("name") or ""
                     sel_class = sel_elem.get_attribute("class") or ""
-                    attr_hay = (sel_id + " " + sel_name + " " + sel_class).lower()
+                    
+                    from selenium.webdriver.support.ui import Select
+                    select_obj = Select(sel_elem)
+                    available = [o.text.strip() for o in select_obj.options]
+                    
+                    logger.info(f"EEO Select [{i}]: id='{sel_id}' name='{sel_name}' options={available}")
 
-                    # Also check parent/label text
+                    attr_hay = (sel_id + " " + sel_name + " " + sel_class).lower()
                     parent_text = ""
                     try:
                         parent_text = sel_elem.find_element(By.XPATH, "./ancestor::*[self::div or self::td or self::li][1]").text.lower()
-                    except Exception:
-                        pass
-                    if not parent_text:
-                        try:
-                            parent_text = sel_elem.find_element(By.XPATH, "./..").text.lower()
-                        except Exception:
-                            pass
-
-                    # Check associated label
+                    except: pass
+                    
                     label_text = ""
                     if sel_id:
                         try:
                             lbl = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{sel_id}']")
                             label_text = lbl.text.lower()
-                        except Exception:
-                            pass
+                        except: pass
 
                     combined = attr_hay + " " + parent_text + " " + label_text
-                    if "race" not in combined:
+                    
+                    # HEURISTIC: Skip binary dropdowns
+                    if len(available) < 5 and any(o.strip().lower() in ["yes", "no", "choose", "select"] for o in available):
                         continue
+                        
+                    # Check for "race" or racial options
+                    race_keywords = ["race", "ethnic origin", "ancestry"]
+                    is_race = any(k in combined for k in race_keywords)
+                    
+                    if not is_race:
+                        racial_options = ["asian", "black", "white", "hispanic", "native"]
+                        match_count = sum(1 for o in available if any(r in o.lower() for r in racial_options))
+                        if match_count >= 2:
+                            is_race = True
 
-                    logger.info(f"Found race dropdown (id={sel_id}, label='{label_text.strip()}')")
-                    from selenium.webdriver.support.ui import Select
-                    select_obj = Select(sel_elem)
-                    available = [o.text.strip() for o in select_obj.options]
-                    logger.info(f"Race dropdown options: {available}")
-
-                    for opt_text in decline_options:
+                    if is_race:
+                        logger.info(f"🎯 🎯 🎯 TARGET RACE DROPDOWN IDENTIFIED [{i}]")
                         for avail in available:
-                            if opt_text.lower() in avail.lower() or avail.lower() in opt_text.lower():
+                            if preferred_race.lower() in avail.lower():
                                 select_obj.select_by_visible_text(avail)
-                                logger.info(f"[OK] Race selected: '{avail}'")
+
+                                logger.info(f"✅ Race selected (preferred): '{avail}'")
+
                                 return True
-
-                    # Last resort: select first non-empty option
-                    for avail in available:
-                        if avail.strip() and avail.strip() not in ["-", "--", "Select", "Select One"]:
-                            select_obj.select_by_visible_text(avail)
-                            logger.info(f"Race: fallback selected first available option: '{avail}'")
-                            return True
-
+                        
+                        # Decline fallback
+                        for opt_text in decline_options:
+                            for avail in available:
+                                if opt_text.lower() in avail.lower():
+                                    select_obj.select_by_visible_text(avail)
+                                    logger.info(f"✅ Race selected (decline): '{avail}'")
+                                    return True
                 except Exception as e:
-                    logger.warning(f"Error processing race select: {e}")
+                    logger.warning(f"Error checking EEO select {i}: {e}")
                     continue
         except Exception as e:
             logger.error(f"_fill_race_dropdown error: {e}")
@@ -1807,17 +1930,19 @@ class InfosysStrategy(BaseStrategy):
                 if method(resume_path):
                     # Infosys Double Popup Logic (User Request)
                     logger.info("Closing 1st popup (Immediate post-upload)...")
-                    time.sleep(2) # Brief pause for UI
+                    time.sleep(self._get_delay("after_upload_popup_wait", 2.0)) # Brief pause for UI
                     self._close_common_popups()
                     
-                    logger.info("Waiting for processing 'on their end' (2nd popup trigger)...")
-                    time.sleep(40) # Wait for backend processing/virus scan (User requested 40s)
+                    # 40s wait for virus scan - configurable
+                    scan_delay = self._get_delay("backend_processing", 40.0)
+                    logger.info(f"Waiting {scan_delay} seconds for backend processing/virus scan...")
+                    time.sleep(scan_delay)
                     
                     logger.info("Closing 2nd popup (Post-save/processing)...")
                     # Poll for the popup for 10 seconds to ensure we catch it
-                    for _ in range(10):
+                    for _ in range(int(self._get_delay("second_popup_poll_duration", 10))):
                         self._close_common_popups()
-                        time.sleep(1)
+                        time.sleep(self._get_delay("second_popup_poll_interval", 1))
                     
                     # Verify for all methods
                     is_verified = self._verify_upload_success()
@@ -1830,8 +1955,9 @@ class InfosysStrategy(BaseStrategy):
                         "//button[contains(., 'Import fields')]"
                     ]
                     if self._click_any(import_selectors):
-                        logger.info(" Clicked 'Import fields' button.")
-                        time.sleep(5) # Wait for import to process
+
+                        logger.info("Γ£ô Clicked 'Import fields' button.")
+                        time.sleep(self._get_delay("after_import_fields_wait", 5.0)) # Wait for import to process
                     else:
                         logger.info("Did not find 'Import fields' button (might be auto-imported or not present).")
 
@@ -1842,7 +1968,7 @@ class InfosysStrategy(BaseStrategy):
                         logger.info("Clicking Next/Proceed after resume section...")
                         # More aggressive click and wait
                         self._click_any(["a#forward-navigation", "button#next", "//button[contains(text(), 'Next')]", "//a[contains(text(), 'Next')]", "//span[contains(text(), 'Proceed')]"])
-                        time.sleep(5)
+                        time.sleep(self._get_delay("after_resume_next_wait", 5.0))
                         return True
 
                     if is_verified:

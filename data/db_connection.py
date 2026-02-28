@@ -29,6 +29,7 @@ class DuckDBConnection:
         """Initialize DuckDB connection"""
         try:
             db_path = settings.DUCKDB_PATH
+
             if db_path.startswith("md:"):
                 # Connect to MotherDuck Cloud
                 logger.info("Connecting to MotherDuck Cloud...")
@@ -39,6 +40,7 @@ class DuckDBConnection:
                 # Ensure directory exists
                 os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
                 self.conn = duckdb.connect(db_path)
+
             logger.info(f"DuckDB connection initialized: {db_path}")
         except Exception as e:
             logger.critical(f"Failed to initialize DuckDB connection: {e}")

@@ -206,7 +206,7 @@ def init_db():
     # -----------------------------------------------------------------------
     conn.execute("""
         INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
-        VALUES (4, 'Infosys Custom', 'strategies.custom.InfyTQStrategy', 'manual', false)
+        VALUES (4, 'Infosys Custom', 'strategies.custom.InfosysStrategy', 'manual', false)
     """)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites

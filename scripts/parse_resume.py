@@ -16,7 +16,7 @@ import pdfplumber
 # -- Paths ------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESUME_DIR = os.path.join(BASE_DIR, "resume")
-PDF_PATH = os.path.join(RESUME_DIR, "Ghazal_Sultan.pdf")
+PDF_PATH = os.path.join(RESUME_DIR, "candidate_resume.pdf")
 OUTPUT_PATH = os.path.join(RESUME_DIR, "parsed_resume.json")
 
 
@@ -82,7 +82,7 @@ def find_section(lines, *headers):
     """Return the line index of the first matching section header."""
     for i, line in enumerate(lines):
         for h in headers:
-            if h.upper() in line.upper():
+            if h.upper() in line.upper() and len(line.strip()) <= 30:
                 return i
     return None
 
@@ -91,7 +91,7 @@ def lines_between(lines, start_idx, *end_headers):
     """Return lines from start_idx+1 until the next section header."""
     result = []
     for line in lines[start_idx + 1 :]:
-        if any(h.upper() in line.upper() for h in end_headers):
+        if any(h.upper() in line.upper() and len(line.strip()) <= 30 for h in end_headers):
             break
         if line.strip():
             result.append(line.strip())

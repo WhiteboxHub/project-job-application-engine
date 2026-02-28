@@ -7,9 +7,11 @@ class Settings(BaseSettings):
     # Database - DuckDB (file-based, no server needed)
     DUCKDB_PATH: str = "data/job_engine.duckdb"
     MOTHERDUCK_TOKEN: Optional[str] = None
+
     
     # Backend API
     BACKEND_URL: str = "http://localhost:8001"
+
     
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
@@ -37,6 +39,7 @@ class Settings(BaseSettings):
     # Capgemini credentials (SuccessFactors login required)
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
+    CAPGEMINI_KEYWORDS: str = "AI,Python,Machine Learning"
 
     model_config = SettingsConfigDict(
         env_file=".env",

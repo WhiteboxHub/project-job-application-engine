@@ -25,9 +25,14 @@ SITE_MAP = {
     'wipro':     'Wipro',
     'kforce':    'KForce',
     'insight':   'Insight Global',  # kept for reference
+    'capgemini': 'Capgemini',
 }
 
+class DummyCandidate:
+    pass
+
 def get_first_candidate(session):
+
     """Get first active flagged candidate"""
     result = session.execute("""
         SELECT cm.id as cm_id, cm.candidate_id, cm.run_parameters,
@@ -41,6 +46,7 @@ def get_first_candidate(session):
     """)
     return result.fetchone()
 
+
 def get_site(session, company_name):
     """Get site + platform info"""
     result = session.execute("""
@@ -50,16 +56,20 @@ def get_site(session, company_name):
         FROM job_sites s
         JOIN ats_platforms p ON s.ats_platform_id = p.id
         WHERE s.company_name = ? AND s.is_active = 1
+
     """, (company_name,))
     return result.fetchone()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Test a single job site")
     parser.add_argument('--site', required=True,
-                        choices=['lancesoft', 'infosys', 'wipro', 'kforce', 'insight'],
+                        choices=['lancesoft', 'infosys', 'wipro', 'kforce', 'insight', 'capgemini'],
                         help='Which site to test')
     parser.add_argument('--live', action='store_true',
                         help='Run LIVE (actually submits). Default is dry-run.')
+    parser.add_argument('--keywords', type=str,
+                        help='Override search keywords (comma-separated)')
     args = parser.parse_args()
 
     dry_run = not args.live
@@ -157,6 +167,14 @@ def main():
     # Set dry_run mode via settings
     from config.settings import settings
     settings.DRY_RUN = dry_run
+    
+    if args.keywords:
+        logger.info(f"🔑 Overriding keywords with: {args.keywords}")
+        # Generic keyword override for strategy search/apply methods
+        # Most strategies check config_data['search']['keywords']
+        if 'search' not in candidate_data:
+            candidate_data['search'] = {}
+        candidate_data['search']['keywords'] = [k.strip() for k in args.keywords.split(',')]
 
     try:
         runner = EngineRunner()
