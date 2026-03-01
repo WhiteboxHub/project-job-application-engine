@@ -15,10 +15,8 @@
         "email": "ghazal.sultan1616@gmail.com",
         "gender": "Female",
         "phone": "6692133034",
-
         "street_address": "440 Oceanside Dr",
         "address": "440 Oceanside Dr",
-
         "city": "Mountain House",
         "state": "California",
         "zip_code": "95391",
@@ -76,28 +74,13 @@
         "race": "Asian",
         "veteran": "No",
         "disability": "No",
+        "contract_restriction": "No",
         "employed_before_wipro": "No",
-        "wipro_employee_id": "",
-        "usa_form": {
-            "residence": "Mountain House, CA",
-            "travel": "25%",
-            "relocate": "Yes",
-            "relocation_destinations": "Open to all major US hubs",
-            "certifications": "None",
-            "expected_salary": "$120,000 - $150,000"
-        },
-        "general_usa_form": {
-            "address": "440 Oceanside dr, Mountain House, CA 95391",
-            "ability_to_perform": "Yes",
-            "authorization": "US Citizen",
-            "acknowledge": true
-        }
+        "wipro_employee_id": ""
     },
     "wipro_credentials": {
-        "email": "ghazal.sultan1616@gmail.com",
-        "password": "Innovapath@1"
+        "email": "candiategmail.com",
+        "password": "password"
     },
-
-    "resume_path": "resume/candidate_resume.pdf"
-
+    "resume_path": "resume/Ghazal Sultan.pdf"
 }

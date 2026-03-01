@@ -192,7 +192,7 @@ class EngineRunner:
                     self.browser,
                     site,
                     selectors,
-                    None,            # db_session not needed  DuckDB singleton handles tracking
+                    conn,
                     candidate_data
                 )
             except Exception as e:

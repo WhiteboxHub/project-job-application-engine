@@ -62,16 +62,34 @@ class ConfigManager:
             return self._cache[cache_key]
         
         try:
-            # Fetch all SiteSelector records for this site
-            selectors = self.db.query(SiteSelector).filter(
-                SiteSelector.job_site_id == self.job_site_id
-            ).all()
+            # Robust check for SQLAlchemy vs Raw DuckDB
+            use_sqlalchemy = hasattr(self.db, 'query') and 'sqlalchemy' in str(type(self.db)).lower()
+            
+            if use_sqlalchemy:
+                # SQLAlchemy
+                selectors = self.db.query(SiteSelector).filter(
+                    SiteSelector.job_site_id == self.job_site_id
+                ).all()
+                config_jsons = [s.config_json for s in selectors]
+            else:
+                # Raw DuckDB
+                import json
+                rows = self.db.execute(
+                    "SELECT config_json FROM site_selectors WHERE job_site_id = ?",
+                    [self.job_site_id]
+                ).fetchall()
+                config_jsons = []
+                for (cj,) in rows:
+                    if isinstance(cj, str):
+                        config_jsons.append(json.loads(cj))
+                    else:
+                        config_jsons.append(cj)
             
             result = []
-            for s in selectors:
-                if s.config_json and isinstance(s.config_json, dict):
-                    if selector_key in s.config_json:
-                        val = s.config_json[selector_key]
+            for config in config_jsons:
+                if config and isinstance(config, dict):
+                    if selector_key in config:
+                        val = config[selector_key]
                         if isinstance(val, list):
                             result.extend(val)
                         elif isinstance(val, str):
@@ -88,45 +106,136 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"ConfigManager: Error loading selectors for '{selector_key}': {e}")
             return []
-    
-    # ========================================================================
-    # FIELD KEYWORDS (Disabled - Missing Model)
-    # ========================================================================
-    
+
     def get_field_keywords(self, field_name):
-        return []
+        """Get keywords for a specific field name from config_json"""
+        cache_key = f"keywords_{field_name}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+        
+        try:
+            use_sqlalchemy = hasattr(self.db, 'query') and 'sqlalchemy' in str(type(self.db)).lower()
+            
+            if use_sqlalchemy:
+                # SQLAlchemy
+                selectors = self.db.query(SiteSelector).filter(
+                    SiteSelector.job_site_id == self.job_site_id
+                ).all()
+                config_jsons = [s.config_json for s in selectors]
+            else:
+                # Raw DuckDB
+                import json
+                rows = self.db.execute(
+                    "SELECT config_json FROM site_selectors WHERE job_site_id = ?",
+                    [self.job_site_id]
+                ).fetchall()
+                config_jsons = []
+                for (cj,) in rows:
+                    if isinstance(cj, str):
+                        config_jsons.append(json.loads(cj))
+                    else:
+                        config_jsons.append(cj)
+            
+            for config in config_jsons:
+                if config and isinstance(config, dict):
+                    if "field_keywords" in config:
+                        kws = config["field_keywords"].get(field_name)
+                        if kws:
+                            result = kws if isinstance(kws, list) else [kws]
+                            self._cache[cache_key] = result
+                            return result
+            
+            return []
+        except Exception as e:
+            logger.error(f"ConfigManager: Error loading field keywords for '{field_name}': {e}")
+            return []
 
     # ========================================================================
     # FIELD VALUES (Disabled - Missing Model)
     # ========================================================================
     
     def get_field_value(self, field_name, context=None):
-        return None
+        """Get field value from config_json as fallback"""
+        try:
+            use_sqlalchemy = hasattr(self.db, 'query') and 'sqlalchemy' in str(type(self.db)).lower()
+            
+            if use_sqlalchemy:
+                selectors = self.db.query(SiteSelector).filter(
+                    SiteSelector.job_site_id == self.job_site_id
+                ).all()
+                config_jsons = [s.config_json for s in selectors]
+            else:
+                import json
+                rows = self.db.execute(
+                    "SELECT config_json FROM site_selectors WHERE job_site_id = ?",
+                    [self.job_site_id]
+                ).fetchall()
+                config_jsons = []
+                for (cj,) in rows:
+                    if isinstance(cj, str): config_jsons.append(json.loads(cj))
+                    else: config_jsons.append(cj)
+            
+            for config in config_jsons:
+                if config and isinstance(config, dict):
+                    if "field_values" in config:
+                        val = config["field_values"].get(field_name)
+                        if val: return val
+            return None
+        except Exception:
+            return None
     
     def get_all_field_values(self, context=None):
         return {}
     
     # ========================================================================
-    # SECTION KEYWORDS (Disabled - Missing Model)
+    # SECTION KEYWORDS
     # ========================================================================
     
     def get_section_keywords(self, section_name):
-        return []
+        """Get keywords identifying a section from config_json"""
+        return self.get_field_keywords(section_name) # Keywords are keywords
     
     # ========================================================================
-    # SEARCH FILTERS (Disabled - Missing Model)
+    # SEARCH FILTERS
     # ========================================================================
     
     def get_search_filters(self, filter_type):
-        return []
+        """Get search filters (target_keyword, blocked_keyword, etc) from config_json"""
+        return self.get_selectors(filter_type)
     
     # ========================================================================
-    # URL CONFIGURATION (Disabled - Missing Model)
+    # URL CONFIGURATION
     # ========================================================================
     
     def get_url(self, url_key, **kwargs):
-        # Fallback to None so strategy uses its own hardcoded URL
-        return None
+        """Get URL templates from config_json"""
+        try:
+            use_sqlalchemy = hasattr(self.db, 'query') and 'sqlalchemy' in str(type(self.db)).lower()
+            
+            if use_sqlalchemy:
+                selectors = self.db.query(SiteSelector).filter(
+                    SiteSelector.job_site_id == self.job_site_id
+                ).all()
+                config_jsons = [s.config_json for s in selectors]
+            else:
+                import json
+                rows = self.db.execute(
+                    "SELECT config_json FROM site_selectors WHERE job_site_id = ?",
+                    [self.job_site_id]
+                ).fetchall()
+                config_jsons = []
+                for (cj,) in rows:
+                    if isinstance(cj, str): config_jsons.append(json.loads(cj))
+                    else: config_jsons.append(cj)
+            
+            for config in config_jsons:
+                if config and isinstance(config, dict):
+                    if "urls" in config:
+                        url = config["urls"].get(url_key)
+                        if url: return url
+            return None
+        except Exception:
+            return None
     
     # ========================================================================
     # UTILITY METHODS

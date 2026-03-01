@@ -46,9 +46,13 @@ class LanceSoftStrategy(BaseStrategy):
         # JobDiva portal base URL
         self.portal_url = job_site.search_url_template
         
-        # Load selectors from centralized location
-        self.selectors_config = self._load_selectors()
-        
+        # Load selectors from centralized database configuration
+        if 'full_config' not in self.selectors:
+            logger.warning("[WARNING] 'full_config' not found in DB selectors for LanceSoft. Strategy may fail.")
+            self.selectors_config = {}
+        else:
+            self.selectors_config = self.selectors['full_config']
+            
         # Debug logging
         if self.db_session:
             logger.info("[OK] Database session available - will save to MySQL")
@@ -73,52 +77,6 @@ class LanceSoftStrategy(BaseStrategy):
         except Exception as e:
             logger.warning(f"Config JSON load error: {e}  will use candidate_data from DB")
             return {}
-    
-    def _load_selectors(self):
-        """
-        Load all CSS/XPath selectors used for LanceSoft JobDiva portal.
-        This centralizes all selector management - similar to Insight Global approach.
-        """
-        return {
-            # Country/Location Filters
-            'country_button': "//button[contains(., 'United States')]",
-            'country_dropdown_btn': "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]",
-            'usa_option': "//a[@class='dropdown-item'][contains(., 'United States')]",
-            'country_fallback': "div.hideshow-country button",
-            
-            # Search Input
-            'search_input': "input.inputbox_search, input[placeholder*='Search job title' i]",
-            
-            # Job Listings
-            'job_container': "div.list-group-item.list-group-item-action",
-            'job_title': "span.text-capitalize.jd-nav-label.notranslate",
-            'job_id': "div.d-flex.text-muted small:nth-child(3)",
-            'details_button': "button.btn.jd-btn",
-            
-            # Pagination
-            'next_page_btn': "button[aria-label='Next Page']",
-            
-            # Application Buttons
-            'apply_button': "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
-            'quick_apply_option': "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
-            
-            # Form Fields
-            'form_modal': "#quickApplyModal",
-            'submit_btn': "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
-            'next_btn_outline': "button.btn.jd-btn-outline",
-            'next_btn_solid': "button.btn.jd-btn:not(.jd-btn-outline)",
-            
-            # Form Labels and Inputs
-            'consent_checkbox': "//div[@id='quickApplyModal']//input[@type='checkbox']",
-            'file_input': "div#quickApplyModal input[type='file']",
-            
-            # EEO Form Fields
-            'gender_radio': "//input[@type='radio'][@name='gender'][@value='1,3']",
-            'ethnicity_radio': "//input[@type='radio'][@name='ethnicity'][@value='1,3']",
-            'race_radio': "//input[@type='radio'][@name='race'][@value='2,8']",
-            'veteran_radios': "//input[@type='radio'][@name='veteran_status']",
-        }
-
     
     def login(self):
         """
@@ -145,6 +103,19 @@ class LanceSoftStrategy(BaseStrategy):
             logger.error(f"[ERROR] Error accessing JobDiva portal: {e}")
             return False
     
+    def _get_selector(self, key_path):
+        """Helper to get nested selector from DB config by dot path (e.g. 'listing.search_input')"""
+        if not self.selectors_config:
+            return None
+        parts = key_path.split('.')
+        current = self.selectors_config
+        for part in parts:
+            if isinstance(current, dict):
+                current = current.get(part)
+            else:
+                return None
+        return current
+
     def find_and_apply_jobs(self):
         """
         Combined workflow: Find and apply to jobs immediately (Single-Phase).
@@ -293,110 +264,34 @@ class LanceSoftStrategy(BaseStrategy):
             
             # --- Country Filter Selection ---
             try:
-                logger.info("  Setting Country filter...")
-                time.sleep(2)
-                
-                country_selected = False
-                
-                # First check if United States is already selected
-                try:
-                    current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
-                    logger.info("  [YES] Country 'United States' already selected")
-                    country_selected = True
-                except Exception:
-                    logger.info("    Country selection needed - attempting to select...")
-                
-                if not country_selected:
-                    # Strategy 1: Find Country button and click dropdown
-                    try:
-                        country_btn_xpath = "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]"
-                        
-                        logger.info("    Waiting for country dropdown button...")
-                        dropdown_btn = WebDriverWait(self.driver, 10).until(  # Increased from 5 to 10 seconds
-                            EC.element_to_be_clickable((By.XPATH, country_btn_xpath))
-                        )
-                        logger.info("    [YES] Found country dropdown button")
-                        
-                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_btn)
+                # Try country filter quick button
+                country_btn = self._find_element_safe(self._get_selector('listing.country_button'), timeout=5)
+                if country_btn:
+                    self.driver.execute_script("arguments[0].click();", country_btn)
+                    logger.info("  Clicked 'United States' quick filter")
+                    time.sleep(2)
+                else:
+                    # Try dropdown
+                    dropdown = self._find_element_safe(self._get_selector('listing.country_dropdown_btn'), timeout=5)
+                    if dropdown:
+                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown)
                         time.sleep(0.5)
-                        self.human.human_click(dropdown_btn)
-                        logger.info("    [YES] Clicked country dropdown")
+                        self.human.human_click(dropdown)
                         time.sleep(1.5)
                         
-                        # Strategy 2: Select 'United States' from dropdown using multiple selectors
-                        usa_found = False
-                        
-                        # Attempt 1: User-provided selector pattern - find anchor tags with dropdown-item class
-                        try:
-                            logger.info("    Attempting to find USA option (method 1: dropdown-item)...")
-                            usa_option_xpath = "//a[@class='dropdown-item'][contains(., 'United States')]"
-                            usa_options = self.driver.find_elements(By.XPATH, usa_option_xpath)
-                            if usa_options:
-                                usa_option = usa_options[0]
-                                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", usa_option)
-                                time.sleep(0.3)
-                                self.human.human_click(usa_option)
-                                usa_found = True
-                                logger.info("    [YES] Selected USA (method 1)")
-                                time.sleep(1)
-                        except Exception as e:
-                            logger.debug(f"    Method 1 failed: {e}")
-                        
-                        # Attempt 2: General dropdown menu buttons or divs
-                        if not usa_found:
-                            logger.info("    Attempting to find USA option (method 2: alternative selectors)...")
-                            try:
-                                usa_option_xpaths = [
-                                    "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
-                                    "//div[contains(@class, 'dropdown-menu')]//button[contains(., 'United States')]",
-                                    "//div[contains(@class, 'dropdown-menu')]//span[contains(., 'United States')]/..",
-                                    "//button[contains(., 'United States')]"
-                                ]
-                                
-                                for idx, xpath in enumerate(usa_option_xpaths, 1):
-                                    try:
-                                        usa_options = self.driver.find_elements(By.XPATH, xpath)
-                                        if usa_options:
-                                            usa_option = usa_options[0]
-                                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", usa_option)
-                                            time.sleep(0.3)
-                                            self.human.human_click(usa_option)
-                                            usa_found = True
-                                            logger.info(f"    [YES] Selected USA (method 2, variant {idx})")
-                                            time.sleep(1)
-                                            break
-                                    except Exception:
-                                        continue
-                            except Exception as e:
-                                logger.debug(f"    Method 2 failed: {e}")
-                        
-                        if usa_found:
-                            country_selected = True
-                        else:
-                            logger.warning("    [WARNING] Could not find USA option in dropdown")
-                            
-                    except Exception as e:
-                        logger.warning(f"    [WARNING] Could not open Country dropdown: {e}")
-                    
-                    # Fallback: Try CSS selector approach
-                    if not country_selected:
-                        logger.info("    Attempting fallback country selection method...")
-                        try:
-                            fallback_dropdown = self.driver.find_element(By.CSS_SELECTOR, "div.hideshow-country button")
-                            if "United States" not in fallback_dropdown.text:
-                                self.human.human_click(fallback_dropdown)
-                                time.sleep(1)
-                                usa_option = self.driver.find_element(By.XPATH, "//div[contains(@class, 'dropdown-menu')]//a[contains(., 'United States')]")
-                                self.human.human_click(usa_option)
-                                country_selected = True
-                                logger.info("    [YES] Selected USA (fallback method)")
-                        except Exception as fb_err:
-                            logger.debug(f"    Fallback country selection failed: {fb_err}")
-                
-                if country_selected:
-                    logger.info("  [OK] Country filter set to 'United States'")
-                else:
-                    logger.warning("  [WARNING] Country selection failed - continuing anyway (may affect results)")
+                        usa_opt = self._find_element_safe(self._get_selector('listing.usa_option'), timeout=3)
+                        if usa_opt:
+                            self.human.human_click(usa_opt)
+                            logger.info("  Selected 'United States' from dropdown")
+                            time.sleep(2)
+            except Exception as e:
+                logger.debug(f"  Country selection failed/skipped: {e}")
+
+            # This block was incorrectly indented and is now removed as per the instruction's implied correction.
+            # The instruction's provided snippet shows the code that should follow the country selection.
+            # The original code had a nested `if not country_selected:` block and a `if country_selected:` block
+            # that were incorrectly indented and seemed to be part of a previous, different country selection logic.
+            # The instruction implies removing this specific block and replacing it with the search input logic.
 
             except Exception as e:
                 logger.warning(f"  [WARNING] Country filter error (non-critical, continuing): {e}")
@@ -426,7 +321,7 @@ class LanceSoftStrategy(BaseStrategy):
             return []
         
         # Use selectors from centralized configuration
-        container_selector = self.selectors_config['job_container']
+        container_selector = self._get_selector('listing.job_container')
         
         page_num = 1
         MAX_PAGES = 20  # Safety limit to prevent infinite loops
@@ -443,11 +338,11 @@ class LanceSoftStrategy(BaseStrategy):
             # Try to find and click Next Page button
             try:
                 # Use selector from centralized configuration
-                next_btn_selector = self.selectors_config['next_page_btn']
+                next_btn = self._find_element_safe(self._get_selector('listing.next_page_btn'), timeout=5)
                 
-                next_btn = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, next_btn_selector))
-                )
+                if not next_btn:
+                    logger.info(f"    [YES] No Next button found, stopping pagination")
+                    break
                 
                 # Check if button is disabled (last page)
                 is_disabled = next_btn.get_attribute('disabled')
@@ -509,137 +404,6 @@ class LanceSoftStrategy(BaseStrategy):
             )
             logger.info("  [YES] Portal loaded")
             time.sleep(2)
-            
-            # Country Filter Selection - IMPROVED WITH MULTIPLE STRATEGIES
-            try:
-                logger.info("  Setting Country filter...")
-                time.sleep(2)
-                
-                country_selected = False
-                
-                # STRATEGY 1: Check if United States is already selected
-                try:
-                    current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
-                    logger.info("  [YES] Country 'United States' already selected")
-                    country_selected = True
-                except Exception:
-                    logger.info("    Country not pre-selected - will attempt to select...")
-                
-                # STRATEGY 2: Try to select country if not already selected
-                if not country_selected:
-                    # Try multiple approaches to find and click the country dropdown
-                    dropdown_selectors = [
-                        "//button[contains(., 'Country')]",
-                        "//button[contains(., 'Select Country')]",
-                        "//button[contains(@class, 'country')]",
-                        "div.hideshow-country button",
-                        "button[data-toggle='dropdown'][aria-label*='Country']"
-                    ]
-                    
-                    dropdown_clicked = False
-                    for selector in dropdown_selectors:
-                        if dropdown_clicked:
-                            break
-                        try:
-                            logger.info(f"    Trying dropdown selector: {selector[:50]}...")
-                            
-                            # Determine if XPath or CSS
-                            if selector.startswith("//") or selector.startswith("("):
-                                dropdown_btn = WebDriverWait(self.driver, 5).until(
-                                    EC.presence_of_element_located((By.XPATH, selector))
-                                )
-                            else:
-                                dropdown_btn = WebDriverWait(self.driver, 5).until(
-                                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                                )
-                            
-                            # Scroll into view
-                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", dropdown_btn)
-                            time.sleep(0.5)
-                            
-                            # Try clicking
-                            try:
-                                dropdown_btn.click()
-                            except Exception:
-                                # Fallback to JavaScript click
-                                self.driver.execute_script("arguments[0].click();", dropdown_btn)
-                            
-                            logger.info("    [OK] Clicked country dropdown")
-                            dropdown_clicked = True
-                            time.sleep(1.5)
-                            
-                        except Exception as e:
-                            logger.debug(f"    Selector failed: {str(e)[:50]}")
-                            continue
-                    
-                    if not dropdown_clicked:
-                        logger.warning("    [WARNING] Could not find/click country dropdown")
-                    else:
-                        # Try to select USA from dropdown
-                        usa_selectors = [
-                            "//a[@class='dropdown-item'][contains(., 'United States')]",
-                            "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
-                            "//li[contains(., 'United States')]//a",
-                            "//button[contains(., 'United States')]",
-                            "a.dropdown-item:contains('United States')"
-                        ]
-                        
-                        usa_found = False
-                        for selector in usa_selectors:
-                            if usa_found:
-                                break
-                            try:
-                                logger.info(f"    Trying USA selector: {selector[:50]}...")
-                                
-                                # Determine if XPath or CSS
-                                if selector.startswith("//") or selector.startswith("("):
-                                    usa_options = self.driver.find_elements(By.XPATH, selector)
-                                else:
-                                    usa_options = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                                
-                                if usa_options:
-                                    usa_option = usa_options[0]
-                                    
-                                    # Scroll into view
-                                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", usa_option)
-                                    time.sleep(0.3)
-                                    
-                                    # Try clicking
-                                    try:
-                                        usa_option.click()
-                                    except Exception:
-                                        # Fallback to JavaScript click
-                                        self.driver.execute_script("arguments[0].click();", usa_option)
-                                    
-                                    usa_found = True
-                                    country_selected = True
-                                    logger.info("    [OK] Selected USA")
-                                    time.sleep(1)
-                                    
-                            except Exception as e:
-                                logger.debug(f"    USA selector failed: {str(e)[:50]}")
-                                continue
-                        
-                        if not usa_found:
-                            logger.warning("    [WARNING] Could not find USA option in dropdown")
-                
-                # Final status
-                if country_selected:
-                    logger.info("  [OK] Country filter set to 'United States'")
-                else:
-                    logger.warning("  [WARNING] Country selection failed - continuing anyway (search may show all countries)")
-
-            except Exception as e:
-                logger.warning(f"  [WARNING] Country filter error (non-critical, continuing): {e}")
-
-
-            # Enter Search Keyword
-            logger.info(f"  Entering search keyword: '{keyword}'")
-            search_input_selector = "input.inputbox_search, input[placeholder*='Search job title' i]"
-            
-            search_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, search_input_selector))
-            )
             
             search_input.clear()
             self.human.fill_text_field(search_input, keyword)
@@ -928,26 +692,24 @@ class LanceSoftStrategy(BaseStrategy):
 
     def _save_job_to_db(self, job_data):
         try:
+            if not self.db_session: return
              
-            existing = self.db_session.query(JobListing).filter(
-                JobListing.job_site_id == self.job_site.id,
-                JobListing.external_job_id == job_data['external_id']
-            ).first()
+            existing = self.db_session.execute(
+                "SELECT external_job_id FROM job_listings WHERE job_site_id = ? AND external_job_id = ?",
+                [self.job_site.id, job_data['external_id']]
+            ).fetchone()
             
             if not existing:
-                job_listing = JobListing(
-                    job_site_id=self.job_site.id,
-                    external_job_id=job_data['external_id'],
-                    job_title=job_data['job_title'],
-                    job_url=job_data['job_url'],
-                    status='discovered'
+                self.db_session.execute(
+                    """
+                    INSERT INTO job_listings (job_site_id, external_job_id, job_title, job_url, status) 
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [self.job_site.id, job_data['external_id'], job_data['job_title'], job_data['job_url'], "discovered"]
                 )
-                self.db_session.add(job_listing)
-                self.db_session.commit()
-                logger.info(f"       Saved to DB")
+                logger.info(f"       Saved to DuckDB: {job_data['job_title']}")
         except Exception as e:
             logger.error(f"      [ERROR] DB Save Error: {e}")
-            self.db_session.rollback()
     
     def _apply_to_job_by_id(self, job_id, job_data):
         """
@@ -1044,18 +806,16 @@ class LanceSoftStrategy(BaseStrategy):
             # Update database
             if self.db_session and self.job_site:
                 try:
-                    application = Application(
-                        job_site_id=self.job_site.id,
-                        job_title=job_title,
-                        job_url=job_data['job_url'],
-                        status='success'
+                    self.db_session.execute(
+                        """
+                        INSERT INTO applications (job_site_id, job_title, job_url, status)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        [self.job_site.id, job_title, job_data['job_url'], 'success']
                     )
-                    self.db_session.add(application)
-                    self.db_session.commit()
+                    logger.info(" Application saved to database")
                 except Exception as e:
                     logger.warning(f"      [WARNING] Database save failed: {e}")
-                    self.db_session.rollback()
-            
             return True
             
         except Exception as e:
@@ -1437,19 +1197,16 @@ class LanceSoftStrategy(BaseStrategy):
             # Update database
             if self.db_session and self.job_site:
                 try:
-                    application = Application(
-                        job_site_id=self.job_site.id,
-                        job_title=job_title,
-                        job_url=job_url,
-                        status='success'
+                    self.db_session.execute(
+                        """
+                        INSERT INTO applications (job_site_id, job_title, job_url, status)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        [self.job_site.id, job_title, job_url, 'success']
                     )
-                    self.db_session.add(application)
-                    self.db_session.commit()
                     logger.info(" Application saved to database")
                 except Exception as e:
                     logger.warning(f"[WARNING] Database save failed: {e}")
-                    self.db_session.rollback()
-            
             guards.increment_counter()
             return True
             
@@ -1554,18 +1311,15 @@ class LanceSoftStrategy(BaseStrategy):
             # Update database
             if self.db_session and self.job_site:
                 try:
-                    application = Application(
-                        job_site_id=self.job_site.id,
-                        job_title=job_title,
-                        job_url=job_data['job_url'],
-                        status='success'
+                    self.db_session.execute(
+                        """
+                        INSERT INTO applications (job_site_id, job_title, job_url, status)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        [self.job_site.id, job_title, job_data['job_url'], 'success']
                     )
-                    self.db_session.add(application)
-                    self.db_session.commit()
                 except Exception as e:
                     logger.warning(f"      [WARNING] Database save failed: {e}")
-                    self.db_session.rollback()
-            
             return True
             
         except Exception as e:
@@ -1586,20 +1340,15 @@ class LanceSoftStrategy(BaseStrategy):
     def _update_job_status(self, job_id, status):
         """Update job status in database"""
         try:
-            from db.models import JobListing
+            if not self.db_session: return
             
-            job = self.db_session.query(JobListing).filter(
-                JobListing.job_site_id == self.job_site.id,
-                JobListing.external_job_id == job_id
-            ).first()
-            
-            if job:
-                job.status = status
-                self.db_session.commit()
-                logger.debug(f"      Updated job {job_id} status to '{status}'")
+            self.db_session.execute(
+                "UPDATE job_listings SET status = ? WHERE job_site_id = ? AND external_job_id = ?",
+                [status, self.job_site.id, job_id]
+            )
+            logger.debug(f"      Updated job {job_id} status to '{status}'")
         except Exception as e:
             logger.error(f"      Error updating job status: {e}")
-            self.db_session.rollback()
     
     def _fill_application_form(self):
         """Fill the main application form using robust label finding"""

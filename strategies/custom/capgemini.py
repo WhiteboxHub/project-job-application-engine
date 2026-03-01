@@ -65,6 +65,8 @@ class CapgeminiStrategy(BaseStrategy):
             logger.info("[OK] Capgemini: Database session available")
         else:
             logger.warning("[WARNING] Capgemini: No database session")
+            
+        self.use_single_phase = True
 
     def _load_selectors(self):
         """Load selectors from database configuration."""
@@ -172,7 +174,10 @@ class CapgeminiStrategy(BaseStrategy):
         """Legacy discovery-only method."""
         logger.info("Capgemini: Starting job discovery phase...")
         
-        keywords = settings.CAPGEMINI_KEYWORDS.split(',')
+        keywords = self.selectors.get('listing', {}).get('search_keywords')
+        if not keywords:
+            logger.error("[ERROR] Capgemini: Critically missing 'search_keywords' in database configuration!")
+            return []
         
         all_listings = []
         seen_urls = set()
@@ -255,6 +260,8 @@ class CapgeminiStrategy(BaseStrategy):
                     clean_url = url.rstrip('/')
                     external_id = clean_url.split('/')[-1] if '/' in clean_url else 'unknown'
                     
+                    logger.info(f"   Extracted Job ID: {external_id} for {title}")
+                    
                     job_data = {
                         'job_title': title,
                         'job_url': url,
@@ -265,29 +272,25 @@ class CapgeminiStrategy(BaseStrategy):
                     # Save to database
                     if self.db_session and self.job_site:
                         try:
-                            existing = self.db_session.query(JobListing).filter(
-                                JobListing.job_site_id == self.job_site.id,
-                                JobListing.job_url == url
-                            ).first()
+                            existing = self.db_session.execute(
+                                "SELECT status FROM job_listings WHERE job_site_id = ? AND job_url = ?",
+                                [self.job_site.id, url]
+                            ).fetchone()
                             
                             if existing:
-                                if existing.status in ['applied', 'success']:
+                                if existing[0] in ['applied', 'success']:
                                     logger.info(f"   Found job already applied: {title} ({external_id})")
-                                    # Note: We still append to listings so the run loop sees it for dry-run context
                             else:
-                                job_listing = JobListing(
-                                    job_site_id=self.job_site.id,
-                                    external_job_id=external_id,
-                                    job_title=title,
-                                    job_url=url,
-                                    status='discovered'
+                                self.db_session.execute(
+                                    """
+                                    INSERT INTO job_listings (job_site_id, external_job_id, job_title, job_url, status)
+                                    VALUES (?, ?, ?, ?, ?)
+                                    """,
+                                    [self.job_site.id, external_id, title, url, 'discovered']
                                 )
-                                self.db_session.add(job_listing)
-                                self.db_session.commit()
                                 logger.info(f"   Saved to DB: {title} ({external_id})")
                         except Exception as db_err:
                             logger.warning(f"  [WARNING] DB save failed for {title}: {db_err}")
-                            self.db_session.rollback()
                     
                     listings.append(job_data)
                     
@@ -302,8 +305,6 @@ class CapgeminiStrategy(BaseStrategy):
             
         except Exception as e:
             logger.error(f"Capgemini: Error during search for {keyword}: {e}")
-            if self.db_session:
-                self.db_session.rollback()
             return []
 
     def apply(self, listing):
@@ -360,7 +361,11 @@ class CapgeminiStrategy(BaseStrategy):
             apply_btn = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, apply_btn_sel))
             )
-            self.human.human_click(apply_btn)
+            try:
+                self.human.human_click(apply_btn)
+            except Exception as e:
+                logger.debug(f"Human click failed, trying JS click: {e}")
+                self.driver.execute_script("arguments[0].click();", apply_btn)
             time.sleep(self.delays.get('page_load_min', 3))
             
             # 3. Click second "Apply now" button (on careers subdomain)
@@ -369,7 +374,10 @@ class CapgeminiStrategy(BaseStrategy):
                 apply_btn2 = WebDriverWait(self.driver, 10).until(
                     EC.element_to_be_clickable((By.CSS_SELECTOR, apply_btn_sel))
                 )
-                self.human.human_click(apply_btn2)
+                try:
+                    self.human.human_click(apply_btn2)
+                except Exception as e:
+                    self.driver.execute_script("arguments[0].click();", apply_btn2)
                 time.sleep(self.delays.get('page_load_min', 3))
             except:
                 logger.debug("Second apply button not found, continuing...")
@@ -377,34 +385,37 @@ class CapgeminiStrategy(BaseStrategy):
             # 4. Wait for SuccessFactors page to load (and handle new windows)
             logger.info("Capgemini [Step 4]: Waiting for SuccessFactors page")
             
-            # Check if a new window/tab opened
-            if len(self.driver.window_handles) > 1:
-                logger.info("   Switching to new window/tab")
-                self.driver.switch_to.window(self.driver.window_handles[-1])
-                
-            try:
-                WebDriverWait(self.driver, 30).until(
-                    lambda d: "successfactors" in d.current_url.lower() or "sfcareer" in d.current_url.lower()
-                )
-            except Exception as e:
-                logger.warning(f"  [WARNING] Timeout waiting for SuccessFactors URL. Current URL: {self.driver.current_url}")
-                # Check again if another window appeared late
-                if len(self.driver.window_handles) > 1:
-                    self.driver.switch_to.window(self.driver.window_handles[-1]
-            # More robust window switching: find the window that is SuccessFactors and not devtools
+            # Save original window to return to if needed
+            main_window = self.driver.current_window_handle
+            
+            # More robust window switching
             start_time = time.time()
             sf_window_found = False
             while time.time() - start_time < 30:
-                for handle in self.driver.window_handles:
-                    self.driver.switch_to.window(handle)
-                    curr_url = self.driver.current_url.lower()
-                    if ("successfactors" in curr_url or "sfcareer" in curr_url) and "devtools" not in curr_url:
-                        logger.info(f"  → Switched to SuccessFactors window: {curr_url}")
-                        sf_window_found = True
-                        break
+                handles = self.driver.window_handles
+                for handle in handles:
+                    try:
+                        self.driver.switch_to.window(handle)
+                        curr_url = self.driver.current_url.lower()
+                        if ("successfactors" in curr_url or "sfcareer" in curr_url) and "devtools" not in curr_url:
+                            logger.info(f"  → Switched to SuccessFactors window: {curr_url}")
+                            sf_window_found = True
+                            break
+                    except Exception as we:
+                        logger.debug(f"    Window handle error: {we}")
+                        continue
                 if sf_window_found:
                     break
-                time.sleep(self.delays.get('short_delay_min', 1))
+                time.sleep(1.5)
+
+            if not sf_window_found:
+                logger.warning("  ⚠️ Could not identify SuccessFactors window, staying on current.")
+                # Try to fall back to main window if we lost focus
+                try:
+                    self.driver.switch_to.window(main_window)
+                except:
+                    if self.driver.window_handles:
+                        self.driver.switch_to.window(self.driver.window_handles[0])
 
             
             if not sf_window_found:
@@ -433,7 +444,14 @@ class CapgeminiStrategy(BaseStrategy):
             
             # 6. Login to SuccessFactors
             logger.info("Capgemini [Step 6]: Logging in to SuccessFactors")
-            self._login_to_successfactors()
+            login_success = self._login_to_successfactors()
+            
+            if not login_success:
+                logger.error("Capgemini: Login failed or timed out")
+                return False
+            
+            # Wait a bit after login for redirection
+            time.sleep(5)
             
             # 7. Fill application form
             logger.info("Capgemini [Step 7]: Filling application form")
@@ -584,156 +602,101 @@ class CapgeminiStrategy(BaseStrategy):
         """Handle SuccessFactors login."""
         email_sel = self.get_sel('application', 'login_email')
         password_sel = self.get_sel('application', 'login_password')
-        submit_sel = self.get_sel('application', 'login_submit')
         phone_sel = self.get_sel('application', 'form_fields', 'phone', required=False)
 
         try:
-            # Check if we are already logged in/on the application page
-            # We must be very careful not to skip if the fields are visible but disabled (behind a login modal)
-            apply_btn_sel = self.selectors_config.get('application', {}).get('submit_btn')
-            if phone_sel:
-                try:
-                    # Check for phone field AND if it's actually visible and enabled
-                    already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
-
-                    if already_on_form and already_on_form[0].is_displayed() and already_on_form[0].is_enabled():
-                        # Also check if an apply/submit button is visible
-                        if apply_btn_sel:
-                            submit_btn = self.driver.find_elements(By.CSS_SELECTOR, apply_btn_sel)
-                            if submit_btn and submit_btn[0].is_displayed():
-                                logger.info("  ✓ Already logged in and on application form (Submit button visible)")
-                                return True
-                        else:
-                            # Fallback if no specific submit_btn configured but phone is ready
-                            logger.info("  ✓ Already on application form (Phone field ready)")
-                            return True
-
-                except:
-                    pass
-
             # 0. Handle Cookie Banner if present
             try:
                 cookie_btn_sel = "#cookiemanageracceptall"
-                # Try finding it multiple ways
                 cookie_btns = self.driver.find_elements(By.CSS_SELECTOR, cookie_btn_sel)
                 if cookie_btns:
                     logger.info("   Dismissing cookie banner using JS")
                     self.driver.execute_script("arguments[0].click();", cookie_btns[0])
-                    # Wait for it to disappear
-                    WebDriverWait(self.driver, 5).until(
-                        EC.invisibility_of_element_located((By.ID, "cookieManagerModal"))
-                    )
-                    time.sleep(self.delays.get('dropdown_select_min', 1))
-            except Exception as ce:
-                logger.debug(f"  Cookie banner interaction issue: {ce}")
-
-
-            # Check for email field presence first
-            try:
-                email_input = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, email_sel))
-                )
+                    time.sleep(2)
             except:
-                # If email field not found, maybe we are ALREADY logged in (multi-job flow)
-                logger.info("  ℹ️ Login field not found, checking if already logged in...")
-                if self._check_if_logged_in_on_form(phone_sel):
-                    return True
-                raise Exception("Login fields not found and not detected as logged in")
+                pass
 
-            # 1. Fill Email
+            # 1. Look for login fields (Check main content and iframes)
+            email_input = self._find_login_field(email_sel)
+            
+            if email_input:
+                logger.info("  ✓ Login fields found, proceeding with login...")
+            else:
+                # 2. Check if already logged in (phone field visible)
+                logger.info("  ℹ️ Login fields not found, checking if already logged in...")
+                if phone_sel:
+                    try:
+                        # Be very strict: only skip login if phone field is visible AND enabled
+                        already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
+                        if already_on_form and already_on_form[0].is_displayed() and already_on_form[0].is_enabled():
+                            # Final popup check: make sure no visible modal-like patterns are present
+                            popups = self.driver.find_elements(By.CSS_SELECTOR, "div.panelContent, div[id*='content'][class*='body'], .fd-dialog__body")
+                            if not any(p.is_displayed() for p in popups):
+                                logger.info("  ✓ Already on application form (Phone field ready and no login popup)")
+                                return True
+                            else:
+                                logger.info("  ℹ️ Phone field exists but a dialog/popup is visible. Prioritizing login check.")
+                    except:
+                        pass
+                
+                # Wait for potential late popups
+                logger.info("  Waiting for login popup to appear...")
+                time.sleep(5)
+                email_input = self._find_login_field(email_sel)
+                if not email_input:
+                    # Final fallback: check phone again after wait
+                    if phone_sel:
+                        already_on_form = self.driver.find_elements(By.CSS_SELECTOR, phone_sel)
+                        if already_on_form and already_on_form[0].is_displayed():
+                            logger.info("  ✓ Already on application form (Confirmed after wait)")
+                            return True
+
+                    os.makedirs("logs", exist_ok=True)
+                    self.driver.save_screenshot("logs/capgemini_login_not_found.png")
+                    raise Exception("Login fields not found and not detected as already logged in")
+
+            # 3. Perform Login
             logger.info(f"  ⌨️ Entering email: {self.email}")
             self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", email_input)
-            time.sleep(self.delays.get('scroll_min', 1))
+            time.sleep(1)
 
-            
-            # Clear thoroughly
+            # Clear and fill email
             self.driver.execute_script("arguments[0].value = '';", email_input)
             email_input.clear()
-            try:
-                email_input.send_keys(Keys.CONTROL, "a")
-                email_input.send_keys(Keys.BACKSPACE)
-            except:
-                pass
-            time.sleep(self.delays.get('short_delay_min', 0.5))
-            
-            # Use JS to set the value, then send a key to trigger events
             self.driver.execute_script("arguments[0].value = arguments[1];", email_input, self.email)
-            time.sleep(self.delays.get('short_delay_min', 0.5))
-            try:
-                email_input.send_keys(Keys.END)
-                email_input.send_keys(" ")
-                email_input.send_keys(Keys.BACKSPACE)
-            except:
-                pass
-            time.sleep(self.delays.get('form_fill_min', 1))
+            time.sleep(1)
+
+            # Find and fill password
+            password_input = self.driver.find_element(By.ID, "password") if self.driver.find_elements(By.ID, "password") else None
+            if not password_input:
+                password_input = self.driver.find_element(By.CSS_SELECTOR, password_sel)
             
-            # 2. Enter password
-            password_input = self.driver.find_element(By.CSS_SELECTOR, password_sel)
             self.driver.execute_script("arguments[0].value = '';", password_input)
             password_input.clear()
             self.driver.execute_script("arguments[0].value = arguments[1];", password_input, self.password)
-            time.sleep(self.delays.get('short_delay_min', 0.5))
-            try:
-                # Trigger input events then send ENTER as a primary submission attempt
-                password_input.send_keys(Keys.END)
-                password_input.send_keys(Keys.ENTER)
-                logger.info("   Sent ENTER to password field")
-            except Exception as pe:
-                logger.debug(f"  Password ENTER failed: {pe}")
-            time.sleep(self.delays.get('form_fill_min', 2))
-            
-            # Debug: take screenshot before sign-in click
-            self.driver.save_screenshot("/Users/bavishsaireddy/project-job-application-engine/logs/before_login_click.png")
-            
-            # 3. Click submit button
-            time.sleep(self.delays.get('form_fill_min', 2))
-            sign_in_clicked = False
-            
-            # Strategy 1: Find by ID or CSS from database
-            try:
+            time.sleep(1)
 
+            # 4. Click Sign In
+            submit_btn = None
+            try:
+                submit_btn = self.driver.find_element(By.ID, "fbqa_signin")
+            except:
                 submit_sel = self.get_sel('application', 'login_submit', required=False)
                 if submit_sel:
-                    logger.info(f"  🚀 Attempting login submission with selector: {submit_sel}")
-                    # Handle comma-separated selectors
-                    selectors = [s.strip() for s in submit_sel.split(',')]
-                    for sel in selectors:
-                        elements = []
-                        if sel.startswith('#'):
-                            elements = self.driver.find_elements(By.ID, sel[1:])
-                        if not elements:
-                            elements = self.driver.find_elements(By.CSS_SELECTOR, sel)
-                        
-                        for btn in elements:
-                            if btn.is_displayed():
-                                logger.info(f"  ✓ Found visible submit button: {sel}")
-                                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
-                                time.sleep(self.delays.get('scroll_min', 1))
-                                try:
-                                    btn.click()
-                                except:
-                                    self.driver.execute_script("arguments[0].click();", btn)
-                                sign_in_clicked = True
-                                break
-                        if sign_in_clicked: break
-
-            except Exception as e1:
-                logger.debug(f"  Selector-based lookup failed: {e1}")
+                    submit_btn = self.driver.find_element(By.CSS_SELECTOR, submit_sel)
             
-            if not sign_in_clicked:
-                # Fallback to legacy hardcoded ID if needed
-                try:
-                    buttons = self.driver.find_elements(By.ID, "fbqa_signin")
-                    for btn in buttons:
-                        if btn.is_displayed():
-                            logger.info("  🚀 Found visible Sign In button by legacy ID")
-                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
-                            time.sleep(self.delays.get('scroll_min', 1))
-                            self.driver.execute_script("arguments[0].click();", btn)
-                            sign_in_clicked = True
-                            break
-                except:
-                    pass
+            if submit_btn and submit_btn.is_displayed():
+                logger.info("  🚀 Clicking Sign In button")
+                self.driver.execute_script("arguments[0].click();", submit_btn)
+                time.sleep(8)
+                return True
+            else:
+                logger.warning("  ⚠️ Sign In button not found")
+                return False
+
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            return False
             
             # Strategy 2: Find all buttons with CSS and click the visible one
             if not sign_in_clicked:
@@ -1034,72 +997,22 @@ class CapgeminiStrategy(BaseStrategy):
         # Database Update
         if self.db_session:
             try:
-                db_listing = self.db_session.query(JobListing).filter(
-                    JobListing.job_url == job_url
-                ).first()
+                job_status = 'applied' if status == 'success' else 'failed'
+                self.db_session.execute(
+                    "UPDATE job_listings SET status = ? WHERE job_url = ?",
+                    [job_status, job_url]
+                )
                 
-                listing_id = None
-                if db_listing:
-                    listing_id = db_listing.id
-                    # Update listing status - use flush to catch FK constraint errors
-                    try:
-                        db_listing.status = 'applied' if status == 'success' else 'failed'
-                        db_listing.attempts += 1
-                        db_listing.last_error = str(error) if error else None
-                        db_listing.updated_at = datetime.now()
-                        self.db_session.flush()
-                    except Exception as db_err:
-                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
-                        self.db_session.rollback()
-                        # Get ID again
-                        db_listing = self.db_session.query(JobListing).filter(
-                            JobListing.job_url == job_url
-                        ).first()
-                        listing_id = db_listing.id if db_listing else None
-                        self.db_session.flush()
-                    except Exception as db_err:
-                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
-                        self.db_session.rollback()
-                        # Refetch to ensure session is clean
-                        db_listing = self.db_session.query(JobListing).filter(JobListing.job_url == job_url).first()
-                        listing_id = db_listing.id if db_listing else None
-                        self.db_session.flush()
-                    except Exception as db_err:
-                        logger.warning(f"  [WARNING] Could not update job_listing status (DB quirk?): {db_err}")
-                        self.db_session.rollback()
-                        # Refetch to ensure session is clean
-                        db_listing = self.db_session.query(JobListing).filter(JobListing.job_url == job_url).first()
-                        listing_id = db_listing.id if db_listing else None
-                    
-                # Create or update application record
-                from models.history_models import Application
-                from sqlalchemy import select
-                
-                # Check for existing application for this listing
-                stmt = select(Application).where(Application.job_listing_id == listing_id)
-                app = self.db_session.execute(stmt).scalars().first() if listing_id else None
-                
-                if app:
-                    app.status = status
-                    app.error_message = str(error) if error else None
-                    app.updated_at = datetime.now()
-                else:
-                    app = Application(
-                        job_site_id=self.job_site.id,
-                        job_listing_id=listing_id,
-                        job_title=job_title,
-                        job_url=job_url,
-                        status=status,
-                        error_message=str(error) if error else None
-                    )
-                    self.db_session.add(app)
-                
-                self.db_session.commit()
-                logger.info(f"  [STATS] Application record updated in database ({status})")
+                self.db_session.execute(
+                    """
+                    INSERT INTO applications (job_site_id, job_title, job_url, status)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    [self.job_site.id, job_title, job_url, status]
+                )
+                logger.info(f"  [STATS] Application record updated: Site={self.job_site.company_name}, Job={job_title}, ID={listing.get('external_id', 'N/A')}, Status={status}")
             except Exception as e:
                 logger.error(f"Failed to record application in DB: {e}")
-                self.db_session.rollback()
-
     def _check_if_logged_in_on_form(self, phone_sel=None):
         """Helper to verify if we are already authenticated and on the application questionnaire."""
         if not phone_sel:
@@ -1113,3 +1026,57 @@ class CapgeminiStrategy(BaseStrategy):
         except:
             pass
         return False
+
+    def _find_login_field(self, email_sel):
+        """Helper to find the email login field, scanning iframes if necessary."""
+        # 1. Check main content
+        try:
+            # Try specific IDs first as they are most reliable
+            for id_val in ['username', 'email']:
+                elements = self.driver.find_elements(By.ID, id_val)
+                for el in elements:
+                    if el.is_displayed():
+                        logger.info(f"  ✓ Found login field by ID: {id_val}")
+                        return el
+            
+            # Try By.NAME
+            for name_val in ['username', 'email']:
+                elements = self.driver.find_elements(By.NAME, name_val)
+                for el in elements:
+                    if el.is_displayed():
+                        logger.info(f"  ✓ Found login field by NAME: {name_val}")
+                        return el
+
+            # Fallback to CSS
+            elements = self.driver.find_elements(By.CSS_SELECTOR, email_sel)
+            for el in elements:
+                if el.is_displayed():
+                    logger.info(f"  ✓ Found login field by CSS: {email_sel}")
+                    return el
+        except:
+            pass
+
+        # 2. Check iframes
+        iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+        for iframe in iframes:
+            try:
+                self.driver.switch_to.frame(iframe)
+                # Repeat same logic inside iframe
+                for id_val in ['username', 'email']:
+                    elements = self.driver.find_elements(By.ID, id_val)
+                    for el in elements:
+                        if el.is_displayed():
+                            logger.info(f"  ✓ Found login field by ID in iframe: {id_val}")
+                            return el
+                
+                elements = self.driver.find_elements(By.CSS_SELECTOR, email_sel)
+                for el in elements:
+                    if el.is_displayed():
+                        logger.info(f"  ✓ Found login field by CSS in iframe: {email_sel}")
+                        return el
+                
+                self.driver.switch_to.default_content()
+            except:
+                self.driver.switch_to.default_content()
+        
+        return None

@@ -82,5 +82,45 @@ class BaseStrategy(ABC):
             logger.error(f"Resume file not found at: {resume_path}")
             return None
             
-        logger.info(f"Resolved resume path: {resume_path}")
-        return resume_path
+    def _record_application_db(self, status, job_url, job_title=None, listing_id=None, error=None):
+        """
+        Robust application recording using raw SQL to avoid SQLAlchemy/DuckDB transaction issues.
+        """
+        if not self.db_session:
+            return
+            
+        try:
+            # 1. Update listing status if exists
+            if listing_id:
+                try:
+                    self.db_session.execute(
+                        "UPDATE job_listings SET status = ?, attempts = attempts + 1, last_error = ? WHERE id = ?",
+                        ['applied' if status == 'success' else 'failed', error, listing_id]
+                    )
+                except Exception as e:
+                    logger.debug(f"Failed to update listing {listing_id}: {e}")
+            elif job_url:
+                try:
+                    self.db_session.execute(
+                        "UPDATE job_listings SET status = ?, attempts = attempts + 1, last_error = ? WHERE job_url = ?",
+                        ['applied' if status == 'success' else 'failed', error, job_url]
+                    )
+                except Exception as e:
+                    logger.debug(f"Failed to update listing by URL {job_url}: {e}")
+
+            # 2. Insert application record
+            from datetime import datetime
+            now = datetime.now().isoformat()
+            
+            self.db_session.execute(
+                """
+                INSERT INTO applications 
+                (job_site_id, job_listing_id, job_title, job_url, status, applied_at, error_message)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                [self.job_site.id, listing_id, job_title, job_url, status, now, error]
+            )
+            logger.info(f"  [DB] Recorded {status} for {job_title or job_url}")
+            
+        except Exception as e:
+            logger.error(f"[ERROR] Failed to record application in DB: {e}")

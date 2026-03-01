@@ -436,8 +436,8 @@ class InfosysStrategy(BaseStrategy):
         self._close_common_popups()
 
         # 2. Try interactive search
-        search_input_selectors = self._get_selectors("search_input", ["input#keyword", "input[name='keyword']", "input.search-keyword"])
-        search_button_selectors = self._get_selectors("search_button", ["button#search", "button.search-btn", "input[type='submit']"])
+        search_input_selectors = self._get_selectors("search_input")
+        search_button_selectors = self._get_selectors("search_button")
         
         search_input = self._find_element_safe(search_input_selectors)
         if search_input:
@@ -511,7 +511,7 @@ class InfosysStrategy(BaseStrategy):
 
                 # next page
                 try:
-                    next_selectors = self._get_selectors("next_button", ["a.next", "li.next a", "a[title='Next']", "button.next"])
+                    next_selectors = self._get_selectors("next_button")
                     next_btn = self._find_element_safe(next_selectors)
                     if next_btn and "disabled" not in (next_btn.get_attribute("class") or ""):
                         logger.info("Moving to next page...")
@@ -542,22 +542,9 @@ class InfosysStrategy(BaseStrategy):
         t = title.lower()
         
         # Get filters from database
-        targets = []
-        blocks = []
-        location_filters = []
-        
-        if self.config:
-            targets = self.config.get_search_filters('target_keyword')
-            blocks = self.config.get_search_filters('blocked_keyword')
-            location_filters = self.config.get_search_filters('location_filter')
-            
-        # Fallbacks if DB empty
-        if not targets:
-            targets = ["ai", "machine learning", "ml", "data science", "engineer", "developer", "technology", "software"]
-        if not blocks:
-            blocks = ["nurse", "sales", "hr", "marketing", "finance", "legal", "doctor"]
-        if not location_filters:
-            location_filters = ["canada", "brazil", "india", "mexico", "united kingdom", "uk", "australia"]
+        targets = self.config.get_search_filters('target_keyword') if self.config else []
+        blocks = self.config.get_search_filters('blocked_keyword') if self.config else []
+        location_filters = self.config.get_search_filters('location_filter') if self.config else []
             
         if any(b.lower() in t for b in blocks if b):
             return False
@@ -571,25 +558,24 @@ class InfosysStrategy(BaseStrategy):
     def _save_job_to_db(self, job_id, title, href, description=None):
         try:
             if not self.db_session: return
-            existing = self.db_session.query(JobListing).filter(JobListing.job_url == href).first()
+            
+            # Check if job exists
+            existing = self.db_session.execute(
+                "SELECT external_job_id FROM job_listings WHERE job_url = ?", 
+                [href]
+            ).fetchone()
+            
             if not existing:
-                listing = JobListing(
-                    job_site_id=self.job_site.id,
-                    external_job_id=job_id,
-                    job_title=title,
-                    job_url=href,
-                    job_description=description,
-                    status="discovered",
+                self.db_session.execute(
+                    """
+                    INSERT INTO job_listings (job_site_id, external_job_id, job_title, job_url, status) 
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [self.job_site.id, job_id, title, href, "discovered"]
                 )
-                self.db_session.add(listing)
-                self.db_session.commit()
                 logger.info(f"Saved to DuckDB: {title}")
         except Exception as e:
             logger.error(f"DB save failed: {e}")
-            try:
-                self.db_session.rollback()
-            except Exception:
-                pass
 
     # -------------------------
     # Apply flow
@@ -621,35 +607,15 @@ class InfosysStrategy(BaseStrategy):
 
         if self.db_session:
             try:
-                listing = self.db_session.query(JobListing).filter(JobListing.job_url == job_url).first()
-                if listing:
-                    listing.job_description = job_description
-                    self.db_session.commit()
-                    logger.info("Updated description in DuckDB.")
-            except Exception:
-                self.db_session.rollback()
+                self.db_session.execute(
+                    "UPDATE job_listings SET job_description = ? WHERE job_url = ?",
+                    [job_description, job_url]
+                )
+                logger.info("Updated description in DuckDB.")
+            except Exception as e:
+                logger.warning(f"Could not update description: {e}")
 
-        # 1) Apply - Get selectors from database (with proper fallback)
-        db_selectors = self._get_selectors('apply_button')
-        
-        # Use database selectors if available, otherwise use hardcoded fallback
-        if db_selectors:
-            apply_selectors = db_selectors
-            logger.info("Using Apply button selectors from database")
-        else:
-            apply_selectors = [
-                # Exact XPath from browser inspection (user-confirmed)
-                "//*[@id='sortableHeader']/li/div/div/div/div[2]/a",
-                # CSS equivalents
-                "#sortableHeader li div div div div:nth-child(2) a",
-                "#sortableHeader > li > div > div > div > div.apply-button-container > a",
-                ".apply-button-container a",
-                "a.infosys-apply-link",
-                "//a[contains(@class, 'apply')]",
-                "//a[contains(text(), 'Apply')]",
-                "//button[contains(text(), 'Apply Now')]",
-            ]
-            logger.info("Using hardcoded Apply button selectors (database empty)")
+        apply_selectors = self._get_selectors('apply_button')
         
         logger.info(f"[SEARCH] Testing {len(apply_selectors)} Apply button selectors...")
         logger.info(f"Selectors: {apply_selectors}")
@@ -945,32 +911,7 @@ class InfosysStrategy(BaseStrategy):
     # -------------------------
     def _handle_first_time_user(self):
         logger.info("Selecting 'I am applying for the first time'...")
-        # Get selectors from database
-        db_selectors = self.config.get_selectors('first_time_user_button') if self.config else []
-        if db_selectors:
-            selectors = db_selectors
-        else:
-            selectors = [
-                # Exact XPath from user inspection: second apply-type-container's Apply button
-                "//*[@id='form_application']/div[2]/div[2]//a[contains(@class,'apply-selector-button') or contains(@class,'apply-btn') or contains(text(),'Apply')]",
-                "//*[@id='form_application']/div[2]/div[2]//button",
-                # Target the Apply button inside the 'first time' container
-                ".apply-type-container:nth-of-type(2) .apply-selector-button-container a",
-                ".apply-type-container:nth-of-type(2) .apply-selector-button-container button",
-                ".apply-type-container:last-of-type .apply-selector-button-container a",
-                # Broader fallbacks
-                ".apply-selector-button-container a",
-                ".apply-selector-button-container button",
-                "//div[contains(@class,'apply-type-container')][2]//a",
-                "//div[contains(@class,'apply-type-container')][2]//button",
-                "//p[contains(text(),'applying for the first time')]/following-sibling::div//a",
-                "//p[contains(text(),'applying for the first time')]/following-sibling::div//button",
-                # Legacy fallbacks
-                ".apply-first-time-button",
-                "a.apply-first-time-button",
-                "input[value='FirstTime']",
-                "#rdoFirstTime",
-            ]
+        selectors = self._get_selectors('first_time_user_button')
         if self._click_any(selectors):
             logger.info(" Selected 'Applying for first time'")
             time.sleep(2)
@@ -979,22 +920,7 @@ class InfosysStrategy(BaseStrategy):
 
     def _handle_privacy_modal(self):
         logger.info("Handling Privacy/Consent Modal...")
-        # Get selectors from database
-        db_consent = self.config.get_selectors('consent_button') if self.config else []
-        if db_consent:
-            consent_selectors = db_consent
-        else:
-            consent_selectors = [
-                # Exact selector from user inspection: <a class="consent-button" href="#">Proceed</a>
-                "a.consent-button",
-                ".consent-button",
-                "//a[@class='consent-button' and text()='Proceed']",
-                "//a[contains(@class, 'consent-button')]",
-                "//a[contains(text(), 'Proceed')]",
-                "button.agree",
-                "button.proceed",
-                "//button[contains(text(), 'Proceed')]",
-            ]
+        consent_selectors = self._get_selectors('consent_button')
         if self._click_any(consent_selectors):
             logger.info(" Clicked Proceed/Consent button")
             time.sleep(3)
@@ -1041,35 +967,25 @@ class InfosysStrategy(BaseStrategy):
         self._select_dropdown(["select#state", "select[name*='state']"], ["California", "CA"])
         time.sleep(1)
 
-        self._smart_fill(self._get_keywords("first_name", ["first name", "firstname", "given name"]), first_name)
-        self._smart_fill(self._get_keywords("last_name", ["last name", "lastname", "surname", "family name"]), last_name)
-        self._smart_fill(self._get_keywords("email", ["email", "email address"]), email)
-        self._smart_fill(self._get_keywords("phone", ["phone", "mobile", "contact number", "cell"]), phone)
+        self._smart_fill(self._get_keywords("first_name"), first_name)
+        self._smart_fill(self._get_keywords("last_name"), last_name)
+        self._smart_fill(self._get_keywords("email"), email)
+        self._smart_fill(self._get_keywords("phone"), phone)
         
-        self._enterprise_fill(self._get_keywords("city", ["city", "addrCity", "town"]), city)
-        self._enterprise_fill(self._get_keywords("address", ["address_1", "address", "address 1", "address line 1", "street", "street address", "addr1", "address1"]), street_address)
-        self._enterprise_fill(self._get_keywords("zip", ["zip", "zip code", "zipcode", "postal", "postal code", "postalcode"]), zip_code)
+        self._enterprise_fill(self._get_keywords("city"), city)
+        self._enterprise_fill(self._get_keywords("address"), street_address)
+        self._enterprise_fill(self._get_keywords("zip"), zip_code)
 
         # -------------------------
         # Legal / Authorization (Often required for 'Next')
         # -------------------------
         logger.info("Filling Legal/Authorization questions...")
-        auth_keywords = self._get_keywords("authorized_us", ["authorized to work", "legally authorized", "right to work"])
-        sponsorship_keywords = self._get_keywords("sponsorship", ["sponsorship", "require sponsorship", "visa sponsorship", "h1-b"])
-        
-        # Default to 'Yes' for authorization, 'No' for sponsorship based on applicant profiles usually handled
-        # Use existing robust _enterprise_fill for these
-        self._enterprise_fill(auth_keywords, "Yes")
-        self._enterprise_fill(sponsorship_keywords, "No")
+        self._enterprise_fill(self._get_keywords("authorized_us"), "Yes")
+        self._enterprise_fill(self._get_keywords("sponsorship"), "No")
 
         logger.info("Proceeding to next section (Personal Info -> Resume)...")
         # Robust Next Click with JS Fallback
-        next_selectors = [
-                "a#forward-navigation",
-                "a.form-next-button",
-                "//button[contains(text(), 'Next')]",
-                "//a[contains(text(), 'Next')]",
-        ]
+        next_selectors = self._get_selectors('forward_navigation')
         
         # Click and wait for stale
         try:
@@ -1369,22 +1285,7 @@ class InfosysStrategy(BaseStrategy):
         return False
 
     def _click_next_best_effort(self):
-        next_selectors = [
-            "#forward-navigation",
-            "a.form-next-button",
-            "button.save-continue",
-            "button.next",
-            "//button[contains(., 'Next')]",
-            "//a[contains(., 'Next')]",
-            "//button[contains(., 'Continue')]",
-            "//a[contains(., 'Continue')]",
-            "//button[contains(., 'Save')]",
-            "//a[contains(., 'Save')]",
-            "//button[contains(., 'Proceed')]",
-            "//a[contains(., 'Proceed')]",
-            "//span[contains(text(), 'Next')]",
-            "//span[contains(text(), 'Continue')]",
-        ]
+        next_selectors = self._get_selectors('forward_navigation')
 
         if self._click_any(next_selectors):
             return True
@@ -1418,7 +1319,7 @@ class InfosysStrategy(BaseStrategy):
             did_something = False
 
             # EDUCATION
-            edu_keywords = self._get_section_keywords("education", ["education", "school", "institution", "university", "college", "degree", "qualification", "major"])
+            edu_keywords = self._get_section_keywords("education")
             if "education" not in filled_sections and self._page_has_any_field(edu_keywords):
                 logger.info("Detected Education section by fields  filling...")
                 self._fill_education_parsed()
@@ -1426,7 +1327,7 @@ class InfosysStrategy(BaseStrategy):
                 did_something = True
 
             # EXPERIENCE
-            exp_keywords = self._get_section_keywords("experience", ["work", "experience", "employer", "company", "designation", "job_title", "position", "responsibilities"])
+            exp_keywords = self._get_section_keywords("experience")
             if "experience" not in filled_sections and self._page_has_any_field(exp_keywords):
                 logger.info("Detected Experience section by fields  filling...")
                 self._fill_experience_parsed()
@@ -1434,7 +1335,7 @@ class InfosysStrategy(BaseStrategy):
                 did_something = True
 
             # SKILLS
-            skills_keywords = self._get_section_keywords("skills", ["skills", "technologies", "tool", "stack"])
+            skills_keywords = self._get_section_keywords("skills")
             if "skills" not in filled_sections and self._page_has_any_field(skills_keywords):
                 logger.info("Detected Skills section by fields  filling...")
                 self._fill_skills_parsed()
@@ -1445,7 +1346,7 @@ class InfosysStrategy(BaseStrategy):
             # We allow this to run multiple times (by not checking filled_sections) 
             # because EEO and Agreement/Other Info often appear on separate pages 
             # but share similar field types/keywords.
-            eeo_keywords = self._get_section_keywords("eeo", ["ethnicity", "race", "race category", "gender", "veteran", "disability", "eeo", "employed", "contract", "arbitration", "other", "additional", "signature", "mutual", "source", "authorized", "relocate", "travel", "sponsorship", "voluntary", "identification", "self-identification", "agreement", "terms", "acknowledge"])
+            eeo_keywords = self._get_section_keywords("eeo")
             if self._page_has_any_field(eeo_keywords):
 
                 logger.info("Detected EEO / Other Info section by fields ΓåÆ filling...")
@@ -1479,28 +1380,19 @@ class InfosysStrategy(BaseStrategy):
                     dis_val = "No, I do not have a disability"
 
                 eeo_data = [
-                    (self._get_keywords("ethnicity", ["ethnicity", "hispanic", "latino"]), applicant.get("ethnicity") or "No"),
-                    (self._get_keywords("gender", ["gender", "sex"]), applicant.get("gender") or "Female"),
-                    (self._get_keywords("veteran", ["veteran", "military", "protected"]), applicant.get("veteran") or "No"),
-                    (self._get_keywords("disability", ["disability", "voluntary self-identification"]), dis_val),
-                    (self._get_keywords("employed", ["employed", "previously worked", "employed by infosys"]), applicant.get("employed_before_wipro") or "No"),
-                    (self._get_keywords("authorized", ["authorized", "work in the united states", "legally"]), applicant.get("auth_country_select") or "Yes"),
-                    (self._get_keywords("sponsorship", ["sponsorship", "visa", "future"]), applicant.get("sponsorship_future") or "No"),
-                    (self._get_keywords("arbitration", ["arbitration", "agreement"]), "Yes"),
-                    (self._get_keywords("relocate", ["relocate"]), "Yes"),
-                    (self._get_keywords("travel", ["travel"]), "Yes"),
-                    (self._get_keywords("signature", ["signature", "full name", "legal name"]), full_name),
-                    # "Do you have a minimum of a Bachelor's degree or 3 years relevant work experience?"
-                    (self._get_keywords("bachelor_degree_req", [
-                        "bachelor", "minimum", "foreign equivalent", "lieu of every year",
-                        "three years of relevant", "work experience in lieu", "degree or foreign"
-                    ]), "Yes"),
-                    # "Are you subject to contractual restrictions (non-compete etc.) that could prevent you from working here?"
-                    # Default: No  answering Yes would flag/reject the application
-                    (self._get_keywords("contractual_restrictions", [
-                        "contractual", "non-competition", "non-compete", "restrictive covenant",
-                        "prevent you from working", "obligations that could prevent", "prior employer"
-                    ]), "No"),
+                    (self._get_keywords("ethnicity"), applicant.get("ethnicity") or "No"),
+                    (self._get_keywords("gender"), applicant.get("gender") or "Female"),
+                    (self._get_keywords("veteran"), applicant.get("veteran") or "No"),
+                    (self._get_keywords("disability"), dis_val),
+                    (self._get_keywords("employed"), applicant.get("employed_before_wipro") or "No"),
+                    (self._get_keywords("authorized"), applicant.get("auth_country_select") or "Yes"),
+                    (self._get_keywords("sponsorship"), applicant.get("sponsorship_future") or "No"),
+                    (self._get_keywords("arbitration"), "Yes"),
+                    (self._get_keywords("relocate"), "Yes"),
+                    (self._get_keywords("travel"), "Yes"),
+                    (self._get_keywords("signature"), full_name),
+                    (self._get_keywords("bachelor_degree_req"), "Yes"),
+                    (self._get_keywords("contractual_restrictions"), applicant.get("contract_restriction") or "No"),
                 ]
 
                 # Race category  use dedicated method for robust dropdown matching
@@ -1510,7 +1402,7 @@ class InfosysStrategy(BaseStrategy):
                 else:
                     logger.warning("[WARNING] Race category dropdown not found or not filled  trying enterprise_fill fallback")
                     if self._enterprise_fill(
-                        self._get_keywords("race", ["race", "race category", "diversity", "ethni"]), race_val
+                        self._get_keywords("race"), race_val
                     ):
                         did_something = True
 
@@ -1527,6 +1419,22 @@ class InfosysStrategy(BaseStrategy):
                     did_something = True
                 else:
                     logger.warning("[WARNING] Could not click form_application div[6] label[1]  may not be on page")
+
+                # Contractual restrictions fallback click (often div[11])
+                _contract_xpath = '//*[@id="form_application"]/div[11]/div/div/div[3]/label[1]'
+                if applicant.get("contract_restriction") == "No":
+                    if self._click_any([
+                        _contract_xpath, 
+                        "input[name='custom[other][contract_restriction]'][value='No']",
+                        "//input[@name='custom[other][contract_restriction]' and @value='No']/..",
+                        "//label[contains(text(), 'No, I am not subject to any contractual restrictions')]",
+                        "//label[contains(., 'contractual restrictions') and contains(., 'No')]",
+                        "//div[contains(@class, 'form-group')]//label[contains(., 'contractual')]/following-sibling::div//label[contains(., 'No')]"
+                    ]):
+                        logger.info("[OK] Clicked Contractual Restrictions explicit fallback (No)")
+                        did_something = True
+                    else:
+                        logger.warning("[WARNING] Could not click Contractual Restrictions fallback")
 
                 filled_sections.add("eeo")
 
@@ -1609,7 +1517,7 @@ class InfosysStrategy(BaseStrategy):
                         continue
                         
                     # Check for "race" or racial options
-                    race_keywords = ["race", "ethnic origin", "ancestry"]
+                    race_keywords = self._get_keywords("race_category")
                     is_race = any(k in combined for k in race_keywords)
                     
                     if not is_race:
@@ -1679,15 +1587,15 @@ class InfosysStrategy(BaseStrategy):
                 logger.info(f"Area of study from guest_form_data fallback: {area_val}")
 
         self._enterprise_fill(
-            ["school", "institution", "university", "college", "education][0][school", "education][0][institution"],
+            self._get_keywords("education_school"),
             edu.get("institution", ""),
         )
         self._enterprise_fill(
-            ["major", "area", "study", "program", "field", "education][0][major", "education][0][program"],
+            self._get_keywords("education_major"),
             area_val,
         )
         self._enterprise_fill(
-            ["degree", "qualification", "education][0][degree", "level"],
+            self._get_keywords("education_degree"),
             edu.get("studyType", ""),
         )
 
@@ -1695,7 +1603,7 @@ class InfosysStrategy(BaseStrategy):
             match = re.search(r"(\d{4})", str(edu.get("endDate")))
             if match:
                 self._enterprise_fill(
-                    ["graduation", "year", "end_date", "education][0][year", "education][0][end_date"],
+                    self._get_keywords("education_end_year"),
                     match.group(1),
                 )
 
@@ -1703,7 +1611,7 @@ class InfosysStrategy(BaseStrategy):
             match = re.search(r"(\d{4})", str(edu.get("startDate")))
             if match:
                 self._enterprise_fill(
-                    ["start_year", "from_year", "education][0][start_year", "education][0][from"],
+                    self._get_keywords("education_start_year"),
                     match.group(1),
                 )
 
@@ -1711,7 +1619,7 @@ class InfosysStrategy(BaseStrategy):
         gpa_val = edu.get("gpa", "")
         if gpa_val:
             self._enterprise_fill(
-                ["gpa", "grade", "grade_point", "education][0][gpa"],
+                self._get_keywords("education_gpa"),
                 str(gpa_val),
             )
 
@@ -1722,7 +1630,7 @@ class InfosysStrategy(BaseStrategy):
             logger.info("No work experience in resume.json")
             return
 
-        max_exp = 3
+        max_exp = int(self._get_value("max_experience_entries", fallback=10))
         for i, job in enumerate(work_list[:max_exp]):
             company_name = job.get("name", "")
             logger.info(f"Filling experience #{i+1}: {company_name}")
@@ -1735,11 +1643,11 @@ class InfosysStrategy(BaseStrategy):
             suffix = f"][{i}]"
 
             self._enterprise_fill(
-                [f"work]{suffix}[company", f"work]{suffix}[name", "company", "employer"],
+                [f"work]{suffix}[company", f"work]{suffix}[name"] + self._get_keywords("experience_company"),
                 company_name,
             )
             self._enterprise_fill(
-                [f"work]{suffix}[job_title", f"work]{suffix}[position", "job_title", "position", "title"],
+                [f"work]{suffix}[job_title", f"work]{suffix}[position"] + self._get_keywords("experience_title"),
                 job.get("position", ""),
             )
 
@@ -1949,11 +1857,7 @@ class InfosysStrategy(BaseStrategy):
                     
                     # NEW: Click "Import fields" if present (User Request)
                     logger.info("Checking for 'Import fields' button...")
-                    import_selectors = [
-                        "button.save-button", 
-                        "//button[contains(text(), 'Import fields')]",
-                        "//button[contains(., 'Import fields')]"
-                    ]
+                    import_selectors = self._get_selectors("import_fields")
                     if self._click_any(import_selectors):
 
                         logger.info("Γ£ô Clicked 'Import fields' button.")
@@ -1967,14 +1871,14 @@ class InfosysStrategy(BaseStrategy):
                         # Click Next to proceed to dynamic sections
                         logger.info("Clicking Next/Proceed after resume section...")
                         # More aggressive click and wait
-                        self._click_any(["a#forward-navigation", "button#next", "//button[contains(text(), 'Next')]", "//a[contains(text(), 'Next')]", "//span[contains(text(), 'Proceed')]"])
+                        self._click_any(self._get_selectors("forward_navigation"))
                         time.sleep(self._get_delay("after_resume_next_wait", 5.0))
                         return True
 
                     if is_verified:
                         logger.info(f"Resume upload verified after {method.__name__}!")
                         # Click Next to proceed
-                        self._click_any(["a#forward-navigation", "button#next", "//button[contains(text(), 'Next')]", "//a[contains(text(), 'Next')]"])
+                        self._click_any(self._get_selectors("forward_navigation"))
                         return True
                     else:
                         logger.warning(f"{method.__name__} finished but verification failed.")
@@ -1986,26 +1890,7 @@ class InfosysStrategy(BaseStrategy):
         return False
 
     def _verify_upload_success(self):
-        success_indicators = [
-            ".dz-filename",
-            ".dz-success",
-            ".dz-complete",
-            ".upload-success",
-            ".dz-preview",
-            "div.dz-image",
-            ".resume-preview",
-            ".file-name",
-            "[id*='resume_name']",
-            "//span[contains(@class, 'dz-filename')]",
-            "//div[contains(@class, 'success-message')]",
-            "//span[contains(text(), '.pdf')]",
-            "//div[contains(text(), 'uploaded successfully')]",
-            "button.remove",
-            "a.remove", 
-            "//a[contains(text(), 'Remove')]",
-            "//button[contains(text(), 'Remove')]",
-            "//span[contains(text(), 'Remove')]"
-        ]
+        success_indicators = self._get_selectors("upload_indicators")
         for sel in success_indicators:
             try:
                 by = By.XPATH if sel.startswith("//") else By.CSS_SELECTOR
@@ -2108,17 +1993,7 @@ class InfosysStrategy(BaseStrategy):
     # Popups (aggressive)
     # -------------------------
     def _close_common_popups(self):
-        popups = [
-            "span.x-icon",
-            ".x-icon",
-            "div.close-item button.close",
-            "//div[contains(@class, 'close-item')]//button",
-            "button[aria-label='Close']",
-            "button.close",
-            "button#onetrust-accept-btn-handler",
-            "//button[contains(text(), 'Close')]",
-            "//span[contains(@class, 'x-icon')]/..",
-        ]
+        popups = self._get_selectors("popup_closers")
 
         logger.info("Scanning for popups to close...")
 
@@ -2178,14 +2053,7 @@ class InfosysStrategy(BaseStrategy):
 
         # Click final button
         # Removing generic "Apply Now" to avoid clicking the initial button if we never left the page
-        success = self._click_any(
-            [
-                ".form-submit-button", 
-                "input[type='submit']", 
-                "//button[contains(text(), 'Submit Application')]",
-                "//button[contains(text(), 'Submit')]"
-            ]
-        )
+        success = self._click_any(self._get_selectors("submit_button"))
         if success:
             logger.info(" Application Submitted!")
             csv_tracker.update_job_status("infosys", job_url, "success")
