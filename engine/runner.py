@@ -10,6 +10,7 @@ from engine.factory import strategy_factory
 from engine.guards import guards
 from core.browser import browser_service
 from core.logger import logger
+from core.auth_service import auth_service
 
 class EngineRunner:
     """Main orchestrator for the job application engine"""
@@ -40,6 +41,11 @@ class EngineRunner:
             logger.info("Initializing browser...")
             self.browser = browser_service.start_browser()
             logger.info("✅ Browser started successfully")
+
+            # 1.5 Optional: Authentication
+            token = auth_service.get_access_token()
+            if token:
+                logger.info(f"🔑 Engine authorized with token: {token[:10]}...")
             
             # 2. Get Active Sites from Database
             session = db.get_session()

@@ -2084,8 +2084,7 @@ def categorize_jobs_by_ats(jobs: list[dict]) -> dict[str, list[dict]]:
             ats_url = j.get("ats_url")
         job_posting_url = j.get("url") or j.get("job_posting_url") or j.get("hiring_cafe_url")
         entry = {
-            "job_id": j.get("job_id"),
-            "title": j.get("title"),
+            **j,
             "job_posting_url": job_posting_url,
             "ats": {"url": ats_url, "platform": platform},
         }
@@ -2202,6 +2201,78 @@ class HiringCafeStrategy(BaseStrategy):
         except Exception:
             return False
 
+    def _parse_hiring_cafe_card_text(self, text: str) -> dict:
+        """
+        Parse the raw text from a Hiring Cafe job card into granular fields.
+        Standard format observed:
+        Line 0: Time elapsed (e.g., "15h" or "2d")
+        Line 1: Job Title
+        Line 2: Location (City, State, Country)
+        Line 3: Type (Onsite/Remote/Hybrid)
+        Line 4: Job Type (Full Time/Contract)
+        Line 5: Company Name
+        Line 6+: Optional Stock info (NYSE: ACN) and Description snippet
+        """
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        data = {
+            "job_tittle": None,
+            "location": None,
+            "city": None,
+            "state": None,
+            "country": None,
+            "type": None,
+            "comapany": None,
+            "company_description": None
+        }
+        
+        if not lines:
+            return data
+            
+        # Line 0 is usually time elapsed, skip if it matches pattern like "15h" or "2d"
+        start_idx = 0
+        if re.match(r'^\d+[hdmw]$', lines[0]):
+            start_idx = 1
+            
+        if len(lines) > start_idx:
+            data["job_tittle"] = lines[start_idx]
+            
+        if len(lines) > start_idx + 1:
+            loc_str = lines[start_idx + 1]
+            data["location"] = loc_str
+            # Parse Location: "Hyderabad, Telangana, India"
+            parts = [p.strip() for p in loc_str.split(',')]
+            if len(parts) >= 3:
+                data["city"] = parts[0]
+                data["state"] = parts[1]
+                data["country"] = parts[2]
+            elif len(parts) == 2:
+                data["city"] = parts[0]
+                data["country"] = parts[1]
+            elif len(parts) == 1:
+                data["city"] = parts[0]
+
+        if len(lines) > start_idx + 2:
+            data["type"] = lines[start_idx + 2]
+            
+        # Skip "Full Time" / "Contract" line (usually start_idx + 3)
+        
+        if len(lines) > start_idx + 4:
+            data["comapany"] = lines[start_idx + 4]
+            
+        # Description snippet usually starts after company or stock info
+        # It often starts with a colon ": Provides..."
+        desc_lines = []
+        for line in lines[start_idx + 5:]:
+            if line.startswith(':'):
+                desc_lines.append(line.lstrip(':').strip())
+            elif not any(x in line for x in ['NYSE:', 'NASDAQ:', 'YOE']):
+                desc_lines.append(line)
+        
+        if desc_lines:
+            data["company_description"] = " ".join(desc_lines)
+            
+        return data
+
     def _scroll_until_end(self, max_scrolls=100, scroll_delay=2):
         logger.info("🔄 Starting infinite scroll to load all positions...")
         previous_count = 0
@@ -2259,23 +2330,29 @@ class HiringCafeStrategy(BaseStrategy):
                     seen_ids.add(job_id)
                     url = href if href.startswith("http") else (self.base_url + (href if href.startswith("/") else "/" + href))
                     title = None
+                    enriched_data = {}
                     try:
                         parent = link.find_element(By.XPATH, "./ancestor::*[self::article or self::div][position()<=3]")
                         raw = (parent.text or "").strip()
                         if raw and "Job Posting" in raw:
                             title = raw.replace("Job Posting", "").strip()[:200] or None
+                        
+                        if raw:
+                            enriched_data = self._parse_hiring_cafe_card_text(raw)
                     except Exception:
                         pass
                     if not title:
-                        title = f"Job {job_id}"
+                        title = enriched_data.get("job_tittle") or f"Job {job_id}"
+                    
                     job_data = {
                         "job_id": job_id,
                         "external_id": job_id,
                         "title": title,
                         "url": url,
-                        "company": None,
-                        "location": None,
+                        "company": enriched_data.get("comapany"),
+                        "location": enriched_data.get("location"),
                         "scraped_at": datetime.now().isoformat(),
+                        **enriched_data
                     }
                     jobs.append(job_data)
                 except Exception as e:
@@ -3075,6 +3152,15 @@ class HiringCafeStrategy(BaseStrategy):
                         "ats_platform": j.get("ats_platform"),
                         "source_keywords": j.get("source_keywords"),
                         "scraped_at": j.get("scraped_at"),
+                        # Enriched fields
+                        "job_tittle": j.get("job_tittle"),
+                        "location": j.get("location"),
+                        "comapany": j.get("comapany"),
+                        "type": j.get("type"),
+                        "city": j.get("city"),
+                        "state": j.get("state"),
+                        "country": j.get("country"),
+                        "company_description": j.get("company_description")
                     }
                     for j in jobs
                 ],

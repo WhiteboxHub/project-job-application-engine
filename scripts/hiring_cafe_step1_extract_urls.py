@@ -101,6 +101,15 @@ Examples:
                         "ats_platform": None,
                         "source_keywords": j.get("source_keywords"),
                         "scraped_at": j.get("scraped_at"),
+                        # Enriched fields
+                        "job_tittle": j.get("job_tittle"),
+                        "location": j.get("location"),
+                        "comapany": j.get("comapany"),
+                        "type": j.get("type"),
+                        "city": j.get("city"),
+                        "state": j.get("state"),
+                        "country": j.get("country"),
+                        "company_description": j.get("company_description")
                     }
                     for j in jobs
                 ],

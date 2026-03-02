@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # How long to wait after clicking submit for navigation (seconds)
     SUBMIT_POST_CLICK_WAIT: int = 15
 
+    # Authentication
+    AUTH_URL: str | None = None
+    AUTH_USERNAME: str | None = None
+    AUTH_PASSWORD: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

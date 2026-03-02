@@ -51,6 +51,7 @@
 # STEP3 = SCRIPTS_DIR / "hiring_cafe_step3_combine_by_ats.py"
 
 
+
 # # ── Helpers ───────────────────────────────────────────────────────────────────
 # def _banner(msg: str, char: str = "=") -> None:
 #     print(f"\n{char * 60}")
@@ -176,6 +177,7 @@ BY_ATS_FILE = ROOT / "hiring_cafe_by_ats.json"
 STEP1 = SCRIPTS_DIR / "hiring_cafe_step1_extract_urls.py"
 STEP2 = SCRIPTS_DIR / "hiring_cafe_step2_extract_ats_urls.py"
 STEP3 = SCRIPTS_DIR / "hiring_cafe_step3_combine_by_ats.py"
+STEP4 = SCRIPTS_DIR / "hiring_cafe_step4_ingest_to_api.py"
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -346,7 +348,9 @@ def main() -> int:
     parser.add_argument("--skip-step1", action="store_true",
                         help="Skip scraping. Resume Step 2 from where it left off.")
     parser.add_argument("--skip-step2", action="store_true",
-                        help="Skip ATS extraction. Only re-run Step 3.")
+                        help="Skip ATS extraction.")
+    parser.add_argument("--skip-step3", action="store_true",
+                        help="Skip combining. Only run Step 4 (API Ingestion).")
     parser.add_argument("--limit", type=int, metavar="N", default=None,
                         help="Only enrich first N jobs in Step 2 (for testing).")
     args = parser.parse_args()
@@ -424,13 +428,24 @@ def main() -> int:
             print("   ℹ️  Re-run with --skip-step1 to resume from where it stopped.")
 
     # ── STEP 3 ────────────────────────────────────────────────────────────────
-    if not STEP3.exists():
-        print(f"❌ Step 3 script not found: {STEP3}", file=sys.stderr)
-        return 1
-    _banner("STEP 3 — Combining jobs by ATS platform", "-")
-    step3_args = ["--input", str(JOBS_FILE), "--output", str(BY_ATS_FILE)]
-    ok = _run_step("Step 3: Combine by ATS", STEP3, step3_args)
-    results["step3"] = "ok" if ok else "failed"
+    if args.skip_step3:
+        print(f"\n⏭️  Step 3 skipped — using {BY_ATS_FILE.name}")
+        results["step3"] = "skipped"
+    else:
+        if not STEP3.exists():
+            print(f"❌ Step 3 script not found: {STEP3}", file=sys.stderr)
+            return 1
+        _banner("STEP 3 — Combining jobs by ATS platform", "-")
+        step3_args = ["--input", str(JOBS_FILE), "--output", str(BY_ATS_FILE)]
+        ok = _run_step("Step 3: Combine by ATS", STEP3, step3_args)
+        results["step3"] = "ok" if ok else "failed"
+
+    # ── STEP 4 ────────────────────────────────────────────────────────────────
+    if STEP4.exists():
+        _banner("STEP 4 — Extracting ATS details & Ingesting to Website API", "-")
+        step4_args = ["--input", str(BY_ATS_FILE)]
+        ok = _run_step("Step 4: Ingest to API", STEP4, step4_args)
+        results["step4"] = "ok" if ok else "failed"
 
     # ── Final Summary ─────────────────────────────────────────────────────────
     total_elapsed = time.time() - run_start
@@ -457,6 +472,7 @@ def main() -> int:
     print(f"   Step 1          : {results.get('step1', 'not run')}")
     print(f"   Step 2          : {results.get('step2', 'not run')}")
     print(f"   Step 3          : {results.get('step3', 'not run')}")
+    print(f"   Step 4          : {results.get('step4', 'not run')}")
     print(f"   Jobs total      : {jobs_count}")
     print(f"   Jobs with ATS   : {jobs_with_ats}  ({int(jobs_with_ats/jobs_count*100) if jobs_count else 0}%)")
     if platform_list:

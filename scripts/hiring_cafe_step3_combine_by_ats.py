@@ -76,6 +76,15 @@ Examples:
                 "title": e.get("title"),
                 "hiring_cafe_url": e.get("job_posting_url") or e.get("hiring_cafe_url"),
                 "ats_url": e.get("ats", {}).get("url") if isinstance(e.get("ats"), dict) else e.get("ats_url"),
+                # Preserve enriched fields
+                "job_tittle": e.get("job_tittle"),
+                "comapany": e.get("comapany"),
+                "location": e.get("location"),
+                "city": e.get("city"),
+                "state": e.get("state"),
+                "country": e.get("country"),
+                "type": e.get("type"),
+                "company_description": e.get("company_description")
             }
             for e in entries
         ]
