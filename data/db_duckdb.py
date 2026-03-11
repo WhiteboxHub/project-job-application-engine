@@ -3,8 +3,6 @@ DuckDB Manager — Job tracking, dedup, and scheduler audit log.
 All job application history lives here (no MySQL needed).
 """
 
-import duckdb
-import os
 import json
 from datetime import datetime
 from core.logger import logger
@@ -20,11 +18,13 @@ class DuckDBManager:
         return cls._instance
 
     def _initialize(self):
-        db_path = os.path.join(os.getcwd(), "data", "job_engine.duckdb")
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        self.conn = duckdb.connect(db_path)
+        # Reuse the single connection managed by DuckDBConnection (db_connection.py).
+        # This avoids opening a second file handle to the same .duckdb file which
+        # would cause "file already in use" errors on Windows.
+        from data.db_connection import db as _db_conn
+        self.conn = _db_conn.get_connection()
         self._create_schema()
-        logger.info(f"DuckDB initialized at {db_path}")
+        logger.info(f"DuckDB initialized (shared connection)")
 
     def _create_schema(self):
         """Create all tables if they don't exist"""
@@ -156,5 +156,32 @@ class DuckDBManager:
         return merged
 
 
-# Singleton instance
-db_duckdb = DuckDBManager()
+class _LazyDuckDBManager:
+    """
+    Lazy proxy for DuckDBManager.
+    Prevents multiprocessing spawn subprocesses from opening the locked
+    .duckdb file during module import on Windows.
+    """
+    _mgr = None
+
+    def _get(self):
+        if self._mgr is None:
+            self._mgr = DuckDBManager()
+        return self._mgr
+
+    def is_already_applied(self, job_id: str, site: str) -> bool:
+        return self._get().is_already_applied(job_id, site)
+
+    def mark_applied(self, job_id: str, site: str, job_title: str = ""):
+        return self._get().mark_applied(job_id, site, job_title)
+
+    def log_scheduler_run(self, site: str, jobs_found: int, jobs_applied: int,
+                          status: str = "completed", error_message: str = None):
+        return self._get().log_scheduler_run(site, jobs_found, jobs_applied, status, error_message)
+
+    def get_selectors(self, job_site_id=None, ats_platform_id=None):
+        return self._get().get_selectors(job_site_id, ats_platform_id)
+
+
+# Lazy singleton — safe to import from worker/subprocess contexts
+db_duckdb = _LazyDuckDBManager()

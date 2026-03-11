@@ -8,9 +8,9 @@ class BaseStrategy(ABC):
     def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
         self.driver = driver
         self.job_site = job_site
-        self.selectors = selectors # JSON config from DB
+        self.selectors = selectors 
         self.db_session = db_session
-        self.candidate_data = candidate_data  # Candidate parameters from database
+        self.candidate_data = candidate_data 
         self.use_single_phase = False
         
     @abstractmethod
@@ -55,21 +55,25 @@ class BaseStrategy(ABC):
         """
         Resolves the absolute path to the resume file.
         Priority:
-        1. settings.RESUME_FILE_PATH (new)
-        2. settings.RESUME_PATH (backwards compatible)
-        3. self.config_data['resume_path'] (if exists)
+        1. self.config_data['resume_path'] (candidate specific)
+        2. settings.RESUME_FILE_PATH (system default)
+        3. settings.RESUME_PATH (backwards compatible)
         """
-        # 1. Try settings (environment variables)
-        resume_path = getattr(settings, 'RESUME_FILE_PATH', None)
-        if not resume_path:
-            resume_path = getattr(settings, 'RESUME_PATH', None)
+        resume_path = None
         
-        # 2. Try config_data (guest_form_data.json)
-        if not resume_path and hasattr(self, 'config_data') and self.config_data:
+        # 1. Try config_data (guest_form_data.json or scheduler payload)
+        if hasattr(self, 'config_data') and self.config_data:
             resume_path = self.config_data.get('resume_path')
             
+        # 2. Try settings (environment variables)
         if not resume_path:
-            logger.warning("No resume path configured in settings or data JSON.")
+            resume_path = getattr(settings, 'RESUME_FILE_PATH', None)
+            
+        if not resume_path:
+            resume_path = getattr(settings, 'RESUME_PATH', None)
+            
+        if not resume_path:
+            logger.warning("No resume path configured in config data or settings.")
             return None
             
         # Ensure absolute path

@@ -12,7 +12,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from data.csv_tracker import tracker as csv_tracker
 from models.config_models import JobListing
-from models.history_models import Application
 
 
 class LanceSoftStrategy(BaseStrategy):
@@ -76,48 +75,44 @@ class LanceSoftStrategy(BaseStrategy):
     
     def _load_selectors(self):
         """
-        Load all CSS/XPath selectors used for LanceSoft JobDiva portal.
-        This centralizes all selector management - similar to Insight Global approach.
+        Load CSS/XPath selectors from the site_selectors DuckDB table.
+
+        Merges both 'listing' and 'application' selector rows for this site
+        into one flat dict — same structure the rest of the code expects via
+        self.selectors_config['key'].
+
+        Falls back to hardcoded defaults if no DB rows exist yet
+        (e.g. before init_db.py has been run).
         """
-        return {
-            # Country/Location Filters
-            'country_button': "//button[contains(., 'United States')]",
-            'country_dropdown_btn': "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]",
-            'usa_option': "//a[@class='dropdown-item'][contains(., 'United States')]",
-            'country_fallback': "div.hideshow-country button",
-            
-            # Search Input
-            'search_input': "input.inputbox_search, input[placeholder*='Search job title' i]",
-            
-            # Job Listings
-            'job_container': "div.list-group-item.list-group-item-action",
-            'job_title': "span.text-capitalize.jd-nav-label.notranslate",
-            'job_id': "div.d-flex.text-muted small:nth-child(3)",
-            'details_button': "button.btn.jd-btn",
-            
-            # Pagination
-            'next_page_btn': "button[aria-label='Next Page']",
-            
-            # Application Buttons
-            'apply_button': "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
-            'quick_apply_option': "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
-            
-            # Form Fields
-            'form_modal': "#quickApplyModal",
-            'submit_btn': "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
-            'next_btn_outline': "button.btn.jd-btn-outline",
-            'next_btn_solid': "button.btn.jd-btn:not(.jd-btn-outline)",
-            
-            # Form Labels and Inputs
-            'consent_checkbox': "//div[@id='quickApplyModal']//input[@type='checkbox']",
-            'file_input': "div#quickApplyModal input[type='file']",
-            
-            # EEO Form Fields
-            'gender_radio': "//input[@type='radio'][@name='gender'][@value='1,3']",
-            'ethnicity_radio': "//input[@type='radio'][@name='ethnicity'][@value='1,3']",
-            'race_radio': "//input[@type='radio'][@name='race'][@value='2,8']",
-            'veteran_radios': "//input[@type='radio'][@name='veteran_status']",
-        }
+        try:
+            from data.db_connection import db
+            conn = db.get_connection()
+
+            rows = conn.execute(
+                "SELECT type, config_json FROM site_selectors "
+                "WHERE job_site_id = (SELECT id FROM job_sites WHERE LOWER(company_name) = 'lancesoft' LIMIT 1)"
+            ).fetchall()
+
+            if rows:
+                merged = {}
+                for (sel_type, config_json) in rows:
+                    data = config_json if isinstance(config_json, dict) else json.loads(config_json)
+                    merged.update(data)
+                logger.info(f"[OK] Loaded {len(merged)} selectors for LanceSoft from DB")
+                return merged
+
+            logger.warning("[WARNING] No site_selectors rows found for LanceSoft — using hardcoded defaults")
+        except Exception as e:
+            logger.warning(f"[WARNING] Could not load selectors from DB: {e} — using hardcoded defaults")
+
+        # Selectors are no longer hardcoded here.
+        # If this point is reached, it means init_db.py has not been run yet.
+        raise RuntimeError(
+            "[ERROR] LanceSoft: No selectors found in database. "
+            "Please run 'python scripts/init_db.py' first to seed the database."
+        )
+
+
 
     
     def login(self):
@@ -300,7 +295,7 @@ class LanceSoftStrategy(BaseStrategy):
                 
                 # First check if United States is already selected
                 try:
-                    current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
+                    current_country_btn = self.driver.find_element(By.XPATH, selectors.get('country_button', "//button[contains(., 'United States')]"))
                     logger.info("  [YES] Country 'United States' already selected")
                     country_selected = True
                 except Exception:
@@ -309,7 +304,7 @@ class LanceSoftStrategy(BaseStrategy):
                 if not country_selected:
                     # Strategy 1: Find Country button and click dropdown
                     try:
-                        country_btn_xpath = "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]"
+                        country_btn_xpath = selectors.get('country_dropdown_btn', "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]")
                         
                         logger.info("    Waiting for country dropdown button...")
                         dropdown_btn = WebDriverWait(self.driver, 10).until(  # Increased from 5 to 10 seconds
@@ -329,7 +324,7 @@ class LanceSoftStrategy(BaseStrategy):
                         # Attempt 1: User-provided selector pattern - find anchor tags with dropdown-item class
                         try:
                             logger.info("    Attempting to find USA option (method 1: dropdown-item)...")
-                            usa_option_xpath = "//a[@class='dropdown-item'][contains(., 'United States')]"
+                            usa_option_xpath = selectors.get('usa_option', "//a[@class='dropdown-item'][contains(., 'United States')]")
                             usa_options = self.driver.find_elements(By.XPATH, usa_option_xpath)
                             if usa_options:
                                 usa_option = usa_options[0]
@@ -346,12 +341,12 @@ class LanceSoftStrategy(BaseStrategy):
                         if not usa_found:
                             logger.info("    Attempting to find USA option (method 2: alternative selectors)...")
                             try:
-                                usa_option_xpaths = [
+                                usa_option_xpaths = selectors.get('usa_dropdown_selectors', [
                                     "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
                                     "//div[contains(@class, 'dropdown-menu')]//button[contains(., 'United States')]",
                                     "//div[contains(@class, 'dropdown-menu')]//span[contains(., 'United States')]/..",
                                     "//button[contains(., 'United States')]"
-                                ]
+                                ])
                                 
                                 for idx, xpath in enumerate(usa_option_xpaths, 1):
                                     try:
@@ -382,11 +377,11 @@ class LanceSoftStrategy(BaseStrategy):
                     if not country_selected:
                         logger.info("    Attempting fallback country selection method...")
                         try:
-                            fallback_dropdown = self.driver.find_element(By.CSS_SELECTOR, "div.hideshow-country button")
+                            fallback_dropdown = self.driver.find_element(By.CSS_SELECTOR, selectors.get('country_fallback', "div.hideshow-country button"))
                             if "United States" not in fallback_dropdown.text:
                                 self.human.human_click(fallback_dropdown)
                                 time.sleep(1)
-                                usa_option = self.driver.find_element(By.XPATH, "//div[contains(@class, 'dropdown-menu')]//a[contains(., 'United States')]")
+                                usa_option = self.driver.find_element(By.XPATH, selectors.get('usa_option', "//div[contains(@class, 'dropdown-menu')]//a[contains(., 'United States')]"))
                                 self.human.human_click(usa_option)
                                 country_selected = True
                                 logger.info("    [YES] Selected USA (fallback method)")
@@ -403,7 +398,7 @@ class LanceSoftStrategy(BaseStrategy):
 
             # --- Enter Search Keyword ---
             logger.info(f"  Entering search keyword: '{keyword}'")
-            search_input_selector = "input.inputbox_search, input[placeholder*='Search job title' i]"
+            search_input_selector = selectors.get('search_input', "input.inputbox_search, input[placeholder*='Search job title' i]")
             
             search_input = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, search_input_selector))
@@ -519,7 +514,7 @@ class LanceSoftStrategy(BaseStrategy):
                 
                 # STRATEGY 1: Check if United States is already selected
                 try:
-                    current_country_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'United States')]")
+                    current_country_btn = self.driver.find_element(By.XPATH, selectors.get('country_button', "//button[contains(., 'United States')]"))
                     logger.info("  [YES] Country 'United States' already selected")
                     country_selected = True
                 except Exception:
@@ -528,13 +523,13 @@ class LanceSoftStrategy(BaseStrategy):
                 # STRATEGY 2: Try to select country if not already selected
                 if not country_selected:
                     # Try multiple approaches to find and click the country dropdown
-                    dropdown_selectors = [
+                    dropdown_selectors = selectors.get('dropdown_country_selectors', [
                         "//button[contains(., 'Country')]",
                         "//button[contains(., 'Select Country')]",
                         "//button[contains(@class, 'country')]",
                         "div.hideshow-country button",
                         "button[data-toggle='dropdown'][aria-label*='Country']"
-                    ]
+                    ])
                     
                     dropdown_clicked = False
                     for selector in dropdown_selectors:
@@ -576,13 +571,13 @@ class LanceSoftStrategy(BaseStrategy):
                         logger.warning("    [WARNING] Could not find/click country dropdown")
                     else:
                         # Try to select USA from dropdown
-                        usa_selectors = [
+                        usa_selectors = selectors.get('usa_dropdown_selectors', [
                             "//a[@class='dropdown-item'][contains(., 'United States')]",
                             "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
                             "//li[contains(., 'United States')]//a",
                             "//button[contains(., 'United States')]",
                             "a.dropdown-item:contains('United States')"
-                        ]
+                        ])
                         
                         usa_found = False
                         for selector in usa_selectors:
@@ -635,7 +630,7 @@ class LanceSoftStrategy(BaseStrategy):
 
             # Enter Search Keyword
             logger.info(f"  Entering search keyword: '{keyword}'")
-            search_input_selector = "input.inputbox_search, input[placeholder*='Search job title' i]"
+            search_input_selector = selectors.get('search_input', "input.inputbox_search, input[placeholder*='Search job title' i]")
             
             search_input = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, search_input_selector))

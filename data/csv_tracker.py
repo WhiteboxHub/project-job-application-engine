@@ -1,142 +1,243 @@
-import csv
-from pathlib import Path
+"""
+DBTracker — DuckDB-backed job tracker.
+
+Replaces the old CSV-based CSVTracker. Stores all discovered/applied/failed
+job data in the `job_listings` table instead of per-site CSV files.
+
+Public API is identical to the old CSVTracker so no callers need to change:
+  - add_discovered_jobs(site_name, jobs)  -> int
+  - update_job_status(site_name, job_url, status, attempts_inc, last_error)  -> bool
+  - get_jobs(site_name, status)  -> list[dict]
+  - get_job_status(site_name, job_url)  -> dict | None
+  - ensure_file(site_name)  -> no-op (kept for API compat)
+"""
+
 from datetime import datetime
+from core.logger import logger
 
 
-class CSVTracker:
-    def __init__(self, directory: str = "data"):
-        self.directory = Path(directory)
-        self.directory.mkdir(parents=True, exist_ok=True)
+class DBTracker:
+    """
+    DuckDB-backed job tracker.
+    Uses the job_listings table keyed on (job_site_id, job_url).
+    """
 
-    def _file(self, site_name: str) -> Path:
-        return self.directory / f"{site_name}_jobs.csv"
+    # ---------------------------------------------------------------------------
+    # Helpers
+    # ---------------------------------------------------------------------------
+
+    def _conn(self):
+        """Return the shared DuckDB connection."""
+        from data.db_connection import db
+        return db.get_connection()
+
+    def _site_id(self, site_name: str) -> int | None:
+        """Resolve company name → job_sites.id (case-insensitive)."""
+        conn = self._conn()
+        row = conn.execute(
+            "SELECT id FROM job_sites WHERE LOWER(company_name) = LOWER(?)",
+            [site_name]
+        ).fetchone()
+        return row[0] if row else None
 
     def _normalize_url(self, url: str) -> str:
-        """Strip trailing slashes and common tracking parameters."""
-        if not url: return ""
-        url = url.split('?')[0].split('#')[0]
-        return url.rstrip('/')
+        """Strip query strings and trailing slashes for comparison."""
+        if not url:
+            return ""
+        return url.split("?")[0].split("#")[0].rstrip("/")
 
-    def _headers(self):
-        return [
-            "external_id",
-            "job_title",
-            "job_url",
-            "location",
-            "job_type",
-            "salary",
-            "description",
-            "requirements",
-            "posted_date",
-            "company",
-            "industry",
-            "status",
-            "attempts",
-            "last_error",
-            "discovered_at",
-            "updated_at",
-        ]
+    def _row_to_dict(self, row, columns) -> dict:
+        """Convert a raw DuckDB row tuple to a dict using the column list."""
+        return dict(zip(columns, row))
+
+    # ---------------------------------------------------------------------------
+    # Public API
+    # ---------------------------------------------------------------------------
 
     def ensure_file(self, site_name: str):
-        f = self._file(site_name)
-        if not f.exists():
-            with f.open("w", newline="", encoding="utf-8") as fh:
-                writer = csv.DictWriter(fh, fieldnames=self._headers())
-                writer.writeheader()
-
-    def _read(self, site_name: str):
-        f = self._file(site_name)
-        if not f.exists():
-            return []
-        with f.open("r", newline="", encoding="utf-8") as fh:
-            reader = csv.DictReader(fh)
-            return list(reader)
-
-    def _write(self, site_name: str, rows):
-        f = self._file(site_name)
-        with f.open("w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=self._headers())
-            writer.writeheader()
-            for r in rows:
-                writer.writerow(r)
+        """No-op — kept for API compatibility with old CSV tracker."""
+        pass
 
     def add_discovered_jobs(self, site_name: str, jobs: list) -> int:
-        """Appends new jobs that are not already present. Returns number of new rows added."""
-        self.ensure_file(site_name)
-        existing = {self._normalize_url(r['job_url']) for r in self._read(site_name)}
-        to_append = []
-        now = datetime.utcnow().isoformat()
-        for job in jobs:
-            url = job.get('job_url')
-            norm_url = self._normalize_url(url)
-            if not url or norm_url in existing:
-                continue
-            to_append.append({
-                'external_id': job.get('external_id', ''),
-                'job_title': job.get('job_title', ''),
-                'job_url': url,
-                'location': job.get('location', ''),
-                'job_type': job.get('job_type', ''),
-                'salary': job.get('salary', ''),
-                'description': job.get('description', ''),
-                'requirements': job.get('requirements', ''),
-                'posted_date': job.get('posted_date', ''),
-                'company': job.get('company', ''),
-                'industry': job.get('industry', ''),
-                'status': 'discovered',
-                'attempts': '0',
-                'last_error': '',
-                'discovered_at': now,
-                'updated_at': now,
-            })
-        if to_append:
-            f = self._file(site_name)
-            with f.open('a', newline='', encoding='utf-8') as fh:
-                writer = csv.DictWriter(fh, fieldnames=self._headers())
-                for r in to_append:
-                    writer.writerow(r)
-        return len(to_append)
+        """
+        Insert jobs that haven't been seen before.
+        Returns the number of new rows added.
+        """
+        from hashlib import md5
 
-    def update_job_status(self, site_name: str, job_url: str, status: str, attempts_inc: int = 0, last_error: str | None = None) -> bool:
-        """Updates the row for job_url. Returns True when an update happened."""
-        self.ensure_file(site_name)
-        rows = self._read(site_name)
-        changed = False
-        now = datetime.utcnow().isoformat()
-        norm_job_url = self._normalize_url(job_url)
-        for r in rows:
-            if self._normalize_url(r.get('job_url')) == norm_job_url:
-                # update attempts
-                try:
-                    current_attempts = int(r.get('attempts', '0'))
-                except Exception:
-                    current_attempts = 0
-                r['attempts'] = str(current_attempts + attempts_inc)
-                r['status'] = status
-                if last_error is not None:
-                    r['last_error'] = last_error
-                r['updated_at'] = now
-                changed = True
-        if changed:
-            self._write(site_name, rows)
-        return changed
+        site_id = self._site_id(site_name)
+        if site_id is None:
+            logger.warning(f"[DBTracker] Unknown site '{site_name}' — cannot add jobs")
+            return 0
+
+        conn = self._conn()
+        now = datetime.utcnow()
+
+        # Pre-fetch existing URLs to correctly count new insertions
+        # (INSERT OR IGNORE is silent for duplicates — doesn't raise an exception)
+        existing_urls = {
+            row[0] for row in conn.execute(
+                "SELECT job_url FROM job_listings WHERE job_site_id = ?",
+                [site_id]
+            ).fetchall()
+        }
+        added = 0
+
+        for job in jobs:
+            url = job.get("job_url", "")
+            if not url or url in existing_urls:
+                continue
+
+            # Use external_id if provided; otherwise derive one from the URL
+            ext_id = job.get("external_id") or md5(url.encode()).hexdigest()[:20]
+
+            try:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO job_listings
+                        (job_site_id, external_job_id, job_title, job_url,
+                         location, job_type, salary, description, requirements,
+                         posted_date, company, industry,
+                         status, attempts, last_error, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'discovered', 0, '', ?, ?)
+                    """,
+                    [
+                        site_id,
+                        ext_id,
+                        job.get("job_title", ""),
+                        url,
+                        job.get("location", ""),
+                        job.get("job_type", ""),
+                        job.get("salary", ""),
+                        job.get("description", ""),
+                        job.get("requirements", ""),
+                        job.get("posted_date", ""),
+                        job.get("company", ""),
+                        job.get("industry", ""),
+                        now,
+                        now,
+                    ],
+                )
+                existing_urls.add(url)  # prevent re-adding same URL twice in one batch
+                added += 1
+            except Exception as e:
+                logger.warning(f"[DBTracker] Failed to insert job '{url}': {e}")
+
+        logger.debug(f"[DBTracker] add_discovered_jobs: {added} new row(s) for '{site_name}'")
+        return added
+
+    def update_job_status(
+        self,
+        site_name: str,
+        job_url: str,
+        status: str,
+        attempts_inc: int = 0,
+        last_error: str | None = None,
+    ) -> bool:
+        """
+        Update the status (and optionally error) of a job by URL.
+        Returns True if a row was found and updated.
+        """
+        site_id = self._site_id(site_name)
+        if site_id is None:
+            logger.warning(f"[DBTracker] Unknown site '{site_name}' — cannot update status")
+            return False
+
+        # Normalize URL on the Python side — avoids REGEXP_REPLACE in SQL
+        # which conflicts with DuckDB's ? parameter placeholder syntax
+        norm_url = self._normalize_url(job_url)
+        conn = self._conn()
+        now = datetime.utcnow()
+
+        # Match on the raw URL first, then fall back to the normalized form
+        row = conn.execute(
+            """
+            SELECT id, attempts FROM job_listings
+            WHERE job_site_id = ?
+              AND (job_url = ? OR job_url = ?)
+            LIMIT 1
+            """,
+            [site_id, job_url, norm_url],
+        ).fetchone()
+
+        if not row:
+            logger.debug(f"[DBTracker] update_job_status: no row found for '{job_url}'")
+            return False
+
+        listing_id, current_attempts = row
+        new_attempts = current_attempts + attempts_inc
+        error_val = last_error if last_error is not None else ""
+
+        conn.execute(
+            """
+            UPDATE job_listings
+               SET status = ?, attempts = ?, last_error = ?, updated_at = ?
+             WHERE id = ?
+            """,
+            [status, new_attempts, error_val, now, listing_id],
+        )
+        return True
 
     def get_jobs(self, site_name: str, status: str | None = None) -> list:
-        """Returns list of rows; optionally filter by status."""
-        rows = self._read(site_name)
+        """
+        Return all job rows for a site as a list of dicts.
+        Optionally filter by status ('discovered', 'applied', 'failed').
+        """
+        site_id = self._site_id(site_name)
+        if site_id is None:
+            return []
+
+        conn = self._conn()
+        cols = [
+            "external_job_id", "job_title", "job_url", "location", "job_type",
+            "salary", "description", "requirements", "posted_date", "company",
+            "industry", "status", "attempts", "last_error", "created_at", "updated_at",
+        ]
+        col_sql = ", ".join(cols)
+
         if status:
-            return [r for r in rows if r.get('status') == status]
-        return rows
+            rows = conn.execute(
+                f"SELECT {col_sql} FROM job_listings WHERE job_site_id = ? AND status = ?",
+                [site_id, status],
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                f"SELECT {col_sql} FROM job_listings WHERE job_site_id = ?",
+                [site_id],
+            ).fetchall()
+
+        return [self._row_to_dict(r, cols) for r in rows]
 
     def get_job_status(self, site_name: str, job_url: str) -> dict | None:
-        """Returns the full row for a specific job_url if it exists."""
-        rows = self._read(site_name)
-        norm_job_url = self._normalize_url(job_url)
-        for r in rows:
-            if self._normalize_url(r.get('job_url')) == norm_job_url:
-                return r
-        return None
+        """
+        Return the full row dict for a specific job URL, or None if not found.
+        """
+        site_id = self._site_id(site_name)
+        if site_id is None:
+            return None
+
+        # Normalize on Python side to avoid REGEXP_REPLACE SQL conflicts
+        norm_url = self._normalize_url(job_url)
+        conn = self._conn()
+        cols = [
+            "external_job_id", "job_title", "job_url", "location", "job_type",
+            "salary", "description", "requirements", "posted_date", "company",
+            "industry", "status", "attempts", "last_error", "created_at", "updated_at",
+        ]
+        col_sql = ", ".join(cols)
+
+        row = conn.execute(
+            f"""
+            SELECT {col_sql} FROM job_listings
+            WHERE job_site_id = ?
+              AND (job_url = ? OR job_url = ?)
+            LIMIT 1
+            """,
+            [site_id, job_url, norm_url],
+        ).fetchone()
+
+        return self._row_to_dict(row, cols) if row else None
 
 
-# module-level default tracker
-tracker = CSVTracker()
+# Module-level singleton — same name as before so all imports work unchanged
+tracker = DBTracker()

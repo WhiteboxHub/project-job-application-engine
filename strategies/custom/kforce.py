@@ -104,53 +104,65 @@ class KForceStrategy(BaseStrategy):
 
     def find_and_apply_jobs(self):
         """
-        Combined workflow: Find and apply to jobs immediately.
-        Iterates through search configurations, performs search, and applies to each unique job.
+        Two-phase workflow:
+          Phase 1 — Collect all unique job listings across all keywords.
+          Phase 2 — Apply to each collected job sequentially.
         Returns the number of successful applications.
         """
-        logger.info("[SEARCH] KForce: Starting combined find-and-apply workflow")
-        
-        # Strictly database-driven keywords
+        logger.info("[SEARCH] KForce: Starting two-phase find-and-apply workflow")
+
+        # Keywords come from the database (init_db.py seeds them)
         keywords = self.selectors.get('listing', {}).get('search_keywords')
         if not keywords:
-            logger.error("[ERROR] KForce: Critically missing 'search_keywords' in database configuration!")
+            logger.error("[ERROR] KForce: No 'search_keywords' found in database! Run init_db.py.")
             return 0
-            
-        logger.info(f"  [STATS] Using {len(keywords)} keywords from database")
-        location = None # Removed location search as per user request
-        
-        total_applied = 0
+
+        logger.info(f"  [STATS] Using {len(keywords)} keyword(s) from database")
+
+        # ── PHASE 1: Collect all jobs ──────────────────────────────────────
+        logger.info("\n" + "=" * 60)
+        logger.info("PHASE 1: Discovering all jobs across all keywords...")
+        logger.info("=" * 60)
+
+        all_listings = []
         seen_urls = set()
-        
+
         for keyword in keywords:
-            logger.info(f"\n{'='*60}")
-            logger.info(f"[SEARCH] Search: {keyword} (Location: {location})")
-            logger.info(f"{'='*60}")
-            
-            # 1. Search for jobs
-            listings = self._perform_search(keyword, location)
-            
-            # 2. Apply immediately to new jobs
+            logger.info(f"\n[SEARCH] Keyword: '{keyword}'")
+            listings = self._perform_search(keyword)
+
+            new_count = 0
             for listing in listings:
                 url = listing.get('job_url')
                 if url and url not in seen_urls:
                     seen_urls.add(url)
-                    
-                    # We have a listing, now apply
-                    logger.info(f"\n[START] Applying to: {listing.get('job_title')}")
-                    if self.apply(listing):
-                        total_applied += 1
-                        # Human Behavior: Pause after submission before next job
-                        logger.info("  [YES] Human Behavior: Pausing for 3 seconds...")
-                        time.sleep(3)
+                    all_listings.append(listing)
+                    new_count += 1
                 else:
-                    logger.debug(f"KForce: Skipping duplicate job: {listing.get('job_title')}")
-            
-            # Delay between searches
+                    logger.debug(f"  Duplicate skipped: {listing.get('job_title')}")
+
+            logger.info(f"  [+] {new_count} new jobs added (total so far: {len(all_listings)})")
+
+            # Human-like pause between searches
             if len(keywords) > 1:
                 time.sleep(random.uniform(3, 6))
-                
-        logger.info(f"\n[OK] KForce: Combined workflow finished. Total applications: {total_applied}")
+
+        logger.info(f"\n[OK] Phase 1 complete. Found {len(all_listings)} unique jobs total.")
+
+        # ── PHASE 2: Apply to each job ─────────────────────────────────────
+        logger.info("\n" + "=" * 60)
+        logger.info(f"PHASE 2: Applying to {len(all_listings)} jobs...")
+        logger.info("=" * 60)
+
+        total_applied = 0
+        for i, listing in enumerate(all_listings, 1):
+            logger.info(f"\n[{i}/{len(all_listings)}] Applying to: {listing.get('job_title')}")
+            if self.apply(listing):
+                total_applied += 1
+                logger.info(f"  [YES] Applied! ({total_applied} successful so far)")
+                time.sleep(random.uniform(2, 4))  # Human-like pause between applications
+
+        logger.info(f"\n[OK] Phase 2 complete. Total applications submitted: {total_applied}/{len(all_listings)}")
         return total_applied
 
     def find_jobs(self):

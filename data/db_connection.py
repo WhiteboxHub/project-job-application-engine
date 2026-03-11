@@ -69,5 +69,38 @@ class DuckDBConnection:
             return False
 
 
-# Singleton instance
-db = DuckDBConnection()
+class _LazyDB:
+    """
+    Lazy proxy for DuckDBConnection.
+
+    On Windows, Python's multiprocessing uses the 'spawn' start method, which
+    re-imports every module (including this one) in each worker process.  If we
+    eagerly create a DuckDBConnection at import time the worker will try to open
+    the already-locked .duckdb file and crash.
+
+    This proxy defers the real connection until the first method call, so
+    subprocesses that only import (but never query) the database never touch
+    the file.
+    """
+    _db = None
+
+    def _get(self):
+        if self._db is None:
+            self._db = DuckDBConnection()
+        return self._db
+
+    def get_connection(self):
+        return self._get().get_connection()
+
+    def get_session(self):
+        return self._get().get_session()
+
+    def execute(self, query, params=None):
+        return self._get().execute(query, params)
+
+    def test_connection(self):
+        return self._get().test_connection()
+
+
+# Lazy singleton — safe to import from worker/subprocess contexts
+db = _LazyDB()

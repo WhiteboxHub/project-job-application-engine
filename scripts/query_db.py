@@ -13,25 +13,42 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import settings
 
 def run_query(sql_query):
-    """Run a SQL query and display results"""
+    """Run a SQL query and display results — no pandas required"""
     try:
         conn = duckdb.connect(settings.DUCKDB_PATH)
-        
+
         print("=" * 70)
         print(f"QUERY: {sql_query}")
         print("=" * 70)
-        
-        result = conn.execute(sql_query).df()
-        
-        if len(result) == 0:
-            print("\n[ERROR] No results found")
+
+        cursor = conn.execute(sql_query)
+        rows = cursor.fetchall()
+
+        if not rows:
+            print("\n  (no results)")
         else:
-            print(f"\n[OK] Found {len(result)} row(s):\n")
-            print(result.to_string())
-        
+            # Get column names from cursor description
+            cols = [d[0] for d in cursor.description] if cursor.description else []
+
+            # Calculate column widths
+            widths = [len(c) for c in cols]
+            for row in rows:
+                for i, val in enumerate(row):
+                    widths[i] = max(widths[i], len(str(val)))
+
+            # Print header
+            header = "  ".join(c.ljust(widths[i]) for i, c in enumerate(cols))
+            sep    = "  ".join("-" * w for w in widths)
+            print(f"\n{header}")
+            print(sep)
+            for row in rows:
+                print("  ".join(str(v).ljust(widths[i]) for i, v in enumerate(row)))
+
+            print(f"\n[OK] {len(rows)} row(s) returned.")
+
         conn.close()
-        print("\n" + "=" * 70)
-        
+        print("=" * 70)
+
     except Exception as e:
         print(f"[ERROR] Query failed: {e}")
 

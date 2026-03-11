@@ -1,5 +1,5 @@
 """
-Initialize DuckDB  applies schema.sql and seeds all site data.
+Initialize DuckDB — applies schema and seeds all site data.
 Run this once before using main.py or scheduler_worker.py.
 
 Usage:
@@ -17,7 +17,7 @@ from core.logger import logger
 
 def init_db():
     db_path = settings.DUCKDB_PATH
-    
+
     if db_path.startswith("md:"):
         logger.info(f"Initializing MotherDuck Cloud at: {db_path}")
         token_suffix = f"?motherduck_token={settings.MOTHERDUCK_TOKEN}" if settings.MOTHERDUCK_TOKEN else ""
@@ -34,16 +34,16 @@ def init_db():
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS ats_platforms (
-            id INTEGER PRIMARY KEY,
-            name VARCHAR(50) NOT NULL,
-            class_handler VARCHAR(100) NOT NULL,
-            automation_level VARCHAR(20) DEFAULT 'manual',
+            id                   INTEGER PRIMARY KEY,
+            name                 VARCHAR(50) NOT NULL,
+            class_handler        VARCHAR(100) NOT NULL,
+            automation_level     VARCHAR(20) DEFAULT 'manual',
             is_headless_required BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Add automation_level column if it doesn't already exist (idempotent)
+    # Idempotent — add automation_level if not present on older DBs
     try:
         conn.execute("ALTER TABLE ats_platforms ADD COLUMN automation_level VARCHAR(20) DEFAULT 'manual'")
         logger.info("Added automation_level column to ats_platforms")
@@ -52,30 +52,30 @@ def init_db():
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS job_sites (
-            id INTEGER PRIMARY KEY,
-            company_name VARCHAR(100) NOT NULL,
-            domain VARCHAR(255) UNIQUE NOT NULL,
-            ats_platform_id INTEGER,
-            category VARCHAR(50) NOT NULL,
-            search_url_template TEXT NOT NULL,
-            apply_url_template TEXT,
-            cf_clearance_required BOOLEAN DEFAULT FALSE,
-            proxy_region VARCHAR(10) DEFAULT 'US',
-            is_active BOOLEAN DEFAULT TRUE,
+            id                       INTEGER PRIMARY KEY,
+            company_name             VARCHAR(100) NOT NULL,
+            domain                   VARCHAR(255) UNIQUE NOT NULL,
+            ats_platform_id          INTEGER,
+            category                 VARCHAR(50) NOT NULL,
+            search_url_template      TEXT NOT NULL,
+            apply_url_template       TEXT,
+            cf_clearance_required    BOOLEAN DEFAULT FALSE,
+            proxy_region             VARCHAR(10) DEFAULT 'US',
+            is_active                BOOLEAN DEFAULT TRUE,
             max_applications_per_run INTEGER DEFAULT 10,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS site_selectors (
-            id INTEGER PRIMARY KEY,
+            id              INTEGER PRIMARY KEY,
             ats_platform_id INTEGER,
-            job_site_id INTEGER,
-            type VARCHAR(20) NOT NULL,
-            config_json JSON NOT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            job_site_id     INTEGER,
+            type            VARCHAR(20) NOT NULL,
+            config_json     JSON NOT NULL,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
@@ -84,63 +84,88 @@ def init_db():
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS job_listings (
-            id INTEGER PRIMARY KEY DEFAULT nextval('job_listings_id_seq'),
-            job_site_id INTEGER NOT NULL,
+            id              INTEGER PRIMARY KEY DEFAULT nextval('job_listings_id_seq'),
+            job_site_id     INTEGER NOT NULL,
             external_job_id VARCHAR(100) NOT NULL,
-            job_title VARCHAR(255),
-            job_url TEXT NOT NULL,
-            status VARCHAR(20) DEFAULT 'discovered',
-            attempts INTEGER DEFAULT 0,
-            last_error TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            job_title       VARCHAR(255),
+            job_url         TEXT NOT NULL,
+            location        VARCHAR(255),
+            job_type        VARCHAR(100),
+            salary          VARCHAR(100),
+            description     TEXT,
+            requirements    TEXT,
+            posted_date     VARCHAR(50),
+            company         VARCHAR(100),
+            industry        VARCHAR(100),
+            status          VARCHAR(20) DEFAULT 'discovered',
+            attempts        INTEGER DEFAULT 0,
+            last_error      TEXT,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (job_site_id, external_job_id)
         )
     """)
+
+    # Idempotent column additions for existing DBs without the new columns
+    for col_def in [
+        "location VARCHAR(255)",
+        "job_type VARCHAR(100)",
+        "salary VARCHAR(100)",
+        "description TEXT",
+        "requirements TEXT",
+        "posted_date VARCHAR(50)",
+        "company VARCHAR(100)",
+        "industry VARCHAR(100)",
+    ]:
+        col_name = col_def.split()[0]
+        try:
+            conn.execute(f"ALTER TABLE job_listings ADD COLUMN {col_def}")
+            logger.info(f"Added column '{col_name}' to job_listings")
+        except Exception:
+            pass  # Column already exists
 
     conn.execute("""
         CREATE SEQUENCE IF NOT EXISTS applications_id_seq
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS applications (
-            id INTEGER PRIMARY KEY DEFAULT nextval('applications_id_seq'),
-            job_site_id INTEGER NOT NULL,
+            id             INTEGER PRIMARY KEY DEFAULT nextval('applications_id_seq'),
+            job_site_id    INTEGER NOT NULL,
             job_listing_id INTEGER,
-            job_title VARCHAR(255),
-            job_url TEXT,
-            status VARCHAR(20) NOT NULL,
-            error_message TEXT,
-            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            job_title      VARCHAR(255),
+            job_url        TEXT,
+            status         VARCHAR(20) NOT NULL,
+            error_message  TEXT,
+            applied_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS metrics (
-            id BIGINT PRIMARY KEY,
-            run_date DATE NOT NULL,
-            job_site_id INTEGER,
-            total_jobs_found INTEGER DEFAULT 0,
-            total_applications_attempted INTEGER DEFAULT 0,
-            total_applications_successful INTEGER DEFAULT 0,
-            total_applications_failed INTEGER DEFAULT 0,
-            avg_application_time_seconds FLOAT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            id                              BIGINT PRIMARY KEY,
+            run_date                        DATE NOT NULL,
+            job_site_id                     INTEGER,
+            total_jobs_found                INTEGER DEFAULT 0,
+            total_applications_attempted    INTEGER DEFAULT 0,
+            total_applications_successful   INTEGER DEFAULT 0,
+            total_applications_failed       INTEGER DEFAULT 0,
+            avg_application_time_seconds    FLOAT,
+            created_at                      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # Tracking tables (from db_duckdb.py schema)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS submitted_jobs (
-            job_id VARCHAR PRIMARY KEY,
-            job_title VARCHAR,
+            job_id     VARCHAR PRIMARY KEY,
+            job_title  VARCHAR,
             applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS applied_jobs (
-            job_id    VARCHAR NOT NULL,
-            site      VARCHAR NOT NULL,
-            job_title VARCHAR,
+            job_id     VARCHAR NOT NULL,
+            site       VARCHAR NOT NULL,
+            job_title  VARCHAR,
             applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (job_id, site)
         )
@@ -163,12 +188,43 @@ def init_db():
     logger.info("Tables created [OK]")
 
     # -----------------------------------------------------------------------
-    # Seed: Insight Global
+    # Seed: ats_platforms
+    #
+    # Naming convention:
+    #   Real shared ATS platform  → platform name as-is  (e.g. jobdiva, lever)
+    #   Company-custom portal     → {company}_custom      (e.g. wipro_custom)
     # -----------------------------------------------------------------------
-    conn.execute("""
-        INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
-        VALUES (1, 'Insight Global Custom', 'strategies.custom.InsightGlobalStrategy', 'manual', false)
-    """)
+    platform_seeds = [
+        # id  name                    class_handler                                   level      headless
+        (1, 'insight_global_custom', 'strategies.custom.InsightGlobalStrategy', 'manual', False),
+        (2, 'jobdiva',               'strategies.custom.LanceSoftStrategy',     'full',   False),
+        (3, 'wipro_custom',          'strategies.custom.WiproStrategy',         'full',   False),
+        (4, 'infosys_custom',        'strategies.custom.InfosysStrategy',       'full',   False),
+        (5, 'kforce_custom',         'strategies.custom.KForceStrategy',        'full',   False),
+        (6, 'lever',                 'strategies.custom.LeverStrategy',         'full',   False),
+        (7, 'capgemini_custom',      'strategies.custom.CapgeminiStrategy',     'full',   False),
+    ]
+    for (pid, name, handler, level, headless) in platform_seeds:
+        conn.execute("""
+            INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
+            VALUES (?, ?, ?, ?, ?)
+        """, [pid, name, handler, level, headless])
+        # Also UPDATE so re-runs fix stale values (name, class, level) on existing rows
+        conn.execute("""
+            UPDATE ats_platforms
+               SET name                 = ?,
+                   class_handler        = ?,
+                   automation_level     = ?,
+                   is_headless_required = ?
+             WHERE id = ?
+        """, [name, handler, level, headless, pid])
+
+    logger.info("ats_platforms seeded [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: job_sites
+    # -----------------------------------------------------------------------
+    # 1. Insight Global  (manual — only run with --site)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
@@ -180,17 +236,7 @@ def init_db():
         )
     """)
 
-    # -----------------------------------------------------------------------
-    # Seed: LanceSoft  (automation_level = 'full')
-    # -----------------------------------------------------------------------
-    conn.execute("""
-        INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
-        VALUES (2, 'JobDiva', 'strategies.custom.LanceSoftStrategy', 'full', false)
-    """)
-    # Update in case row already existed without automation_level
-    conn.execute("""
-        UPDATE ats_platforms SET automation_level = 'full' WHERE id = 2
-    """)
+    # 2. LanceSoft  (uses JobDiva ATS)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
@@ -201,30 +247,7 @@ def init_db():
         )
     """)
 
-    # -----------------------------------------------------------------------
-    # Seed: Infosys  (automation_level = 'manual')
-    # -----------------------------------------------------------------------
-    conn.execute("""
-        INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
-        VALUES (4, 'Infosys Custom', 'strategies.custom.InfyTQStrategy', 'manual', false)
-    """)
-    conn.execute("""
-        INSERT OR IGNORE INTO job_sites
-            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
-        VALUES (
-            4, 'Infosys', 'infosys.com', 4, 'System integrator',
-            'https://career.infosys.com/joblist',
-            true
-        )
-    """)
-
-    # -----------------------------------------------------------------------
-    # Seed: Wipro  (automation_level = 'manual')
-    # -----------------------------------------------------------------------
-    conn.execute("""
-        INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
-        VALUES (3, 'Wipro Custom', 'strategies.custom.WiproStrategy', 'manual', false)
-    """)
+    # 3. Wipro  (company-custom portal)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
@@ -235,6 +258,165 @@ def init_db():
         )
     """)
 
+    # 4. Infosys  (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            4, 'Infosys', 'infosys.com', 4, 'System integrator',
+            'https://career.infosys.com/joblist',
+            true
+        )
+    """)
+
+    # 5. KForce  (company-custom portal, inactive until strategy is ready)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            5, 'KForce', 'kforce.com', 5, 'Staffing vendor',
+            'https://www.kforce.com/jobs/',
+            false
+        )
+    """)
+
+    # 6. Capgemini  (company-custom portal, inactive until strategy is ready)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            6, 'Capgemini', 'capgemini.com', 7, 'System integrator',
+            'https://www.capgemini.com/careers/',
+            false
+        )
+    """)
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for LanceSoft (job_site_id = 2)
+    #
+    # type='listing'     → selectors used during job search/discovery
+    # type='application' → selectors used during form filling / submission
+    # -----------------------------------------------------------------------
+    import json as _json
+
+    lancesoft_listing_selectors = {
+        "country_button":       "//button[contains(., 'United States')]",
+        "country_dropdown_btn": "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]",
+        "usa_option":           "//a[@class='dropdown-item'][contains(., 'United States')]",
+        "country_fallback":     "div.hideshow-country button",
+        "search_input":         "input.inputbox_search, input[placeholder*='Search job title' i]",
+        "job_container":        "div.list-group-item.list-group-item-action",
+        "job_title":            "span.text-capitalize.jd-nav-label.notranslate",
+        "job_id":               "div.d-flex.text-muted small:nth-child(3)",
+        "details_button":       "button.btn.jd-btn",
+        "next_page_btn":        "button[aria-label='Next Page']",
+        "dropdown_country_selectors": [
+            "//button[contains(., 'Country')]",
+            "//button[contains(., 'Select Country')]",
+            "//button[contains(@class, 'country')]",
+            "div.hideshow-country button",
+            "button[data-toggle='dropdown'][aria-label*='Country']"
+        ],
+        "usa_dropdown_selectors": [
+            "//a[@class='dropdown-item'][contains(., 'United States')]",
+            "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
+            "//li[contains(., 'United States')]//a",
+            "//button[contains(., 'United States')]",
+            "a.dropdown-item:contains('United States')"
+        ]
+    }
+
+    lancesoft_application_selectors = {
+        "apply_button":         "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
+        "quick_apply_option":   "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
+        "form_modal":           "#quickApplyModal",
+        "submit_btn":           "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
+        "submit_btn_fallback":  [
+            "#quickApplyModal .job-app-btns button:last-child",
+            "#quickApplyModal .job-app-btns button:nth-child(2)"
+        ],
+        "next_btn_outline":     "button.btn.jd-btn-outline",
+        "next_btn_solid":       "button.btn.jd-btn:not(.jd-btn-outline)",
+        "consent_checkbox":     "//div[@id='quickApplyModal']//input[@type='checkbox']",
+        "file_input":           "div#quickApplyModal input[type='file']",
+        "gender_radio":         "//input[@type='radio'][@name='gender'][@value='1,3']",
+        "ethnicity_radio":      "//input[@type='radio'][@name='ethnicity'][@value='1,3']",
+        "race_radio":           "//input[@type='radio'][@name='race'][@value='2,8']",
+        "veteran_radios":       "//input[@type='radio'][@name='veteran_status']",
+        "next_btn_xpath":       "//button[contains(@class, 'jd-btn') and not(contains(@class, 'jd-btn-outline'))]//span[contains(., 'Next')]/ancestor::button",
+        "phone_xpath":          "//label[contains(text(), 'Phone')]/..//input",
+    }
+
+    conn.execute("""
+        INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
+        VALUES (9, 2, 'listing', ?)
+    """, [_json.dumps(lancesoft_listing_selectors)])
+
+    conn.execute("""
+        INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
+        VALUES (10, 2, 'application', ?)
+    """, [_json.dumps(lancesoft_application_selectors)])
+
+    # Idempotent UPDATE in case rows already existed with stale values
+    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 9",
+                 [_json.dumps(lancesoft_listing_selectors)])
+    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 10",
+                 [_json.dumps(lancesoft_application_selectors)])
+
+    logger.info("site_selectors seeded for LanceSoft [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for KForce (job_site_id = 5)
+    # -----------------------------------------------------------------------
+    kforce_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning", "Data Scientist"],
+        "search_input": "//*[@id='site-content']/div/section/div[2]/div/div/div[2]/form/div/div[1]/div/input",
+        "location_input": "//*[@id='react-select-2--value']/div[2]",
+        "search_button": "//*[@id='site-content']/div/section/div[2]/div/div/div[2]/form/div/div[3]/div/input",
+        "pagination_count": "//*[@id='site-content']/div/main/div/div/div/div[2]/div[1]/p[2]/span",
+        "pagination_next": "button[aria-label='Next'], .pagination-next > a, //a[contains(@class,'next')]",
+        "job_link": "//*[@id='site-content']/div/main/div/div/div/div[2]/ul/li/h2/a"
+    }
+
+    kforce_application_selectors = {
+        "apply_initiator": "//*[@id='TK_WIDGET_INITIATOR']",
+        "apply_link_option": "//*[@id='ApplyWithForm']/div[4]/a",
+        "success_indicators": ["successfully submitted", "thank you for applying", "application received"],
+        "questionnaire_answers": {
+            "eligibility_auth": "AuthorizedForAny",
+            "sponsorship_req": "No"
+        },
+        "form_fields": {
+            "first_name": "//*[@id='firstName']",
+            "last_name": "//*[@id='lastName']",
+            "email": "//*[@id='emailAddress']",
+            "email_verify": "//*[@id='emailAddressVerify']",
+            "phone": "//*[@id='phoneNumberAll']",
+            "zip_code": "//*[@id='postalCode']",
+            "state": "//*[@id='state']",
+            "resume_upload": "input[type='file'][accept*='pdf'], //input[@type='file']",
+            "eligibility_auth": "//*[@id='eligibility']/ul/li[1]/label/span",
+            "submit_btn": "//*[@id='SubmitButton']"
+        }
+    }
+
+    conn.execute("""
+        INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
+        VALUES (11, 5, 'listing', ?)
+    """, [_json.dumps(kforce_listing_selectors)])
+
+    conn.execute("""
+        INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
+        VALUES (12, 5, 'application', ?)
+    """, [_json.dumps(kforce_application_selectors)])
+
+    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 11",
+                 [_json.dumps(kforce_listing_selectors)])
+    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 12",
+                 [_json.dumps(kforce_application_selectors)])
+
+    logger.info("site_selectors seeded for KForce [OK]")
+
     # Indexes
     conn.execute("CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at)")
@@ -244,14 +426,17 @@ def init_db():
     logger.info("DuckDB initialization complete!")
     logger.info("=" * 50)
 
-    # Show summary
+    # Summary
     sites = conn.execute(
-        "SELECT js.company_name, ap.automation_level FROM job_sites js "
-        "JOIN ats_platforms ap ON js.ats_platform_id = ap.id ORDER BY js.id"
+        "SELECT js.company_name, ap.name, ap.automation_level, js.is_active "
+        "FROM job_sites js "
+        "JOIN ats_platforms ap ON js.ats_platform_id = ap.id "
+        "ORDER BY js.id"
     ).fetchall()
-    for (name, level) in sites:
-        icon = "" if level == "full" else ""
-        logger.info(f"  {icon}  {name} ({level})")
+    for (company, platform, level, active) in sites:
+        icon = "✅" if level == "full" else "🔧"
+        active_str = "" if active else " [INACTIVE]"
+        logger.info(f"  {icon}  {company} → [{platform}] ({level}){active_str}")
 
     conn.close()
     logger.info("\nRun 'python scripts/main.py --site LanceSoft' to start.")
