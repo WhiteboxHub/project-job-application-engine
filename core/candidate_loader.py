@@ -6,16 +6,16 @@ Priority order: guest_form_data.json OVERRIDES parsed_resume.json
 (so manual corrections always win).
 """
 
-import os
 import json
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 # Paths relative to project root (resolved from this file's location)
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_RESUME_JSON   = os.path.join(_PROJECT_ROOT, "resume", "parsed_resume.json")
-_GUEST_JSON    = os.path.join(_PROJECT_ROOT, "data", "guest_form_data.json")
+_RESUME_JSON = os.path.join(_PROJECT_ROOT, "resume", "parsed_resume.json")
+_GUEST_JSON = os.path.join(_PROJECT_ROOT, "data", "guest_form_data.json")
 
 
 class CandidateLoader:
@@ -38,7 +38,7 @@ class CandidateLoader:
                 search, applicant, resume_path, wipro_credentials
         """
         resume_data = CandidateLoader._load_json(_RESUME_JSON, "parsed_resume.json")
-        guest_data  = CandidateLoader._load_json(_GUEST_JSON,  "guest_form_data.json")
+        guest_data = CandidateLoader._load_json(_GUEST_JSON, "guest_form_data.json")
 
         if not resume_data and not guest_data:
             logger.error("[ERROR] Both JSON files missing  cannot load candidate data")
@@ -50,33 +50,35 @@ class CandidateLoader:
 
         # Personal info from resume
         personal = resume_data.get("personal_info", {})
-        candidate["first_name"]  = personal.get("first_name", "")
-        candidate["last_name"]   = personal.get("last_name", "")
-        candidate["email"]       = personal.get("email", "")
-        candidate["phone"]       = personal.get("phone", "")
+        candidate["first_name"] = personal.get("first_name", "")
+        candidate["last_name"] = personal.get("last_name", "")
+        candidate["email"] = personal.get("email", "")
+        candidate["phone"] = personal.get("phone", "")
 
         # Address from resume
         addr = resume_data.get("address", {})
         candidate["address"] = {
             "street_address": addr.get("street_address", ""),
-            "city":           addr.get("city", ""),
-            "state":          addr.get("state", ""),
-            "zip_code":       addr.get("zip_code", ""),
-            "country":        addr.get("country", "United States"),
+            "city": addr.get("city", ""),
+            "state": addr.get("state", ""),
+            "zip_code": addr.get("zip_code", ""),
+            "country": addr.get("country", "United States"),
         }
 
         # Work / education / skills from resume
-        candidate["work"]      = resume_data.get("work", [])
+        candidate["work"] = resume_data.get("work", [])
         candidate["education"] = resume_data.get("education", [])
-        candidate["skills"]    = resume_data.get("skills", [])
+        candidate["skills"] = resume_data.get("skills", [])
 
         # Professional summary from resume
         prof = resume_data.get("professional_info", {})
-        candidate["title"]   = prof.get("title", "")
+        candidate["title"] = prof.get("title", "")
         candidate["summary"] = prof.get("summary", "")
 
         # Resume path
-        candidate["resume_path"] = guest_data.get("resume_path", "resume/Ghazal_Sultan.pdf")
+        candidate["resume_path"] = guest_data.get(
+            "resume_path", "resume/Ghazal_Sultan.pdf"
+        )
 
         # --- Overlay guest_form_data.json (takes priority) ---
         if guest_data:
@@ -103,21 +105,26 @@ class CandidateLoader:
                 candidate["address"]["zip_code"] = applicant["zip_code"]
 
             # Compliance / EEO fields from guest data
-            candidate["gender"]               = applicant.get("gender", "")
-            candidate["visa_status"]          = applicant.get("visa_status", "")
-            candidate["citizenship"]          = applicant.get("citizenship", "")
-            candidate["auth_work_country"]    = applicant.get("auth_work_country", "United States")
-            candidate["sponsorship_future"]   = applicant.get("sponsorship_future", "No")
-            candidate["race"]                 = applicant.get("race", "Opt Out")
-            candidate["veteran"]              = applicant.get("veteran", "No")
-            candidate["disability"]           = applicant.get("disability", "No")
+            candidate["gender"] = applicant.get("gender", "")
+            candidate["visa_status"] = applicant.get("visa_status", "")
+            candidate["citizenship"] = applicant.get("citizenship", "")
+            candidate["auth_work_country"] = applicant.get(
+                "auth_work_country", "United States"
+            )
+            candidate["sponsorship_future"] = applicant.get("sponsorship_future", "No")
+            candidate["race"] = applicant.get("race", "Opt Out")
+            candidate["veteran"] = applicant.get("veteran", "No")
+            candidate["disability"] = applicant.get("disability", "No")
 
             # Search parameters
-            candidate["search"] = guest_data.get("search", {
-                "keywords": ["AI Engineer", "Python"],
-                "location": "United States",
-                "distance": "0"
-            })
+            candidate["search"] = guest_data.get(
+                "search",
+                {
+                    "keywords": ["AI Engineer", "Python"],
+                    "location": "United States",
+                    "distance": "0",
+                },
+            )
 
             # Credentials (e.g. Wipro login)
             candidate["wipro_credentials"] = guest_data.get("wipro_credentials", {})

@@ -1,23 +1,27 @@
-import os
 from pathlib import Path
 from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     # Database - DuckDB (file-based, no server needed)
     DUCKDB_PATH: str = "data/job_engine.duckdb"
     MOTHERDUCK_TOKEN: Optional[str] = None
-    
+
     # Backend API
     BACKEND_URL: str = "http://localhost:8001"
-    
+    TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
+    INTERNAL_SECRET_KEY: Optional[str] = None
+
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
     HEADLESS: bool = False
 
     # Resume
     RESUME_FILE_PATH: Optional[str] = "resume/candidate_resume.pdf"
-    RESUME_PATH: Optional[str] = None # Backwards compatibility
+    RESUME_PATH: Optional[str] = None  # Backwards compatibility
+    DOWNLOADED_RESUME_DIR: str = "resume/downloads/"
 
     # Proxy
     PROXY_URL: Optional[str] = None
@@ -32,20 +36,21 @@ class Settings(BaseSettings):
     SUBMIT_POST_CLICK_WAIT: int = 15
 
     # Multi-platform support (backward compatible)
-    PLATFORM_FILTER: Optional[str] = None  # Filter by platform: "LanceSoft", "InsightGlobal", etc.
+    PLATFORM_FILTER: Optional[str] = (
+        None  # Filter by platform: "LanceSoft", "InsightGlobal", etc.
+    )
 
     # Capgemini credentials (SuccessFactors login required)
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
     @property
     def chrome_profile_path(self) -> str:
         return str(Path(self.CHROME_USER_DATA_DIR).resolve())
+
 
 settings = Settings()

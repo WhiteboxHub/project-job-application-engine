@@ -5,6 +5,7 @@ All job application history lives here (no MySQL needed).
 
 import json
 from datetime import datetime
+
 from core.logger import logger
 
 
@@ -22,6 +23,7 @@ class DuckDBManager:
         # This avoids opening a second file handle to the same .duckdb file which
         # would cause "file already in use" errors on Windows.
         from data.db_connection import db as _db_conn
+
         self.conn = _db_conn.get_connection()
         self._create_schema()
         logger.info(f"DuckDB initialized (shared connection)")
@@ -85,7 +87,7 @@ class DuckDBManager:
         """Return True if we already applied to this job on this site"""
         result = self.conn.execute(
             "SELECT 1 FROM applied_jobs WHERE job_id = ? AND site = ?",
-            [str(job_id), site]
+            [str(job_id), site],
         ).fetchone()
         return result is not None
 
@@ -97,7 +99,7 @@ class DuckDBManager:
                 INSERT OR IGNORE INTO applied_jobs (job_id, site, job_title, applied_at)
                 VALUES (?, ?, ?, ?)
                 """,
-                [str(job_id), site, job_title, datetime.now()]
+                [str(job_id), site, job_title, datetime.now()],
             )
             logger.debug(f"Marked as applied: {job_id} @ {site}")
         except Exception as e:
@@ -107,8 +109,14 @@ class DuckDBManager:
     # Scheduler audit log
     # -------------------------------------------------------------------------
 
-    def log_scheduler_run(self, site: str, jobs_found: int, jobs_applied: int,
-                          status: str = "completed", error_message: str = None):
+    def log_scheduler_run(
+        self,
+        site: str,
+        jobs_found: int,
+        jobs_applied: int,
+        status: str = "completed",
+        error_message: str = None,
+    ):
         """Write one audit row per scheduler run"""
         try:
             self.conn.execute(
@@ -118,7 +126,7 @@ class DuckDBManager:
                 VALUES
                     (nextval('scheduler_runs_seq'), ?, ?, ?, ?, ?, ?)
                 """,
-                [datetime.now(), site, jobs_found, jobs_applied, status, error_message]
+                [datetime.now(), site, jobs_found, jobs_applied, status, error_message],
             )
             logger.info(f"Scheduler run logged: {site} — {jobs_applied} applied")
         except Exception as e:
@@ -143,7 +151,9 @@ class DuckDBManager:
         if not conditions:
             return {}
 
-        query = "SELECT config_json FROM site_selectors WHERE " + " OR ".join(conditions)
+        query = "SELECT config_json FROM site_selectors WHERE " + " OR ".join(
+            conditions
+        )
         rows = self.conn.execute(query, params).fetchall()
 
         merged = {}
@@ -162,6 +172,7 @@ class _LazyDuckDBManager:
     Prevents multiprocessing spawn subprocesses from opening the locked
     .duckdb file during module import on Windows.
     """
+
     _mgr = None
 
     def _get(self):
@@ -175,9 +186,17 @@ class _LazyDuckDBManager:
     def mark_applied(self, job_id: str, site: str, job_title: str = ""):
         return self._get().mark_applied(job_id, site, job_title)
 
-    def log_scheduler_run(self, site: str, jobs_found: int, jobs_applied: int,
-                          status: str = "completed", error_message: str = None):
-        return self._get().log_scheduler_run(site, jobs_found, jobs_applied, status, error_message)
+    def log_scheduler_run(
+        self,
+        site: str,
+        jobs_found: int,
+        jobs_applied: int,
+        status: str = "completed",
+        error_message: str = None,
+    ):
+        return self._get().log_scheduler_run(
+            site, jobs_found, jobs_applied, status, error_message
+        )
 
     def get_selectors(self, job_site_id=None, ats_platform_id=None):
         return self._get().get_selectors(job_site_id, ats_platform_id)

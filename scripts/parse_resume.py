@@ -8,9 +8,10 @@ Run:
     python scripts/parse_resume.py
 """
 
+import json
 import os
 import re
-import json
+
 import pdfplumber
 
 # -- Paths ------------------------------------------------------------------
@@ -30,7 +31,7 @@ def clean_name(s):
     """Handle spaced-caps name like 'G H A Z A L  S U L T A N' -> 'GHAZAL SULTAN'."""
     # If every char is separated by a space (e.g. 'G H A Z A L'), collapse them
     # Pattern: single letter, space, single letter, space...
-    if re.match(r'^([A-Z] )+[A-Z]$', s.strip()):
+    if re.match(r"^([A-Z] )+[A-Z]$", s.strip()):
         # Remove all spaces to get the full name string, then try to split
         # We can't know where first ends and last begins, so we use the raw PDF line
         # which has double-space between first and last name
@@ -49,24 +50,24 @@ def split_spaced_name(raw_line):
     s = raw_line.strip()
 
     # Case 1: Normal name (no spaced-caps pattern)
-    if not re.match(r'^([A-Za-z] )+[A-Za-z]$', s):
+    if not re.match(r"^([A-Za-z] )+[A-Za-z]$", s):
         parts = s.split()
         if len(parts) >= 2:
             return parts[0].title(), " ".join(parts[1:]).title()
         return s.title(), ""
 
     # Case 2: Double-space between first and last name
-    if '  ' in s:
-        parts = re.split(r'  +', s)
-        first = re.sub(r' ', '', parts[0]).title()
-        last = re.sub(r' ', '', parts[1]).title() if len(parts) > 1 else ""
+    if "  " in s:
+        parts = re.split(r"  +", s)
+        first = re.sub(r" ", "", parts[0]).title()
+        last = re.sub(r" ", "", parts[1]).title() if len(parts) > 1 else ""
         return first, last
 
     # Case 3: Single-space between ALL letters (e.g. 'G H A Z A L S U L T A N')
     # Collapse all spaces -> 'GHAZALSULTAN', then try to split into two words
     # We don't know the boundary, so we try all split points and pick the one
     # that gives two valid English-looking words (both >= 3 chars)
-    collapsed_upper = re.sub(r' ', '', s)  # -> 'GHAZALSULTAN'
+    collapsed_upper = re.sub(r" ", "", s)  # -> 'GHAZALSULTAN'
     best = (collapsed_upper, "")
     for i in range(3, len(collapsed_upper) - 2):
         first_part = collapsed_upper[:i].title()
@@ -112,7 +113,9 @@ def parse_header(lines, raw_lines=None):
             contact_line = line
             break
 
-    phone_match = re.search(r"\+?1?\s*[\(]?\d{3}[\)\s.-]?\s*\d{3}[-.\s]\d{4}", contact_line)
+    phone_match = re.search(
+        r"\+?1?\s*[\(]?\d{3}[\)\s.-]?\s*\d{3}[-.\s]\d{4}", contact_line
+    )
     phone = phone_match.group(0).strip() if phone_match else ""
 
     email_match = re.search(r"[\w.+-]+@[\w.-]+\.\w+", contact_line)
@@ -131,7 +134,7 @@ def parse_header(lines, raw_lines=None):
     if email:
         local = email.split("@")[0]  # e.g. 'ghazal.sultan1616'
         # Remove trailing digits
-        local = re.sub(r'\d+$', '', local)
+        local = re.sub(r"\d+$", "", local)
         name_parts = local.split(".")
         if len(name_parts) >= 2:
             first_name = name_parts[0].title()
@@ -296,12 +299,32 @@ def parse_resume(pdf_path):
     skills_idx = find_section(stripped, "SKILLS")
     summary_idx = find_section(stripped, "SUMMARY")
 
-    section_headers = ["EDUCATION", "WORK EXPERIENCE", "EXPERIENCE", "SKILLS", "SUMMARY",
-                       "CERTIFICATIONS", "PROJECTS", "LANGUAGES"]
+    section_headers = [
+        "EDUCATION",
+        "WORK EXPERIENCE",
+        "EXPERIENCE",
+        "SKILLS",
+        "SUMMARY",
+        "CERTIFICATIONS",
+        "PROJECTS",
+        "LANGUAGES",
+    ]
 
-    edu_lines = lines_between(stripped, edu_idx, *section_headers) if edu_idx is not None else []
-    work_lines = lines_between(stripped, work_idx, *section_headers) if work_idx is not None else []
-    skill_lines = lines_between(stripped, skills_idx, *section_headers) if skills_idx is not None else []
+    edu_lines = (
+        lines_between(stripped, edu_idx, *section_headers)
+        if edu_idx is not None
+        else []
+    )
+    work_lines = (
+        lines_between(stripped, work_idx, *section_headers)
+        if work_idx is not None
+        else []
+    )
+    skill_lines = (
+        lines_between(stripped, skills_idx, *section_headers)
+        if skills_idx is not None
+        else []
+    )
 
     # -- Parse sections --
     education = parse_education(edu_lines)
@@ -317,10 +340,10 @@ def parse_resume(pdf_path):
             "phone": header["phone"],
         },
         "address": {
-            "street_address": "",   # Not in resume  leave blank for manual entry
+            "street_address": "",  # Not in resume  leave blank for manual entry
             "city": header["city"],
             "state": header["state"],
-            "zip_code": "",         # Not in resume  leave blank for manual entry
+            "zip_code": "",  # Not in resume  leave blank for manual entry
             "country": "United States",
         },
         "education": education,
@@ -353,7 +376,9 @@ if __name__ == "__main__":
         json.dump(data, f, indent=4, ensure_ascii=False)
 
     print(f"[OK] Written to: {OUTPUT_PATH}")
-    print(f"   Name    : {data['personal_info']['first_name']} {data['personal_info']['last_name']}")
+    print(
+        f"   Name    : {data['personal_info']['first_name']} {data['personal_info']['last_name']}"
+    )
     print(f"   Email   : {data['personal_info']['email']}")
     print(f"   Phone   : {data['personal_info']['phone']}")
     print(f"   City    : {data['address']['city']}, {data['address']['state']}")

@@ -3,14 +3,16 @@ Quick DuckDB Query Tool
 Run SQL queries against the job_engine.duckdb database
 """
 
-import duckdb
-import sys
 import os
+import sys
+
+import duckdb
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.settings import settings
+
 
 def run_query(sql_query):
     """Run a SQL query and display results — no pandas required"""
@@ -38,7 +40,7 @@ def run_query(sql_query):
 
             # Print header
             header = "  ".join(c.ljust(widths[i]) for i, c in enumerate(cols))
-            sep    = "  ".join("-" * w for w in widths)
+            sep = "  ".join("-" * w for w in widths)
             print(f"\n{header}")
             print(sep)
             for row in rows:
@@ -51,6 +53,7 @@ def run_query(sql_query):
 
     except Exception as e:
         print(f"[ERROR] Query failed: {e}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -68,13 +71,13 @@ if __name__ == "__main__":
         print("  3. SELECT * FROM applications ORDER BY applied_at DESC LIMIT 10")
         print("  4. SELECT status, COUNT(*) FROM job_listings GROUP BY status")
         print("\nEnter your SQL query (or 'exit' to quit):")
-        
+
         while True:
             query = input("\nSQL> ").strip()
-            
-            if query.lower() in ['exit', 'quit', 'q']:
+
+            if query.lower() in ["exit", "quit", "q"]:
                 print("Goodbye!")
                 break
-            
+
             if query:
                 run_query(query)

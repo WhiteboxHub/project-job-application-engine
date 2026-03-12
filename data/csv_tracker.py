@@ -13,6 +13,7 @@ Public API is identical to the old CSVTracker so no callers need to change:
 """
 
 from datetime import datetime
+
 from core.logger import logger
 
 
@@ -29,14 +30,14 @@ class DBTracker:
     def _conn(self):
         """Return the shared DuckDB connection."""
         from data.db_connection import db
+
         return db.get_connection()
 
     def _site_id(self, site_name: str) -> int | None:
         """Resolve company name → job_sites.id (case-insensitive)."""
         conn = self._conn()
         row = conn.execute(
-            "SELECT id FROM job_sites WHERE LOWER(company_name) = LOWER(?)",
-            [site_name]
+            "SELECT id FROM job_sites WHERE LOWER(company_name) = LOWER(?)", [site_name]
         ).fetchone()
         return row[0] if row else None
 
@@ -76,9 +77,9 @@ class DBTracker:
         # Pre-fetch existing URLs to correctly count new insertions
         # (INSERT OR IGNORE is silent for duplicates — doesn't raise an exception)
         existing_urls = {
-            row[0] for row in conn.execute(
-                "SELECT job_url FROM job_listings WHERE job_site_id = ?",
-                [site_id]
+            row[0]
+            for row in conn.execute(
+                "SELECT job_url FROM job_listings WHERE job_site_id = ?", [site_id]
             ).fetchall()
         }
         added = 0
@@ -123,7 +124,9 @@ class DBTracker:
             except Exception as e:
                 logger.warning(f"[DBTracker] Failed to insert job '{url}': {e}")
 
-        logger.debug(f"[DBTracker] add_discovered_jobs: {added} new row(s) for '{site_name}'")
+        logger.debug(
+            f"[DBTracker] add_discovered_jobs: {added} new row(s) for '{site_name}'"
+        )
         return added
 
     def update_job_status(
@@ -140,7 +143,9 @@ class DBTracker:
         """
         site_id = self._site_id(site_name)
         if site_id is None:
-            logger.warning(f"[DBTracker] Unknown site '{site_name}' — cannot update status")
+            logger.warning(
+                f"[DBTracker] Unknown site '{site_name}' — cannot update status"
+            )
             return False
 
         # Normalize URL on the Python side — avoids REGEXP_REPLACE in SQL
@@ -189,9 +194,22 @@ class DBTracker:
 
         conn = self._conn()
         cols = [
-            "external_job_id", "job_title", "job_url", "location", "job_type",
-            "salary", "description", "requirements", "posted_date", "company",
-            "industry", "status", "attempts", "last_error", "created_at", "updated_at",
+            "external_job_id",
+            "job_title",
+            "job_url",
+            "location",
+            "job_type",
+            "salary",
+            "description",
+            "requirements",
+            "posted_date",
+            "company",
+            "industry",
+            "status",
+            "attempts",
+            "last_error",
+            "created_at",
+            "updated_at",
         ]
         col_sql = ", ".join(cols)
 
@@ -220,9 +238,22 @@ class DBTracker:
         norm_url = self._normalize_url(job_url)
         conn = self._conn()
         cols = [
-            "external_job_id", "job_title", "job_url", "location", "job_type",
-            "salary", "description", "requirements", "posted_date", "company",
-            "industry", "status", "attempts", "last_error", "created_at", "updated_at",
+            "external_job_id",
+            "job_title",
+            "job_url",
+            "location",
+            "job_type",
+            "salary",
+            "description",
+            "requirements",
+            "posted_date",
+            "company",
+            "industry",
+            "status",
+            "attempts",
+            "last_error",
+            "created_at",
+            "updated_at",
         ]
         col_sql = ", ".join(cols)
 

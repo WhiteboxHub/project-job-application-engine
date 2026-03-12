@@ -1,6 +1,7 @@
-import duckdb
-import sys
 import os
+import sys
+
+import duckdb
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,19 +33,25 @@ print("CONFIGURATION DATA")
 print("=" * 70)
 
 print("\n ATS PLATFORMS:")
-platforms = conn.execute("SELECT id, name, class_handler, automation_level FROM ats_platforms").fetchall()
+platforms = conn.execute(
+    "SELECT id, name, class_handler, automation_level FROM ats_platforms"
+).fetchall()
 for p in platforms:
     icon = "" if p[3] == "full" else ""
     print(f"  {icon} ID {p[0]}: {p[1]} -> {p[2]} [{p[3]}]")
 
 print("\n JOB SITES:")
-sites = conn.execute("SELECT id, company_name, domain, category, is_active FROM job_sites").fetchall()
+sites = conn.execute(
+    "SELECT id, company_name, domain, category, is_active FROM job_sites"
+).fetchall()
 for s in sites:
     status = "[YES] Active" if s[4] else " Inactive"
     print(f"  ID {s[0]}: {s[1]} ({s[2]}) - {s[3]} [{status}]")
 
 print("\n SITE SELECTORS:")
-selectors = conn.execute('SELECT id, job_site_id, "type" FROM site_selectors').fetchall()
+selectors = conn.execute(
+    'SELECT id, job_site_id, "type" FROM site_selectors'
+).fetchall()
 for sel in selectors:
     print(f"  ID {sel[0]}: Job Site {sel[1]} - Type: {sel[2]}")
 
@@ -58,7 +65,9 @@ print(f"\n JOB LISTINGS: {job_count} jobs discovered")
 
 if job_count > 0:
     print("\n  Status breakdown:")
-    statuses = conn.execute("SELECT status, COUNT(*) FROM job_listings GROUP BY status").fetchall()
+    statuses = conn.execute(
+        "SELECT status, COUNT(*) FROM job_listings GROUP BY status"
+    ).fetchall()
     for status in statuses:
         print(f"    - {status[0]}: {status[1]}")
 
@@ -67,7 +76,9 @@ print(f"\n APPLICATIONS: {app_count} applications submitted")
 
 if app_count > 0:
     print("\n  Status breakdown:")
-    app_statuses = conn.execute("SELECT status, COUNT(*) FROM applications GROUP BY status").fetchall()
+    app_statuses = conn.execute(
+        "SELECT status, COUNT(*) FROM applications GROUP BY status"
+    ).fetchall()
     for status in app_statuses:
         print(f"    - {status[0]}: {status[1]}")
 

@@ -5,8 +5,10 @@ Run this once before using main.py or scheduler_worker.py.
 Usage:
     python scripts/init_db.py
 """
-import sys
+
 import os
+import sys
+
 import duckdb
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,7 +22,11 @@ def init_db():
 
     if db_path.startswith("md:"):
         logger.info(f"Initializing MotherDuck Cloud at: {db_path}")
-        token_suffix = f"?motherduck_token={settings.MOTHERDUCK_TOKEN}" if settings.MOTHERDUCK_TOKEN else ""
+        token_suffix = (
+            f"?motherduck_token={settings.MOTHERDUCK_TOKEN}"
+            if settings.MOTHERDUCK_TOKEN
+            else ""
+        )
         conn = duckdb.connect(f"{db_path}{token_suffix}")
     else:
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
@@ -45,7 +51,9 @@ def init_db():
 
     # Idempotent — add automation_level if not present on older DBs
     try:
-        conn.execute("ALTER TABLE ats_platforms ADD COLUMN automation_level VARCHAR(20) DEFAULT 'manual'")
+        conn.execute(
+            "ALTER TABLE ats_platforms ADD COLUMN automation_level VARCHAR(20) DEFAULT 'manual'"
+        )
         logger.info("Added automation_level column to ats_platforms")
     except Exception:
         pass  # Column already exists
@@ -196,28 +204,40 @@ def init_db():
     # -----------------------------------------------------------------------
     platform_seeds = [
         # id  name                    class_handler                                   level      headless
-        (1, 'insight_global_custom', 'strategies.custom.InsightGlobalStrategy', 'manual', False),
-        (2, 'jobdiva',               'strategies.custom.LanceSoftStrategy',     'full',   False),
-        (3, 'wipro_custom',          'strategies.custom.WiproStrategy',         'full',   False),
-        (4, 'infosys_custom',        'strategies.custom.InfosysStrategy',       'full',   False),
-        (5, 'kforce_custom',         'strategies.custom.KForceStrategy',        'full',   False),
-        (6, 'lever',                 'strategies.custom.LeverStrategy',         'full',   False),
-        (7, 'capgemini_custom',      'strategies.custom.CapgeminiStrategy',     'full',   False),
+        (
+            1,
+            "insight_global_custom",
+            "strategies.custom.InsightGlobalStrategy",
+            "manual",
+            False,
+        ),
+        (2, "jobdiva", "strategies.custom.LanceSoftStrategy", "full", False),
+        (3, "wipro_custom", "strategies.custom.WiproStrategy", "full", False),
+        (4, "infosys_custom", "strategies.custom.InfosysStrategy", "full", False),
+        (5, "kforce_custom", "strategies.custom.KForceStrategy", "full", False),
+        (6, "lever", "strategies.custom.LeverStrategy", "full", False),
+        (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
     ]
-    for (pid, name, handler, level, headless) in platform_seeds:
-        conn.execute("""
+    for pid, name, handler, level, headless in platform_seeds:
+        conn.execute(
+            """
             INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, automation_level, is_headless_required)
             VALUES (?, ?, ?, ?, ?)
-        """, [pid, name, handler, level, headless])
+        """,
+            [pid, name, handler, level, headless],
+        )
         # Also UPDATE so re-runs fix stale values (name, class, level) on existing rows
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE ats_platforms
                SET name                 = ?,
                    class_handler        = ?,
                    automation_level     = ?,
                    is_headless_required = ?
              WHERE id = ?
-        """, [name, handler, level, headless, pid])
+        """,
+            [name, handler, level, headless, pid],
+        )
 
     logger.info("ats_platforms seeded [OK]")
 
@@ -300,68 +320,78 @@ def init_db():
     import json as _json
 
     lancesoft_listing_selectors = {
-        "country_button":       "//button[contains(., 'United States')]",
+        "country_button": "//button[contains(., 'United States')]",
         "country_dropdown_btn": "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]",
-        "usa_option":           "//a[@class='dropdown-item'][contains(., 'United States')]",
-        "country_fallback":     "div.hideshow-country button",
-        "search_input":         "input.inputbox_search, input[placeholder*='Search job title' i]",
-        "job_container":        "div.list-group-item.list-group-item-action",
-        "job_title":            "span.text-capitalize.jd-nav-label.notranslate",
-        "job_id":               "div.d-flex.text-muted small:nth-child(3)",
-        "details_button":       "button.btn.jd-btn",
-        "next_page_btn":        "button[aria-label='Next Page']",
+        "usa_option": "//a[@class='dropdown-item'][contains(., 'United States')]",
+        "country_fallback": "div.hideshow-country button",
+        "search_input": "input.inputbox_search, input[placeholder*='Search job title' i]",
+        "job_container": "div.list-group-item.list-group-item-action",
+        "job_title": "span.text-capitalize.jd-nav-label.notranslate",
+        "job_id": "div.d-flex.text-muted small:nth-child(3)",
+        "details_button": "button.btn.jd-btn",
+        "next_page_btn": "button[aria-label='Next Page']",
         "dropdown_country_selectors": [
             "//button[contains(., 'Country')]",
             "//button[contains(., 'Select Country')]",
             "//button[contains(@class, 'country')]",
             "div.hideshow-country button",
-            "button[data-toggle='dropdown'][aria-label*='Country']"
+            "button[data-toggle='dropdown'][aria-label*='Country']",
         ],
         "usa_dropdown_selectors": [
             "//a[@class='dropdown-item'][contains(., 'United States')]",
             "//div[contains(@class, 'dropdown-menu')]//a[contains(text(), 'United States')]",
             "//li[contains(., 'United States')]//a",
             "//button[contains(., 'United States')]",
-            "a.dropdown-item:contains('United States')"
-        ]
+            "a.dropdown-item:contains('United States')",
+        ],
     }
 
     lancesoft_application_selectors = {
-        "apply_button":         "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
-        "quick_apply_option":   "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
-        "form_modal":           "#quickApplyModal",
-        "submit_btn":           "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
-        "submit_btn_fallback":  [
+        "apply_button": "#root > div > div > div:nth-child(4) > div:nth-child(1) > button",
+        "quick_apply_option": "#applyOptionsModal > div > div > div.modal-body > div > button:nth-child(3) > span",
+        "form_modal": "#quickApplyModal",
+        "submit_btn": "#quickApplyModal > div > div > div.job-app-btns > div:nth-child(2) > button",
+        "submit_btn_fallback": [
             "#quickApplyModal .job-app-btns button:last-child",
-            "#quickApplyModal .job-app-btns button:nth-child(2)"
+            "#quickApplyModal .job-app-btns button:nth-child(2)",
         ],
-        "next_btn_outline":     "button.btn.jd-btn-outline",
-        "next_btn_solid":       "button.btn.jd-btn:not(.jd-btn-outline)",
-        "consent_checkbox":     "//div[@id='quickApplyModal']//input[@type='checkbox']",
-        "file_input":           "div#quickApplyModal input[type='file']",
-        "gender_radio":         "//input[@type='radio'][@name='gender'][@value='1,3']",
-        "ethnicity_radio":      "//input[@type='radio'][@name='ethnicity'][@value='1,3']",
-        "race_radio":           "//input[@type='radio'][@name='race'][@value='2,8']",
-        "veteran_radios":       "//input[@type='radio'][@name='veteran_status']",
-        "next_btn_xpath":       "//button[contains(@class, 'jd-btn') and not(contains(@class, 'jd-btn-outline'))]//span[contains(., 'Next')]/ancestor::button",
-        "phone_xpath":          "//label[contains(text(), 'Phone')]/..//input",
+        "next_btn_outline": "button.btn.jd-btn-outline",
+        "next_btn_solid": "button.btn.jd-btn:not(.jd-btn-outline)",
+        "consent_checkbox": "//div[@id='quickApplyModal']//input[@type='checkbox']",
+        "file_input": "div#quickApplyModal input[type='file']",
+        "gender_radio": "//input[@type='radio'][@name='gender'][@value='1,3']",
+        "ethnicity_radio": "//input[@type='radio'][@name='ethnicity'][@value='1,3']",
+        "race_radio": "//input[@type='radio'][@name='race'][@value='2,8']",
+        "veteran_radios": "//input[@type='radio'][@name='veteran_status']",
+        "next_btn_xpath": "//button[contains(@class, 'jd-btn') and not(contains(@class, 'jd-btn-outline'))]//span[contains(., 'Next')]/ancestor::button",
+        "phone_xpath": "//label[contains(text(), 'Phone')]/..//input",
     }
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
         VALUES (9, 2, 'listing', ?)
-    """, [_json.dumps(lancesoft_listing_selectors)])
+    """,
+        [_json.dumps(lancesoft_listing_selectors)],
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
         VALUES (10, 2, 'application', ?)
-    """, [_json.dumps(lancesoft_application_selectors)])
+    """,
+        [_json.dumps(lancesoft_application_selectors)],
+    )
 
     # Idempotent UPDATE in case rows already existed with stale values
-    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 9",
-                 [_json.dumps(lancesoft_listing_selectors)])
-    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 10",
-                 [_json.dumps(lancesoft_application_selectors)])
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 9",
+        [_json.dumps(lancesoft_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 10",
+        [_json.dumps(lancesoft_application_selectors)],
+    )
 
     logger.info("site_selectors seeded for LanceSoft [OK]")
 
@@ -375,16 +405,20 @@ def init_db():
         "search_button": "//*[@id='site-content']/div/section/div[2]/div/div/div[2]/form/div/div[3]/div/input",
         "pagination_count": "//*[@id='site-content']/div/main/div/div/div/div[2]/div[1]/p[2]/span",
         "pagination_next": "button[aria-label='Next'], .pagination-next > a, //a[contains(@class,'next')]",
-        "job_link": "//*[@id='site-content']/div/main/div/div/div/div[2]/ul/li/h2/a"
+        "job_link": "//*[@id='site-content']/div/main/div/div/div/div[2]/ul/li/h2/a",
     }
 
     kforce_application_selectors = {
         "apply_initiator": "//*[@id='TK_WIDGET_INITIATOR']",
         "apply_link_option": "//*[@id='ApplyWithForm']/div[4]/a",
-        "success_indicators": ["successfully submitted", "thank you for applying", "application received"],
+        "success_indicators": [
+            "successfully submitted",
+            "thank you for applying",
+            "application received",
+        ],
         "questionnaire_answers": {
             "eligibility_auth": "AuthorizedForAny",
-            "sponsorship_req": "No"
+            "sponsorship_req": "No",
         },
         "form_fields": {
             "first_name": "//*[@id='firstName']",
@@ -396,30 +430,44 @@ def init_db():
             "state": "//*[@id='state']",
             "resume_upload": "input[type='file'][accept*='pdf'], //input[@type='file']",
             "eligibility_auth": "//*[@id='eligibility']/ul/li[1]/label/span",
-            "submit_btn": "//*[@id='SubmitButton']"
-        }
+            "submit_btn": "//*[@id='SubmitButton']",
+        },
     }
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
         VALUES (11, 5, 'listing', ?)
-    """, [_json.dumps(kforce_listing_selectors)])
+    """,
+        [_json.dumps(kforce_listing_selectors)],
+    )
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json)
         VALUES (12, 5, 'application', ?)
-    """, [_json.dumps(kforce_application_selectors)])
+    """,
+        [_json.dumps(kforce_application_selectors)],
+    )
 
-    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 11",
-                 [_json.dumps(kforce_listing_selectors)])
-    conn.execute("UPDATE site_selectors SET config_json = ? WHERE id = 12",
-                 [_json.dumps(kforce_application_selectors)])
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 11",
+        [_json.dumps(kforce_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 12",
+        [_json.dumps(kforce_application_selectors)],
+    )
 
     logger.info("site_selectors seeded for KForce [OK]")
 
     # Indexes
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_applications_date ON applications(applied_at)"
+    )
 
     logger.info("")
     logger.info("=" * 50)
@@ -433,7 +481,7 @@ def init_db():
         "JOIN ats_platforms ap ON js.ats_platform_id = ap.id "
         "ORDER BY js.id"
     ).fetchall()
-    for (company, platform, level, active) in sites:
+    for company, platform, level, active in sites:
         icon = "✅" if level == "full" else "🔧"
         active_str = "" if active else " [INACTIVE]"
         logger.info(f"  {icon}  {company} → [{platform}] ({level}){active_str}")

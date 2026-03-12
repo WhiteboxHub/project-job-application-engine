@@ -3,10 +3,12 @@ DuckDB Connection Manager (Singleton Pattern)
 Replaces MySQL — uses a local DuckDB file for all job tracking.
 """
 
-import duckdb
-import os
 import logging
+import os
+
+import duckdb
 from sqlalchemy.orm import declarative_base
+
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,7 @@ Base = declarative_base()
 
 class DuckDBConnection:
     """Singleton DuckDB connection manager"""
+
     _instance = None
 
     def __new__(cls):
@@ -33,7 +36,11 @@ class DuckDBConnection:
                 # Connect to MotherDuck Cloud
                 logger.info("Connecting to MotherDuck Cloud...")
                 # DuckDB 0.9.0+ handles ?motherduck_token= appended to the URL automatically
-                token_suffix = f"?motherduck_token={settings.MOTHERDUCK_TOKEN}" if settings.MOTHERDUCK_TOKEN else ""
+                token_suffix = (
+                    f"?motherduck_token={settings.MOTHERDUCK_TOKEN}"
+                    if settings.MOTHERDUCK_TOKEN
+                    else ""
+                )
                 self.conn = duckdb.connect(f"{db_path}{token_suffix}")
             else:
                 # Ensure directory exists
@@ -82,6 +89,7 @@ class _LazyDB:
     subprocesses that only import (but never query) the database never touch
     the file.
     """
+
     _db = None
 
     def _get(self):

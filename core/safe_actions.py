@@ -1,16 +1,23 @@
-import time
 import random
-from selenium.webdriver.common.by import By
+import time
+
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementClickInterceptedException
-from core.logger import logger
+from selenium.webdriver.common.by import By
+
 from core.human_behavior import HumanBehavior
+from core.logger import logger
+
 
 class SafeActions:
     def __init__(self, driver):
         self.driver = driver
         self.human = HumanBehavior(driver)
-        
+
     def _random_sleep(self, min_s=2.1, max_s=4.5):
         """Use HumanBehavior for consistent random delays"""
         HumanBehavior.random_delay(min_s, max_s)
@@ -52,12 +59,16 @@ class SafeActions:
                         logger.debug(f"Clicked element via JS fallback: {selector}")
                         return True
                     except Exception:
-                        logger.warning(f"JS click fallback failed for {selector}, will retry ({attempt+1}/{retries})")
+                        logger.warning(
+                            f"JS click fallback failed for {selector}, will retry ({attempt + 1}/{retries})"
+                        )
                         time.sleep(1)
                         attempt += 1
                         continue
             except StaleElementReferenceException as e:
-                logger.warning(f"Click failed (StaleElementReferenceException) on {selector}, retrying ({attempt+1}/{retries})")
+                logger.warning(
+                    f"Click failed (StaleElementReferenceException) on {selector}, retrying ({attempt + 1}/{retries})"
+                )
                 time.sleep(1)
                 attempt += 1
             except NoSuchElementException:

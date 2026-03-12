@@ -2,17 +2,23 @@
 Quick script to check job status in the database.
 Run: python scripts/check_failed.py
 """
-import sys, os
+
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import duckdb
+
 from config.settings import settings
 
 conn = duckdb.connect(settings.DUCKDB_PATH)
 
 # Status summary
 print("\n=== STATUS SUMMARY ===")
-rows = conn.execute("SELECT status, COUNT(*) as count FROM job_listings GROUP BY status").fetchall()
+rows = conn.execute(
+    "SELECT status, COUNT(*) as count FROM job_listings GROUP BY status"
+).fetchall()
 if rows:
     for r in rows:
         print(f"  {str(r[0]).ljust(15)}: {r[1]} jobs")

@@ -1,48 +1,39 @@
 # 🤖 Job Application Engine
 
-A database-driven, multi-site job application automation engine built on the **Strategy Pattern**. Each job board has its own self-contained strategy module. Configuration, deduplication, and audit logging all live in the **MotherDuck Cloud** (or local DuckDB).
+A database-driven, multi-site job application automation engine built on the **Strategy Pattern**. Each job board has its own self-contained strategy module. Configuration, deduplication, and execution metadata live in the **MotherDuck Cloud** (or local DuckDB), while the candidate data and scheduling are directly orchestrated by the central **wbl-backend API**.
 
 ---
 
-## ☁️ Database (MotherDuck Cloud / Local DuckDB)
+## 🏗️ Architecture & Data Flow
 
-The project supports both local DuckDB and MotherDuck (Cloud) for team collaboration.
-When using MotherDuck, the entire team safely shares the same database securely in the cloud. We use this to instantly sync new ATS platform settings, job sites, and CSS selectors with everyone on the team!
+The engine operates on a seamless, zero-touch dynamic pipeline:
 
-### Configuration tables
+1. **Trigger Phase:** The engine (`scripts/main.py`) hits the backend API (`/api/weekly-workflow/trigger-run`) to check for pending automated workflows scheduled for the current time.
+2. **Data Injection:** The backend constructs the candidate's profile, including keywords, experience, and the resume link, and returns it as a JSON payload (`run_parameters`).
+3. **Resume Download:** The `resume_downloader` parses the `resume_url` (Google Drive) and securely downloads the PDF into `resume/downloads/`. 
+4. **Execution:** The completely assembled payload is injected into memory, meaning the engine **NO LONGER** relies on local configuration files like `guest_form_data.json`.
+5. **Sequential Application:** The engine automatically queries the database for all active platforms mapped for full automation and executes them sequentially using the injected candidate data.
 
+---
+
+## ☁️ Database Configuration
+
+The system uses a **Local DuckDB database** (`data/job_engine.duckdb`) to track application states locally.
+
+### Control Tables
 | Table | Purpose |
 |---|---|
-| `ats_platforms` | ATS platform name, automation class path, automation level |
-| `job_sites` | Company name, domain, search URL, daily application cap |
-| `site_selectors` | Per-site CSS selectors stored as JSON (listing + application) |
+| `ats_platforms` | Platform class handler (`strategies.custom.mysite`) and `automation_level` ('full', 'semi', etc.). |
+| `job_sites` | Target portal details (e.g., LanceSoft, Wipro) and the boolean `is_active` flag. |
+| `site_selectors` | HTML/CSS selectors per website injected at runtime to resist UI changes. |
 
-### Tracking tables (Memory)
-
-| Table | Purpose |
-|---|---|
-| `applied_jobs` | Deduplication — prevents anyone on the team from re-applying to the same job |
-| `scheduler_runs` | Audit log for every automated run (timestamp, counts, errors) |
+> **IMPORTANT:** When `main.py` is run without site parameters, it will automatically query the database and execute ALL sites where `is_active = true` AND `automation_level = 'full'`.
 
 ---
 
-## 🌐 Supported Sites
+## 🚀 Quick Start Guide
 
-| # | Site | Automation Level | Status | Notes |
-|---|---|---|---|---|
-| 1 | **Wipro** | Semi-auto | Active | Guest mode; SAP UI5 JS extraction |
-| 2 | **Infosys** | Full-auto | Active | BKS portal; full form fill + upload |
-| 3 | **LanceSoft** | Full-auto | Active | JobDiva portal; scheduled daily |
-| 4 | **Insight Global**| Semi-auto | Paused | Run on-demand with `--site` |
-| 5 | **KForce** | Semi-auto | Paused | Guest application flow |
-| 6 | **Capgemini** | Semi-auto | Paused | Requires login credentials |
-| 7 | **Hiring Cafe** | Semi-auto | Paused | Aggregator portal |
-
----
-
-## 🚀 Quick Start Guide for Developers
-
-### 1. Install dependencies
+### 1. Install Dependencies
 
 ```bash
 python -m venv venv
@@ -50,67 +41,65 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment (`.env`)
+### 2. Configure Environment (`.env`)
 
 Copy `.env.example` to `.env` and fill in your details:
 
 ```env
-# Sync to the cloud with MotherDuck (Required for team sync)
-DUCKDB_PATH=md:job_engine
-MOTHERDUCK_TOKEN=your_token_here
+# Database
+DUCKDB_PATH=data/job_engine.duckdb
 
-RESUME_FILE_PATH=resume/candidate_resume.pdf
+# Backend Integration
+BACKEND_URL=https://api.whitebox-learning.com/api
+TRIGGER_ENDPOINT=/weekly-workflow/trigger-run
+INTERNAL_SECRET_KEY=your_secure_auth_key
+
+
+# Execution Specs
 HEADLESS=False
 KEEP_BROWSER_OPEN=False
+DOWNLOADED_RESUME_DIR=resume/downloads/
 ```
 
-### 3. Configure Candidate Data
+### 3. Initialize the Database
 
-Edit `data/guest_form_data.json` — this is the single source of truth for the person you are actually applying for! Fill in their address, experience, and keywords here.
-
-### 4. Parse your resume
-
-```bash
-python scripts/parse_resume.py
-```
-This reads your PDF and creates a structured payload for the forms.
-
-### 5. Initialise the database
-
+*Note: You only need to run this if you are ADDING a new company to the database or doing a local test! Otherwise, the data is already in MotherDuck.*
 ```bash
 python scripts/init_db.py
 ```
-*Note: If you are connecting to MotherDuck cloud, you only need to run this if you are ADDING a new company to the database! Otherwise, your data is already synced!*
 
-### 6. Run a site!
+### 4. Running the Engine
 
+**Run dynamically (via Backend API):**
 ```bash
-# Run one active site
-python scripts/main.py --site "Wipro"
+# Fetches data from the backend API, downloads the resume, and runs ALL active sites sequentially
+python scripts/main.py
+```
 
-# Or let the scheduler run all active sites sequentially!
-python scripts/scheduler_worker.py
+**Testing a specific site:**
+```bash
+python scripts/main.py --site "Wipro"
 ```
 
 ---
 
-## 🧠 How the Strategy Pattern Works
+## ⏰ Windows Task Scheduler Deployment
 
-Because everyone adds new companies differently, we use a Strategy Pattern. 
-When the engine runs a site, here is what happens:
+The engine is built to be deployed via **Windows Task Scheduler** for daily or weekly background operation.
 
-1. `runner.py` asks the database what Python class handles the chosen company (e.g. `strategies.custom.WiproStrategy`).
-2. `factory.py` dynamically loads that Python file and hands it the browser.
-3. The strategy uses `.find_jobs()` to gather the job listings on the page.
-4. `runner.py` checks the MotherDuck brain to remove jobs we already applied for.
-5. `runner.py` feeds the clean jobs back into the strategy's `.apply()` method.
-6. Successful applications are saved in MotherDuck so the whole team knows it's done.
+1. Configure a `Daily` trigger in Windows Task Scheduler.
+2. Set the Action to run a batch script (`run_engine.bat`) that activates the `venv` and calls `python scripts/main.py`.
+3. **How it syncs:** Every day, the script will ping the backend. If it's time to run a job (e.g., exactly one week since the last run), the backend will provide the payload and automatically update its `last_run` and `next_run` timestamps.
+4. If it is *not* time to run yet, the backend returns an empty response, and the script silently shuts down.
 
-### How to Add a New Site to the Engine:
+---
 
-1. Create a new file like `strategies/custom/mysite.py`. You must extend `BaseStrategy`!
-2. Write the logic for `login()`, `find_jobs()`, and `apply()`.
-3. Open `strategies/custom/__init__.py` and add your class to the `__all__` list!
-4. Open `scripts/init_db.py` and write the SQL to INSERT your new company into the database.
-5. Run `python scripts/init_db.py` to push your SQL changes and CSS selectors to the MotherDuck Cloud.
-6. Push your branch to GitHub. The whole team now has your strategy!
+## 🧠 Adding a New Company Strategy
+
+Because different ATS platforms operate differently, we use the Strategy Pattern.
+
+1. **Create Class:** Create a new file `strategies/custom/new_company.py` that inherits from `BaseStrategy`.
+2. **Implement Logic:** Implement `login()`, `find_jobs()`, and `apply()`.
+3. **Access Internal Data:** Use `self.candidate_data` generated during initialization to fill out forms dynamically.
+4. **Register Entrypoint:** Add your class to `strategies/custom/__init__.py`.
+5. **Add to Database:** Insert the company mapping into `ats_platforms` and `job_sites` via `scripts/init_db.py`. Ensure `is_active=True` and `automation_level='full'` to put it in the active automated pipeline!

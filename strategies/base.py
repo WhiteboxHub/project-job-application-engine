@@ -1,18 +1,24 @@
+import os
 from abc import ABC, abstractmethod
+
+from selenium.webdriver.common.by import By
+
+from config.settings import settings
 from core.logger import logger
 from models.config_models import JobListing
-from selenium.webdriver.common.by import By
-import os
-from config.settings import settings
+
+
 class BaseStrategy(ABC):
-    def __init__(self, driver, job_site, selectors, db_session=None, candidate_data=None):
+    def __init__(
+        self, driver, job_site, selectors, db_session=None, candidate_data=None
+    ):
         self.driver = driver
         self.job_site = job_site
-        self.selectors = selectors 
+        self.selectors = selectors
         self.db_session = db_session
-        self.candidate_data = candidate_data 
+        self.candidate_data = candidate_data
         self.use_single_phase = False
-        
+
     @abstractmethod
     def login(self):
         """
@@ -44,7 +50,9 @@ class BaseStrategy(ABC):
             try:
                 elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
                 if not elements:
-                    logger.error(f"Validation failed: Essential element '{selector}' missing.")
+                    logger.error(
+                        f"Validation failed: Essential element '{selector}' missing."
+                    )
                     return False
             except Exception:
                 logger.error(f"Validation failed: Error checking '{selector}'.")
@@ -60,31 +68,31 @@ class BaseStrategy(ABC):
         3. settings.RESUME_PATH (backwards compatible)
         """
         resume_path = None
-        
+
         # 1. Try config_data (guest_form_data.json or scheduler payload)
-        if hasattr(self, 'config_data') and self.config_data:
-            resume_path = self.config_data.get('resume_path')
-            
+        if hasattr(self, "config_data") and self.config_data:
+            resume_path = self.config_data.get("resume_path")
+
         # 2. Try settings (environment variables)
         if not resume_path:
-            resume_path = getattr(settings, 'RESUME_FILE_PATH', None)
-            
+            resume_path = getattr(settings, "RESUME_FILE_PATH", None)
+
         if not resume_path:
-            resume_path = getattr(settings, 'RESUME_PATH', None)
-            
+            resume_path = getattr(settings, "RESUME_PATH", None)
+
         if not resume_path:
             logger.warning("No resume path configured in config data or settings.")
             return None
-            
+
         # Ensure absolute path
         if not os.path.isabs(resume_path):
             # BaseStrategy is in strategies/, project root is one level up
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             resume_path = os.path.abspath(os.path.join(project_root, resume_path))
-            
+
         if not os.path.exists(resume_path):
             logger.error(f"Resume file not found at: {resume_path}")
             return None
-            
+
         logger.info(f"Resolved resume path: {resume_path}")
         return resume_path
