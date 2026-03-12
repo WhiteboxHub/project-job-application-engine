@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables (contains secrets)
+.env
+.envrc
+
+# Selenium / Browser
+chrome_profile/
+debug_screenshots/
+
+# Logs
+*.log
+logs/automation/*.log
+logs/automation/*.txt
+
+# Temporary files
+temp_resumes/
+test_output.txt
+
+# Runtime data (generated at runtime, not committed)
+data/applied_jobs.json
+data/discovered_jobs.json
+data/*_jobs.csv
+data/job_engine.duckdb
+data/guest_form_data.json
+
+# Resume files (personal data - never commit)
+resume/*.pdf
+resume/*.docx
+resume/_raw_text.txt
+resume/parsed_resume.json
+
+# Database runtime files
+*.duckdb
+db/jobs.duckdb
+
+# Resume files (sensitive personal data)
+resume/
+resume_json/
