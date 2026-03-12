@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
 
+    # Wellfound Scraper Settings
+    WELLFOUND_MAX_PAGES: int = 3
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
