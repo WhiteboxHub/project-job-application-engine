@@ -63,6 +63,16 @@ class KForceStrategy(BaseStrategy):
 
         return {"listing": listing, "application": application}
 
+    def _by(self, selector):
+        """
+        Auto-detect locator strategy: XPath if selector starts with '/' or '(',
+        otherwise use CSS_SELECTOR.
+        Returns a (By, selector) tuple for use in WebDriverWait / find_element.
+        """
+        if selector and (selector.startswith("/") or selector.startswith("(")):
+            return (By.XPATH, selector)
+        return (By.CSS_SELECTOR, selector)
+
     def get_sel(self, category, key, subkey=None, required=True):
         """
         Helper to safely fetch selectors from the database-loaded config.
@@ -225,24 +235,19 @@ class KForceStrategy(BaseStrategy):
     def _perform_search(self, keyword, location=None):
         """Internal method for a single search iteration  uses multi-fallback selectors."""
 
-        # ------------------------------------------------------------------ #
-        # Candidate input selectors (try them in order until one works)       #
-        # ------------------------------------------------------------------ #
-        INPUT_SELECTORS = [
+        # Database-provided selectors with fallbacks (make optional to avoid crash)
+        db_input = self.get_sel("listing", "search_input", required=False)
+        db_button = self.get_sel("listing", "search_btn", required=False)
+
+        INPUT_SELECTORS = [db_input] if db_input else [
             "input[id*='keyword' i]",
-            "input[name*='keyword' i]",
-            "input[placeholder*='keyword' i]",
-            "input[placeholder*='title' i]",
             "input[placeholder*='search' i]",
-            "input[aria-label*='keyword' i]",
-            "input[type='search']",
             "input[type='text']:first-of-type",
         ]
-        BUTTON_SELECTORS = [
+        BUTTON_SELECTORS = [db_button] if db_button else [
             "button[type='submit']",
             "button[class*='search' i]",
             "input[type='submit']",
-            "button[id*='search' i]",
         ]
         LINK_SELECTORS = [
             "a[href*='/candidate/jobs/'],",
@@ -253,11 +258,12 @@ class KForceStrategy(BaseStrategy):
         ]
 
         def _find_first(selectors, timeout=4):
-            """Return the first element found from a list of CSS selectors."""
+            """Return the first element found from a list of selectors."""
             for sel in selectors:
+                if not sel: continue
                 try:
                     el = WebDriverWait(self.driver, timeout).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, sel))
+                        EC.presence_of_element_located(self._by(sel)) # use _by for DB xpath support
                     )
                     return el, sel
                 except Exception:
@@ -265,44 +271,57 @@ class KForceStrategy(BaseStrategy):
             return None, None
 
         try:
+            # Only navigate to search URL on the FIRST keyword or if we aren't on it
             search_url = "https://www.kforce.com/find-work/search-jobs/"
-            logger.info(f"KForce: Navigating to {search_url}")
-            self.driver.get(search_url)
-            time.sleep(4)
+            if search_url not in self.driver.current_url:
+                logger.info(f"KForce: Navigating to {search_url}")
+                self.driver.get(search_url)
+                time.sleep(4)
+            else:
+                logger.info("KForce: Already on search page, performing next search inplace.")
 
             # Try to find and fill the search input
             input_el, used_sel = _find_first(INPUT_SELECTORS, timeout=5)
             if input_el:
                 logger.info(f"KForce: Found search input via '{used_sel}'")
-                self.human.human_click(input_el)
-                time.sleep(0.5)
-                success = self.human.fill_text_field(input_el, keyword)
-                if success:
+                
+                # Use JS clear + Native send_keys for stability across searches
+                try:
+                    self.human.human_click(input_el)
+                    time.sleep(0.5)
+                    self.driver.execute_script("arguments[0].value = '';", input_el) # Force clear
+                    input_el.clear() # Standard clear
+                    input_el.send_keys(keyword)
                     logger.info(f"  [YES] Entered keyword: {keyword}")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"  [ERROR] Failed to fill search box: {e}")
             else:
                 # Fallback: navigate directly to search URL with query param
                 encoded = keyword.replace(" ", "+")
                 fallback_url = f"https://www.kforce.com/find-work/search-jobs/?keyword={encoded}&location=United+States"
                 logger.warning(
-                    f"  [WARNING] Could not find search input  navigating to URL: {fallback_url}"
+                    f"  [WARNING] Could not find search input — navigating to URL: {fallback_url}"
                 )
                 self.driver.get(fallback_url)
                 time.sleep(4)
 
-            # Try to click search button (optional  some React sites search live)
+            # Try to click search button explicitly as requested by user
             btn_el, _ = _find_first(BUTTON_SELECTORS, timeout=3)
             if btn_el:
                 try:
+                    # Scroll to button and click
+                    self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn_el)
+                    time.sleep(0.5)
                     self.human.human_click(btn_el)
                     logger.info("  [YES] Clicked search button")
-                    time.sleep(5)
+                    time.sleep(5) # Wait for search results
                 except Exception as be:
-                    logger.debug(f"KForce: Button click failed (OK): {be}")
+                    logger.debug(f"KForce: Button click failed: {be}")
             else:
-                # Try pressing Enter on the input
+                logger.info("  [INFO] No search button found, pressing ENTER instead")
                 try:
                     from selenium.webdriver.common.keys import Keys
-
                     if input_el:
                         input_el.send_keys(Keys.RETURN)
                         logger.info("  [YES] Pressed ENTER to search")
@@ -371,7 +390,20 @@ class KForceStrategy(BaseStrategy):
             logger.error("KForce: No job URL provided")
             return False
 
-        applicant = self.config_data.get("applicant", {})
+        # Build a unified applicant dict:
+        # Priority 1: top-level fields from run_parameters (set by backend/CandidateLoader)
+        # Priority 2: the flat 'applicant' sub-dict (from guest_form_data.json)
+        _applicant_raw = self.config_data.get("applicant", {})
+        applicant = {
+            "first_name":  self.config_data.get("first_name")  or _applicant_raw.get("first_name"),
+            "last_name":   self.config_data.get("last_name")   or _applicant_raw.get("last_name"),
+            "email":       self.config_data.get("email")       or _applicant_raw.get("email"),
+            "phone":       self.config_data.get("phone")       or _applicant_raw.get("phone"),
+            # Backend puts state and zip_code at the top level of the JSON
+            "zip_code":    self.config_data.get("zip_code")    or _applicant_raw.get("zip_code"),
+            "state":       self.config_data.get("state")       or _applicant_raw.get("state"),
+            "country":     self.config_data.get("country")     or _applicant_raw.get("country", "United States"),
+        }
         apply_initiator = self.get_sel("application", "apply_initiator")
 
         try:
@@ -392,10 +424,10 @@ class KForceStrategy(BaseStrategy):
 
             time.sleep(3)
 
-            # 2. Click 'Apply Today' initiator
+            # 2. Click 'Apply Now' button
             logger.info("KForce [Step 2]: Searching for Apply initiator")
             initiator = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, apply_initiator))
+                EC.element_to_be_clickable(self._by(apply_initiator))
             )
             logger.info("  [YES] Found initiator, clicking...")
             self.human.human_click(initiator)
@@ -405,7 +437,7 @@ class KForceStrategy(BaseStrategy):
             logger.info("KForce [Step 3]: Searching for 'Apply Today' dropdown option")
             apply_link_sel = self.get_sel("application", "apply_link_option")
             apply_link = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, apply_link_sel))
+                EC.element_to_be_clickable(self._by(apply_link_sel))
             )
             logger.info("  [YES] Found dropdown option, clicking...")
             self.human.human_click(apply_link)
@@ -413,50 +445,206 @@ class KForceStrategy(BaseStrategy):
             # Wait for application form to load
             first_field_sel = self.get_sel("application", "form_fields", "first_name")
             WebDriverWait(self.driver, 25).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, first_field_sel))
+                EC.presence_of_element_located(self._by(first_field_sel))
             )
             logger.info("KForce: Application form loaded")
 
             # 4. Fill personal details
+            # KForce uses React-controlled inputs. Plain send_keys / clear() don't
+            # trigger React's state — we must set the native value via JS and then
+            # dispatch an 'input' event so React re-syncs.
+            def _fill_react_field(sel, value):
+                """Set value on a React-controlled input field."""
+                if not sel or not value:
+                    logger.warning(f"  [SKIP] Missing selector or value for field")
+                    return
+                try:
+                    el = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located(self._by(sel))
+                    )
+                    self.driver.execute_script(
+                        """
+                        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value').set;
+                        nativeInputValueSetter.call(arguments[0], arguments[1]);
+                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+                        """,
+                        el, str(value)
+                    )
+                    time.sleep(random.uniform(0.4, 0.8))
+                    logger.info(f"    [YES] Filled via JS React-compatible method")
+                except Exception as e:
+                    logger.warning(f"  [WARNING] JS fill failed, trying send_keys: {e}")
+                    try:
+                        el = self.driver.find_element(*self._by(sel))
+                        el.clear()
+                        el.send_keys(str(value))
+                        time.sleep(0.4)
+                    except Exception as e2:
+                        logger.error(f"  [ERROR] send_keys fallback also failed: {e2}")
+
             fields_map = {
                 "first_name": applicant.get("first_name"),
-                "last_name": applicant.get("last_name"),
-                "email": applicant.get("email"),
+                "last_name":  applicant.get("last_name"),
+                "email":      applicant.get("email"),
                 "email_verify": applicant.get("email"),
-                "phone": applicant.get("phone"),
-                "zip_code": applicant.get("zip_code"),
+                "phone":      applicant.get("phone"),
             }
 
             for field, value in fields_map.items():
-                logger.info(f"KForce [Step 4]: Filling field '{field}'")
+                logger.info(f"KForce [Step 4]: Filling '{field}' = '{value}'")
                 selector = self.get_sel("application", "form_fields", field)
-                if selector and value:
-                    elem = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                    )
-                    self.human.fill_text_field(elem, value)
-                    time.sleep(random.uniform(0.7, 1.2))
-                else:
-                    logger.warning(
-                        f"  [WARNING] Skipping field '{field}': missing selector or value"
-                    )
+                _fill_react_field(selector, value)
 
-            # 5. Handle State dropdown
+
+            # 5. Handle State dropdown — slow, explicit, scroll first
             state_val = applicant.get("state")
             state_selector = self.get_sel("application", "form_fields", "state")
-            if state_val and state_selector:
-                state_dropdown = self.driver.find_element(
-                    By.CSS_SELECTOR, state_selector
-                )
-                from selenium.webdriver.support.ui import Select
+            zip_val = applicant.get("zip_code")
+            zip_selector = self.get_sel("application", "form_fields", "zip_code")
+            
+            logger.info("=" * 50)
+            logger.info(f"[DEBUG] State Value Resolves To: '{state_val}'")
+            logger.info(f"[DEBUG] State Selector: '{state_selector}'")
+            logger.info(f"[DEBUG] Zip Value Resolves To: '{zip_val}'")
+            logger.info(f"[DEBUG] Zip Selector: '{zip_selector}'")
+            logger.info("=" * 50)
 
-                select = Select(state_dropdown)
+            logger.info(f"KForce [Step 5]: Filling state = '{state_val}'")
+            if state_val and state_selector:
                 try:
-                    select.select_by_visible_text(state_val)
-                except:
-                    # Fallback to value if text fails
-                    select.select_by_value(state_val)
-                logger.debug(f"Selected state: {state_val}")
+                    state_dropdown = WebDriverWait(self.driver, 15).until(
+                        EC.element_to_be_clickable(self._by(state_selector))
+                    )
+                    # Scroll to element so it's visible
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView({block:'center'});", state_dropdown
+                    )
+                    time.sleep(1)
+
+                    from selenium.webdriver.support.ui import Select
+                    select = Select(state_dropdown)
+
+                    selected = False
+                    # Strategy 1: visible text exact match
+                    try:
+                        select.select_by_visible_text(state_val)
+                        selected = True
+                        logger.info(f"  [YES] State selected by text: {state_val}")
+                    except Exception:
+                        pass
+
+                    # Strategy 2: value attribute
+                    if not selected:
+                        try:
+                            select.select_by_value(state_val)
+                            selected = True
+                            logger.info(f"  [YES] State selected by value: {state_val}")
+                        except Exception:
+                            pass
+
+                    # Strategy 3: JS partial text match + fire change event
+                    if not selected:
+                        self.driver.execute_script(
+                            """
+                            var sel = arguments[0];
+                            var target = arguments[1].toLowerCase().trim();
+                            for (var i = 0; i < sel.options.length; i++) {
+                                if (sel.options[i].text.toLowerCase().trim().indexOf(target) !== -1) {
+                                    sel.selectedIndex = i;
+                                    sel.dispatchEvent(new Event('change', {bubbles: true}));
+                                    sel.dispatchEvent(new Event('input',  {bubbles: true}));
+                                    break;
+                                }
+                            }
+                            """,
+                            state_dropdown, state_val
+                        )
+                        logger.info(f"  [YES] State set via JS text-match: {state_val}")
+
+                    time.sleep(1.5)  # Wait for React re-render after dropdown change
+                except Exception as se:
+                    logger.warning(f"  [WARNING] State selection failed: {se}")
+            else:
+                logger.warning("  [WARNING] Skipping state: missing value or selector")
+
+            # 5b. Handle Country dropdown
+            country_val = applicant.get("country", "United States")
+            country_selector = self.get_sel("application", "form_fields", "country", required=False)
+            if country_val and country_selector:
+                try:
+                    from selenium.webdriver.support.ui import Select
+                    country_dropdown = WebDriverWait(self.driver, 10).until(
+                        EC.element_to_be_clickable(self._by(country_selector))
+                    )
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView({block:'center'});", country_dropdown
+                    )
+                    time.sleep(0.5)
+                    select = Select(country_dropdown)
+                    try:
+                        select.select_by_visible_text(country_val)
+                    except Exception:
+                        try:
+                            select.select_by_value(country_val)
+                        except Exception:
+                            self.driver.execute_script(
+                                """
+                                var sel = arguments[0];
+                                var target = arguments[1].toLowerCase();
+                                for (var i = 0; i < sel.options.length; i++) {
+                                    if (sel.options[i].text.toLowerCase().indexOf(target) !== -1) {
+                                        sel.selectedIndex = i;
+                                        sel.dispatchEvent(new Event('change', {bubbles: true}));
+                                        break;
+                                    }
+                                }
+                                """,
+                                country_dropdown, country_val
+                            )
+                    logger.info(f"  [YES] Country set: {country_val}")
+                    time.sleep(0.5)
+                except Exception as ce:
+                    logger.warning(f"  [WARNING] Could not set country: {ce}")
+
+            # 5c. Fill zip LAST — after all dropdowns so React re-renders don't clear it
+            zip_val = applicant.get("zip_code")
+            zip_selector = self.get_sel("application", "form_fields", "zip_code")
+            logger.info(f"KForce [Step 5c]: Filling zip_code = '{zip_val}'")
+            if zip_val and zip_selector:
+                try:
+                    zip_el = WebDriverWait(self.driver, 10).until(
+                        EC.element_to_be_clickable(self._by(zip_selector))
+                    )
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView({block:'center'});", zip_el
+                    )
+                    time.sleep(0.5)
+                    # Click to focus, then clear and type
+                    zip_el.click()
+                    time.sleep(0.3)
+                    zip_el.clear()
+                    time.sleep(0.2)
+                    zip_el.send_keys(str(zip_val))
+                    time.sleep(0.3)
+                    # Also fire via JS native setter for React
+                    self.driver.execute_script(
+                        """
+                        var niv = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value').set;
+                        niv.call(arguments[0], arguments[1]);
+                        arguments[0].dispatchEvent(new Event('input',  {bubbles:true}));
+                        arguments[0].dispatchEvent(new Event('change', {bubbles:true}));
+                        """,
+                        zip_el, str(zip_val)
+                    )
+                    logger.info(f"  [YES] Zip filled: {zip_val}")
+                    time.sleep(0.5)
+                except Exception as ze:
+                    logger.warning(f"  [WARNING] Zip fill failed: {ze}")
+            else:
+                logger.warning(f"  [WARNING] Skipping zip: val='{zip_val}' sel='{zip_selector}'")
 
             # 6. Upload Resume
             logger.info("KForce [Step 6]: Resolving resume path")
@@ -468,9 +656,7 @@ class KForceStrategy(BaseStrategy):
             if resume_path and resume_selector:
                 logger.info(f"  [YES] Found resume: {os.path.basename(resume_path)}")
                 try:
-                    file_input = self.driver.find_element(
-                        By.CSS_SELECTOR, resume_selector
-                    )
+                    file_input = self.driver.find_element(*self._by(resume_selector))
                     # Unhide if necessary
                     self.driver.execute_script(
                         "arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';",
@@ -580,7 +766,7 @@ class KForceStrategy(BaseStrategy):
             if submit_sel:
                 try:
                     submit_btn = WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, submit_sel))
+                        EC.presence_of_element_located(self._by(submit_sel))
                     )
                     # Visual Feedback: Scroll to button so user can see it
                     self.driver.execute_script(
@@ -609,7 +795,7 @@ class KForceStrategy(BaseStrategy):
                         return True
                     else:
                         submit_btn = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, submit_sel))
+                            EC.element_to_be_clickable(self._by(submit_sel))
                         )
                         self.human.human_click(submit_btn)
                         logger.info(

@@ -161,14 +161,26 @@ class LanceSoftStrategy(BaseStrategy):
         search_configurations = self.config_data.get("search_configurations", [])
         if not search_configurations:
             search_config = self.config_data.get("search", {})
-            keywords = search_config.get(
-                "keywords", []
-            )  # run_parameters uses 'keywords' (list)
-            if not keywords:
-                # Fallback: single keyword key
-                keywords = [search_config.get("keyword", "AI Engineer")]
             location = search_config.get("location", "USA")
             distance = search_config.get("distance", "50")
+
+            # Priority 1: keywords from backend candidate_data
+            keywords = search_config.get("keywords", [])
+            if not keywords:
+                keywords = [kw for kw in [search_config.get("keyword")] if kw]
+
+            # Priority 2: keywords from DB (site_selectors listing config)
+            if not keywords:
+                keywords = self.selectors.get("listing", {}).get("search_keywords", [])
+
+            if not keywords:
+                logger.error(
+                    "[ERROR] LanceSoft: No search keywords found in candidate data "
+                    "or DB! Run init_db.py to seed search_keywords."
+                )
+                return 0
+
+            logger.info(f"[SEARCH] Using {len(keywords)} keyword(s)")
             # Expand each keyword into its own search config
             search_configurations = [
                 {"keyword": kw, "location": location, "distance": distance}
@@ -218,14 +230,29 @@ class LanceSoftStrategy(BaseStrategy):
         # Support multiple search configurations
         search_configurations = self.config_data.get("search_configurations", [])
         if not search_configurations:
-            # Fallback to single search config
             search_config = self.config_data.get("search", {})
+            location = search_config.get("location", "Chicago, IL")
+            distance = search_config.get("distance", "50")
+
+            # Priority 1: keywords from backend candidate_data
+            keywords = search_config.get("keywords", [])
+            if not keywords:
+                keywords = [kw for kw in [search_config.get("keyword")] if kw]
+
+            # Priority 2: keywords from DB (site_selectors listing config)
+            if not keywords:
+                keywords = self.selectors.get("listing", {}).get("search_keywords", [])
+
+            if not keywords:
+                logger.error(
+                    "[ERROR] LanceSoft: No search keywords found in candidate data "
+                    "or DB! Run init_db.py to seed search_keywords."
+                )
+                return []
+
             search_configurations = [
-                {
-                    "keyword": search_config.get("keyword", "AI Engineer"),
-                    "location": search_config.get("location", "Chicago, IL"),
-                    "distance": search_config.get("distance", "50"),
-                }
+                {"keyword": kw, "location": location, "distance": distance}
+                for kw in keywords
             ]
 
         all_jobs = []
@@ -1891,12 +1918,10 @@ class LanceSoftStrategy(BaseStrategy):
             # Use config data for applicant information
             applicant_data = self.config_data.get("applicant", {})
             user_data = {
-                "First Name": applicant_data.get("first_name", "Ghazal"),
-                "Last Name": applicant_data.get("last_name", "Sultan"),
-                "Email": applicant_data.get(
-                    "email", "mahendarbathini34@gmail.com"
-                ).strip(),
-                "Phone": applicant_data.get("phone", "+1 (669) 000-0000"),
+                "First Name": applicant_data.get("first_name", ""),
+                "Last Name": applicant_data.get("last_name", ""),
+                "Email": applicant_data.get("email", "").strip(),
+                "Phone": applicant_data.get("phone", ""),
             }
 
             # Map labels to keys
