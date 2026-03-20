@@ -406,7 +406,7 @@ def init_db():
         "search_button": "//*[@id='site-content']/div/section/div[2]/div/div/div[2]/form/div/div[3]/div/input",
         "pagination_count": "//*[@id='site-content']/div/main/div/div/div/div[2]/div[1]/p[2]/span",
         "pagination_next": "button[aria-label='Next'], .pagination-next > a, //a[contains(@class,'next')]",
-        "job_link": "//*[@id='site-content']/div/main/div/div/div/div[2]/ul/li/h2/a",
+        "job_link": "//*[@id='site-content']/div/main/div/div/div/div[2]/ul/li[1]/h2/a",
     }
 
     kforce_application_selectors = {

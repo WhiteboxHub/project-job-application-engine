@@ -1,7 +1,7 @@
 """
 parse_resume.py
 ---------------
-Reads resume/Ghazal Sultan.pdf using pdfplumber and writes
+Reads resume/candidate_resume.pdf using pdfplumber and writes
 resume/parsed_resume.json with real data extracted from the PDF.
 
 Run:
@@ -17,7 +17,7 @@ import pdfplumber
 # -- Paths ------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESUME_DIR = os.path.join(BASE_DIR, "resume")
-PDF_PATH = os.path.join(RESUME_DIR, "Ghazal_Sultan.pdf")
+PDF_PATH = os.path.join(RESUME_DIR, "candidate_resume.pdf")
 OUTPUT_PATH = os.path.join(RESUME_DIR, "parsed_resume.json")
 
 
@@ -42,9 +42,9 @@ def clean_name(s):
 def split_spaced_name(raw_line):
     """
     Handle PDF name formats:
-    - 'G H A Z A L  S U L T A N'  (double-space between first/last)
-    - 'G H A Z A L S U L T A N'   (single-space between ALL letters)
-    - 'Ghazal Sultan'              (normal)
+    - 'J O H N  D O E'            (double-space between first/last)
+    - 'J O H N D O E'             (single-space between ALL letters)
+    - 'John Doe'                  (normal)
     Returns (first_name, last_name).
     """
     s = raw_line.strip()
@@ -63,11 +63,11 @@ def split_spaced_name(raw_line):
         last = re.sub(r" ", "", parts[1]).title() if len(parts) > 1 else ""
         return first, last
 
-    # Case 3: Single-space between ALL letters (e.g. 'G H A Z A L S U L T A N')
-    # Collapse all spaces -> 'GHAZALSULTAN', then try to split into two words
+    # Case 3: Single-space between ALL letters (e.g. 'J O H N D O E')
+    # Collapse all spaces -> 'JOHNDOE', then try to split into two words
     # We don't know the boundary, so we try all split points and pick the one
     # that gives two valid English-looking words (both >= 3 chars)
-    collapsed_upper = re.sub(r" ", "", s)  # -> 'GHAZALSULTAN'
+    collapsed_upper = re.sub(r" ", "", s)  # -> 'JOHNDOE'
     best = (collapsed_upper, "")
     for i in range(3, len(collapsed_upper) - 2):
         first_part = collapsed_upper[:i].title()
@@ -129,10 +129,10 @@ def parse_header(lines, raw_lines=None):
         state = city_match.group(2).strip()
 
     # -- Name extraction --
-    # Primary: extract from email if it has a dot-separated name (e.g. ghazal.sultan@...)
+    # Primary: extract from email if it has a dot-separated name (e.g. john.doe@...)
     first_name, last_name = "", ""
     if email:
-        local = email.split("@")[0]  # e.g. 'ghazal.sultan1616'
+        local = email.split("@")[0]  # e.g. 'john.doe1616'
         # Remove trailing digits
         local = re.sub(r"\d+$", "", local)
         name_parts = local.split(".")

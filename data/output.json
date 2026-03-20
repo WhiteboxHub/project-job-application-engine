@@ -1,146 +1,98 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260320-2125",
-    "candidate_name": "Ramani Moganti",
+    "run_id": "RUN-20260320-2304",
+    "candidate_name": "Lalitha Gopaluni",
     "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 20,
-        "total_applications_attempted": 16,
+        "total_jobs_found": 68,
+        "total_applications_attempted": 10,
         "total_applications_successful": 0,
-        "total_applications_failed": 16
+        "total_applications_failed": 10
     },
     "successful_applications": [],
     "failed_applications": [
         {
             "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:27:45.909369+00:00"
+            "job_id": "26-34938",
+            "job_title": "Senior Manager, Learning & Development - AI & Change Leadership",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "LanceSoft single-phase error: Resume not found: C:\\Users\\Innovapath\\Desktop\\job_engine\\project-job-application-engine\\resume/candidate_resume.pdf",
+            "failed_at": "2026-03-20T23:05:24.447080+00:00"
         },
         {
             "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:28:58.738809+00:00"
+            "job_id": "26-34537",
+            "job_title": "IT Security Engineer",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "LanceSoft single-phase error: Resume not found: C:\\Users\\Innovapath\\Desktop\\job_engine\\project-job-application-engine\\resume/candidate_resume.pdf",
+            "failed_at": "2026-03-20T23:06:44.081649+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:30:12.797445+00:00"
+            "job_site": "KForce",
+            "job_id": "#",
+            "job_title": "Search Jobs",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
+            "error_reason": "Message: \nStacktrace:\nSymbols not available. Dumping unresolved backtrace:\n\t0x9d7dd3\n\t0x9d7e14\n\t0x7e1db0\n\t0x82c20a\n\t0x82c4ab\n\t0x86de32\n\t0x84ea84\n\t0x86b621\n\t0x84e7d6\n\t0x820049\n\t0x820e04\n\t0xc36924\n\t0xc31bf7\n\t0xc4f5a0\n\t0x9f0f58\n\t0x9f891d\n\t0x9e0648\n\t0x9e0812\n\t0x9ca21a\n\t0x76f55d49\n\t0x77c2d81b\n\t0x77c2d7a1\n",
+            "failed_at": "2026-03-20T23:07:37.347156+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:31:41.773878+00:00"
+            "job_site": "KForce",
+            "job_id": "#",
+            "job_title": "Search Jobs",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-20T23:07:37.363034+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:33:10.660563+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MTkwMFQxfjk5",
+            "job_title": "QA",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTkwMFQxfjk5/",
+            "error_reason": "Submission verification failed",
+            "failed_at": "2026-03-20T23:08:12.890098+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:34:23.735592+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MTkwMFQxfjk5",
+            "job_title": "QA",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTkwMFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-20T23:08:12.904911+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:35:39.878396+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MTg5NlQxfjk5",
+            "job_title": "Technical Support Analyst",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg5NlQxfjk5/",
+            "error_reason": "Submission verification failed",
+            "failed_at": "2026-03-20T23:08:48.578339+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:36:54.840228+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MTg5NlQxfjk5",
+            "job_title": "Technical Support Analyst",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg5NlQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-20T23:08:48.617223+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:38:08.517491+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5UVlR-MjE3MTg5MlQxfjk5",
+            "job_title": "Field Technical Spt Rep II",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MTg5MlQxfjk5/",
+            "error_reason": "Submission verification failed",
+            "failed_at": "2026-03-20T23:09:24.295875+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:39:22.371193+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:40:36.073297+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:42:58.462290+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:45:23.315861+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:47:46.301993+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:49:49.701717+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "Unknown",
-            "job_title": "Unknown",
-            "job_url": "Unknown",
-            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
-            "failed_at": "2026-03-20T21:51:31.335457+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5UVlR-MjE3MTg5MlQxfjk5",
+            "job_title": "Field Technical Spt Rep II",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MTg5MlQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-20T23:09:24.312233+00:00"
         }
     ],
-    "started_at": "2026-03-20T21:25:44.876566+00:00",
-    "finished_at": "2026-03-20T21:52:05.835112+00:00"
+    "started_at": "2026-03-20T23:04:09.841959+00:00",
+    "finished_at": "2026-03-20T23:09:51.354973+00:00"
 }

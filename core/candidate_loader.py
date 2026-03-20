@@ -77,7 +77,7 @@ class CandidateLoader:
 
         # Resume path
         candidate["resume_path"] = guest_data.get(
-            "resume_path", "resume/Ghazal_Sultan.pdf"
+            "resume_path", "resume/candidate_resume.pdf"
         )
 
         # --- Overlay guest_form_data.json (takes priority) ---
