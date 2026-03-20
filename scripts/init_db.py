@@ -252,7 +252,7 @@ def init_db():
             1, 'Insight Global', 'insightglobal.com', 1, 'Staffing vendor',
             'https://insightglobal.com/jobs/',
             'https://jobs.insightglobal.com/users/jobapplynoaccount.aspx?jobid={job_id}',
-            true
+            false
         )
     """)
 
@@ -274,7 +274,7 @@ def init_db():
         VALUES (
             3, 'Wipro', 'wipro.com', 3, 'System integrator',
             'https://careers.wipro.com/',
-            true
+            false
         )
     """)
 
@@ -285,7 +285,7 @@ def init_db():
         VALUES (
             4, 'Infosys', 'infosys.com', 4, 'System integrator',
             'https://career.infosys.com/joblist',
-            true
+            false
         )
     """)
 
@@ -296,7 +296,7 @@ def init_db():
         VALUES (
             5, 'KForce', 'kforce.com', 5, 'Staffing vendor',
             'https://www.kforce.com/jobs/',
-            false
+            true
         )
     """)
 
@@ -320,6 +320,7 @@ def init_db():
     import json as _json
 
     lancesoft_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
         "country_button": "//button[contains(., 'United States')]",
         "country_dropdown_btn": "//button[contains(., 'Country')] | //button[contains(., 'Select Country')]",
         "usa_option": "//a[@class='dropdown-item'][contains(., 'United States')]",
@@ -428,7 +429,8 @@ def init_db():
             "phone": "//*[@id='phoneNumberAll']",
             "zip_code": "//*[@id='postalCode']",
             "state": "//*[@id='state']",
-            "resume_upload": "input[type='file'][accept*='pdf'], //input[@type='file']",
+            "country": "//*[@id='countryID']",
+            "resume_upload": "//*[@id='uploadFileSystemResume']",
             "eligibility_auth": "//*[@id='eligibility']/ul/li[1]/label/span",
             "submit_btn": "//*[@id='SubmitButton']",
         },

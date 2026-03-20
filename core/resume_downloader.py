@@ -36,7 +36,12 @@ class ResumeDownloader:
 
         # Handle Google Drive Links
         if "drive.google.com" in resume_url:
-            file_id = ResumeDownloader._extract_gdrive_id(resume_url)
+            if "/folders/" in resume_url:
+                logger.info("Detected Google Drive Folder Link. Extracting file ID from folder HTML...")
+                file_id = ResumeDownloader._extract_id_from_folder(resume_url)
+            else:
+                file_id = ResumeDownloader._extract_gdrive_id(resume_url)
+            
             if file_id:
                 logger.info(
                     f"Extracted Google Drive File ID: {file_id}. Downloading..."
@@ -108,5 +113,30 @@ class ResumeDownloader:
 
         return None
 
+    @staticmethod
+    def _extract_id_from_folder(url: str) -> str:
+        """Tries to extract the first PDF file ID from a public Google Drive folder HTML source."""
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            html = response.text
+            
+            # Google Drive folders embed file data in a massive JS array.
+            # We look for a file ID sitting next to something ending in .pdf
+            # Example pattern in the JSON-like data: ["1aBcDeFg_...","Resume.pdf"
+            match = re.search(r'\["([a-zA-Z0-9_-]{28,33})","[^"]+\.pdf"', html, re.IGNORECASE)
+            if match:
+                return match.group(1)
+            
+            # Fallback: Just grab the first generic file ID we see in the folder payload
+            fallback_match = re.search(r'\["([a-zA-Z0-9_-]{28,33})","[^"]+"', html)
+            if fallback_match:
+                return fallback_match.group(1)
+                
+            return None
+        except Exception as e:
+            logger.error(f"Failed to scrape folder link: {e}")
+            return None
 
 resume_downloader = ResumeDownloader()

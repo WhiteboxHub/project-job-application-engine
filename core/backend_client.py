@@ -58,5 +58,31 @@ class BackendClient:
             logger.error(f"Failed to communicate with Backend API: {e}")
             return {}
 
+    @staticmethod
+    def update_run_parameters(candidate_id: int, parameters: dict) -> bool:
+        """Saves the completely built run_parameters JSON back to the DB."""
+        if not settings.BACKEND_URL:
+            return False
+
+        base = settings.BACKEND_URL.rstrip("/")
+        url = f"{base}/weekly-workflow/update-parameters/{candidate_id}"
+
+        headers = {"Content-Type": "application/json"}
+        if settings.INTERNAL_SECRET_KEY:
+            headers["Authorization"] = f"Bearer {settings.INTERNAL_SECRET_KEY}"
+
+        try:
+            logger.info(f"Saving run_parameters back to DB UI for candidate {candidate_id}...")
+            response = requests.post(url, headers=headers, json=parameters, timeout=15)
+            if response.status_code == 200:
+                logger.info("Successfully updated database UI with generated run_parameters!")
+                return True
+            else:
+                logger.warning(f"Failed to save to DB UI. Status {response.status_code}: {response.text}")
+                return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to communicate with DB UI: {e}")
+            return False
+
 
 backend_client = BackendClient()

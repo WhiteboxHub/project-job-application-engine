@@ -44,32 +44,28 @@ def main():
         logger.info(f"[LIMIT] {args.max_apps} applications per run")
 
     try:
-        # 1. Fetch pending automation parameters
-        logger.info("Checking for scheduled automation workflows...")
+        # 1. Fetch pending automation parameters from the Production API
         candidate_data = backend_client.fetch_pending_candidates()
 
         if not candidate_data:
             logger.info("[STOP] No pending weekly workflow candidate found. Exiting.")
             sys.exit(0)
 
-        logger.info(
-            f"Loaded candidate profile dynamically: {candidate_data.get('first_name')} {candidate_data.get('last_name')}"
-        )
+        # 2. Transform the raw database row into structured run_parameters 
+        # (This automatically downloads the folder link resume and extracts names!)
+        from core.run_parameters_builder import run_parameters_builder
+        run_parameters = run_parameters_builder.build(candidate_data)
+        
+        logger.info("Successfully processed candidate into structured run_parameters JSON.")
 
-        # 2. Download resume dynamically if provided
-        resume_url = candidate_data.get("resume_url", "")
-        if resume_url:
-            downloaded_pdf_path = resume_downloader.download(resume_url)
-            if downloaded_pdf_path:
-                candidate_data["resume_path"] = downloaded_pdf_path
-            else:
-                logger.error(
-                    "[ERROR] Could not download resume PDF. Check URL/permissions. Proceeding may fail uploads."
-                )
+        # 3. Save the built JSON back to the backend Database so it appears in the UI
+        candidate_id = candidate_data.get("candidate_id")
+        if candidate_id:
+            backend_client.update_run_parameters(candidate_id, run_parameters)
 
-        # 3. Execute Engine using purely network data
+        # 4. Execute Engine using the pristine, fully-built JSON payload
         runner = EngineRunner()
-        runner.run(site_filter=args.site, candidate_data=candidate_data)
+        runner.run(site_filter=args.site, candidate_data=run_parameters)
 
     except Exception as e:
         logger.critical(f"Fatal error: {e}")
