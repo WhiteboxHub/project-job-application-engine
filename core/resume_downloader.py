@@ -117,23 +117,31 @@ class ResumeDownloader:
     def _extract_id_from_folder(url: str) -> str:
         """Tries to extract the first PDF file ID from a public Google Drive folder HTML source."""
         try:
-            headers = {"User-Agent": "Mozilla/5.0"}
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
             response = requests.get(url, headers=headers, timeout=15)
             response.raise_for_status()
             html = response.text
             
-            # Google Drive folders embed file data in a massive JS array.
-            # We look for a file ID sitting next to something ending in .pdf
-            # Example pattern in the JSON-like data: ["1aBcDeFg_...","Resume.pdf"
-            match = re.search(r'\["([a-zA-Z0-9_-]{28,33})","[^"]+\.pdf"', html, re.IGNORECASE)
+            # The folder HTML is a massive SPA payload where JSON strings are XML/HTML encoded (e.g., &quot;)
+            # This regex captures any 28-33 char ID block that sits right before a .pdf filename.
+            # To ensure it grabs the *closest* ID to the PDF (and avoids matching the outer folder ID),
+            # it uses a negative lookahead to prevent another ID from jumping in between.
+            match = re.search(r'([a-zA-Z0-9_-]{28,33})(?:(?![a-zA-Z0-9_-]{28,33}).){0,200}?\.pdf', html, re.IGNORECASE)
             if match:
                 return match.group(1)
             
-            # Fallback: Just grab the first generic file ID we see in the folder payload
-            fallback_match = re.search(r'\["([a-zA-Z0-9_-]{28,33})","[^"]+"', html)
-            if fallback_match:
-                return fallback_match.group(1)
-                
+            # Fallback: Just grab the first generic file ID we see in the folder payload that ISN'T the folder ID itself
+            url_match = re.search(r'folders/([a-zA-Z0-9_-]+)', url)
+            folder_id = url_match.group(1) if url_match else ""
+            
+            all_ids = re.findall(r'(?:&quot;|\")([a-zA-Z0-9_-]{28,33})(?:&quot;|\")', html)
+            for file_id in all_ids:
+                if file_id != folder_id and "qLId0qETDvjt" not in file_id: # Avoid google internal IDs
+                    return file_id
+                    
             return None
         except Exception as e:
             logger.error(f"Failed to scrape folder link: {e}")
