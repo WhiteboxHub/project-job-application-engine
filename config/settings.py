@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
 
+# Email Reporting Setup
+    SMTP_SERVER: Optional[str] = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: Optional[str] = "[EMAIL_ADDRESS]"
+    SMTP_PASSWORD: Optional[str] = "nzon sigv nxms isqy"
+    REPORT_RECEIVER_EMAIL: str = "[EMAIL_ADDRESS]"
+    SENDER_EMAIL: Optional[str] = "[EMAIL_ADDRESS]"
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )

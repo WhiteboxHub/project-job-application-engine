@@ -5,10 +5,12 @@ Uses raw DuckDB queries (no SQLAlchemy ORM session needed).
 """
 
 import json
+from datetime import datetime
 
 from core.browser import browser_service
 from core.candidate_loader import CandidateLoader
 from core.logger import logger
+from core.execution_logger import execution_tracker
 from data.csv_tracker import tracker as csv_tracker
 from data.db_connection import db
 from engine.factory import strategy_factory
@@ -60,6 +62,8 @@ class EngineRunner:
         logger.info("=" * 60)
         logger.info("Starting Job Application Engine...")
         logger.info("=" * 60)
+
+        started_at = datetime.utcnow().isoformat()
 
         try:
             # 1. Start Browser
@@ -130,6 +134,8 @@ class EngineRunner:
             # 3. Load candidate data (from JSON if not passed directly)
             if not candidate_data:
                 candidate_data = CandidateLoader.load()
+                
+            execution_tracker.initialize(run_parameters=candidate_data)
 
             # 4. Process each site
             for site in active_sites:
@@ -158,6 +164,17 @@ class EngineRunner:
                 )
                 logger.info(f"Dry run mode: {stats['dry_run_mode']}")
                 logger.info("=" * 60)
+
+                # Generate output.json and dispatch email
+                try:
+                    output_path = execution_tracker.generate_report("data/output.json")
+                    logger.info(f"Saved run report to {output_path}")
+                    
+                    from core.email_reporter import email_reporter
+                    email_reporter.send_report(output_path)
+                except Exception as out_err:
+                    logger.error(f"Failed to generate output.json or send email report: {out_err}")
+
             except Exception as re:
                 logger.debug(f"Could not print final report: {re}")
 
@@ -234,6 +251,7 @@ class EngineRunner:
             logger.info("Discovering jobs...")
             jobs = strategy.find_jobs()
             logger.info(f"Found {len(jobs)} job(s)")
+            execution_tracker.add_jobs_found(len(jobs))
 
             if jobs:
                 # Save discovered jobs to tracker
@@ -283,11 +301,31 @@ class EngineRunner:
                             # we count it. If the strategy itself handles the quota, even better.
                             guards.increment_counter()
                             applied_count += 1
+                            execution_tracker.record_success(
+                                site.company_name, 
+                                job.get("external_id", job.get("job_url", "")), 
+                                job_title, 
+                                job_url
+                            )
                             logger.info(f"Application #{applied_count} successful")
                         else:
+                            execution_tracker.record_error(
+                                site.company_name, 
+                                job.get("external_id", job.get("job_url", "")), 
+                                job_title, 
+                                job_url, 
+                                "Application logic returned False"
+                            )
                             logger.warning("Application failed")
                     except Exception as e:
                         logger.error(f"[ERROR] Error applying to job: {e}")
+                        execution_tracker.record_error(
+                            site.company_name, 
+                            job.get("external_id", job.get("job_url", "")), 
+                            job.get("job_title", "Unknown"), 
+                            job.get("job_url", ""), 
+                            str(e)
+                        )
                         if any(
                             msg in str(e).lower()
                             for msg in [

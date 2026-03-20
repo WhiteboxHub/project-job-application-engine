@@ -152,6 +152,9 @@ class KForceStrategy(BaseStrategy):
         logger.info(
             f"\n[OK] Phase 1 complete. Found {len(all_listings)} unique jobs total."
         )
+        
+        from core.execution_logger import execution_tracker
+        execution_tracker.add_jobs_found(len(all_listings))
 
         # ── PHASE 2: Apply to each job ─────────────────────────────────────
         logger.info("\n" + "=" * 60)
@@ -677,6 +680,21 @@ class KForceStrategy(BaseStrategy):
 
     def _record_application(self, listing, job_url, job_title, status, error=None):
         """Record application in DB and CSV"""
+        from core.execution_logger import execution_tracker
+        
+        # safely extract external_id
+        if isinstance(listing, dict):
+            external_id = listing.get("external_id", "unknown")
+        elif listing:
+            external_id = getattr(listing, "external_job_id", "unknown")
+        else:
+            external_id = "unknown"
+            
+        if status == "success":
+            execution_tracker.record_success("KForce", str(external_id), str(job_title), str(job_url))
+        else:
+            execution_tracker.record_error("KForce", str(external_id), str(job_title), str(job_url), str(error))
+
         # CSV Update
         csv_tracker.update_job_status(
             "kforce",

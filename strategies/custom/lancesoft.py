@@ -499,6 +499,9 @@ class LanceSoftStrategy(BaseStrategy):
             jobs_on_page = self._extract_job_listings(container_selector)
             all_jobs.extend(jobs_on_page)
             logger.info(f"    Found {len(jobs_on_page)} jobs on page {page_num}")
+            
+            from core.execution_logger import execution_tracker
+            execution_tracker.add_jobs_found(len(jobs_on_page))
 
             # Try to find and click Next Page button
             try:
@@ -810,6 +813,9 @@ class LanceSoftStrategy(BaseStrategy):
                         continue
 
                 logger.info(f"    Found {len(job_ids_on_page)} jobs on page {page_num}")
+                
+                from core.execution_logger import execution_tracker
+                execution_tracker.add_jobs_found(len(job_ids_on_page))
 
                 # 2. Iterate through IDs and apply (re-finding element each time)
                 items_processed = 0
@@ -1662,6 +1668,23 @@ class LanceSoftStrategy(BaseStrategy):
             logger.info("=" * 60)
             logger.info("[OK] APPLICATION SUBMITTED SUCCESSFULLY!")
             logger.info("=" * 60)
+            
+            from core.execution_logger import execution_tracker
+            
+            # safely extract external_id
+            if isinstance(listing, dict):
+                external_id = listing.get("external_id", "Unknown")
+            elif listing:
+                external_id = getattr(listing, "external_job_id", "Unknown")
+            else:
+                external_id = "Unknown"
+                
+            execution_tracker.record_success(
+                job_site="LanceSoft",
+                job_id=str(external_id),
+                job_title=str(job_title),
+                job_url=str(job_url)
+            )
 
             # Update tracking
             csv_tracker.update_job_status(
@@ -1784,6 +1807,14 @@ class LanceSoftStrategy(BaseStrategy):
 
             # Success!
             logger.info(f"      [OK] Successfully applied")
+            
+            from core.execution_logger import execution_tracker
+            execution_tracker.record_success(
+                job_site="LanceSoft",
+                job_id=str(job_data.get("external_id", "Unknown")),
+                job_title=str(job_title),
+                job_url=str(job_data.get("job_url", "Unknown URL"))
+            )
 
             # Update tracking
             csv_tracker.update_job_status(
@@ -1812,6 +1843,15 @@ class LanceSoftStrategy(BaseStrategy):
             import traceback
 
             logger.debug(traceback.format_exc())
+            
+            from core.execution_logger import execution_tracker
+            execution_tracker.record_error(
+                job_site="LanceSoft",
+                job_id=str(job_data.get("external_id", "Unknown")) if isinstance(job_data, dict) else "Unknown",
+                job_title=str(job_title) if 'job_title' in locals() else "Unknown",
+                job_url=str(job_data.get("job_url", "Unknown URL")) if isinstance(job_data, dict) else "Unknown",
+                error_reason=f"LanceSoft single-phase error: {str(e)}"
+            )
 
             # Update tracking
             csv_tracker.update_job_status(

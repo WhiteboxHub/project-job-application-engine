@@ -1,0 +1,146 @@
+{
+    "workflow_id": null,
+    "schedule_id": null,
+    "run_id": "RUN-20260320-2125",
+    "candidate_name": "Ramani Moganti",
+    "status": "failed",
+    "execution_summary": {
+        "total_jobs_found": 20,
+        "total_applications_attempted": 16,
+        "total_applications_successful": 0,
+        "total_applications_failed": 16
+    },
+    "successful_applications": [],
+    "failed_applications": [
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:27:45.909369+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:28:58.738809+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:30:12.797445+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:31:41.773878+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:33:10.660563+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:34:23.735592+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:35:39.878396+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:36:54.840228+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:38:08.517491+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:39:22.371193+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:40:36.073297+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:42:58.462290+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:45:23.315861+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:47:46.301993+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:49:49.701717+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "Unknown",
+            "job_title": "Unknown",
+            "job_url": "Unknown",
+            "error_reason": "LanceSoft single-phase error: name 'job_id' is not defined",
+            "failed_at": "2026-03-20T21:51:31.335457+00:00"
+        }
+    ],
+    "started_at": "2026-03-20T21:25:44.876566+00:00",
+    "finished_at": "2026-03-20T21:52:05.835112+00:00"
+}
