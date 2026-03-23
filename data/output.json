@@ -3,7 +3,7 @@
     "schedule_id": null,
     "run_id": "RUN-8f9f4101-7499-4a5d-a75c-74f13345407d",
     "candidate_name": "Vasanthi Nettem",
-    "status": "completed_with_errors",
+    "status": "failed",
     "execution_summary": {
         "total_jobs_found": 40,
         "total_applications_attempted": 5,

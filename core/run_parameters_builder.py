@@ -121,15 +121,14 @@ class RunParametersBuilder:
         api_keywords = candidate_data.get("keywords", [])
         if not api_keywords:
             api_keywords = [
-                "AI Data Scientist",
-                "MLOps Engineer",
-                "Data Scientist (AI)",
-                "AI Engineer",
-                "Machine Learning Engineer",
-                "Generative AI Engineer",
-                "LLM Engineer",
+                "Data Scientist",
+                "Machine Learning",
                 "AI",
-                "PYTHON"
+                "PYTHON",
+                "Generative AI",
+                "LLM",
+                "MLOps",
+                "AI Engineer"
             ]
 
         # 4. Construct the clean, minimal JSON
