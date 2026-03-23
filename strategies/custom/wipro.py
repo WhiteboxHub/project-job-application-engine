@@ -145,7 +145,22 @@ class WiproStrategy(BaseStrategy):
 
         # Get search parameters
         search = self.config_data.get("search", {})
-        keyword = search.get("keyword", "AI Engineer")
+        
+        # STRICTION: Use ONLY keywords from run_parameters (Whitebox API)
+        keywords_list = search.get("keywords", [])
+        keyword = search.get("keyword")
+        
+        # Use first array item if plural 'keywords' is provided but singular isn't
+        if keywords_list and not keyword:
+            keyword = keywords_list[0]
+            
+        if not keyword:
+            logger.error(
+                "[ERROR] Wipro: No search keywords found in candidate data! "
+                "Ensure Whitebox API is sending keywords."
+            )
+            return []
+            
         location = search.get("location", "")
 
         logger.info(f"\n{'=' * 60}")

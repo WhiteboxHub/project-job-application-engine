@@ -119,15 +119,18 @@ class KForceStrategy(BaseStrategy):
         """
         logger.info("[SEARCH] KForce: Starting two-phase find-and-apply workflow")
 
-        # Keywords come from the database (init_db.py seeds them)
-        keywords = self.selectors.get("listing", {}).get("search_keywords")
+        # STRICTION: Use ONLY keywords from run_parameters (Whitebox API)
+        _search = self.config_data.get("search", {})
+        keywords = _search.get("keywords")
+        
         if not keywords:
             logger.error(
-                "[ERROR] KForce: No 'search_keywords' found in database! Run init_db.py."
+                "[ERROR] KForce: No keywords found in run_parameters (search.keywords)! "
+                "Ensure Whitebox API is sending keywords."
             )
             return 0
 
-        logger.info(f"  [STATS] Using {len(keywords)} keyword(s) from database")
+        logger.info(f"  [STATS] Using {len(keywords)} keyword(s): {keywords}")
 
         # ── PHASE 1: Collect all jobs ──────────────────────────────────────
         logger.info("\n" + "=" * 60)
@@ -235,9 +238,13 @@ class KForceStrategy(BaseStrategy):
     def _perform_search(self, keyword, location=None):
         """Internal method for a single search iteration  uses multi-fallback selectors."""
 
-        # Database-provided selectors with fallbacks (make optional to avoid crash)
+        # Database-provided selectors — 'search_button' is the correct DB key
         db_input = self.get_sel("listing", "search_input", required=False)
-        db_button = self.get_sel("listing", "search_btn", required=False)
+        # DB key is 'search_button', fallback to the known XPath from the site
+        db_button = (
+            self.get_sel("listing", "search_button", required=False)
+            or "//*[@id='site-content']/div/section/div[2]/div/div/div[2]/form/div/div[3]/div/input"
+        )
 
         INPUT_SELECTORS = [db_input] if db_input else [
             "input[id*='keyword' i]",
@@ -391,18 +398,47 @@ class KForceStrategy(BaseStrategy):
             return False
 
         # Build a unified applicant dict:
-        # Priority 1: top-level fields from run_parameters (set by backend/CandidateLoader)
-        # Priority 2: the flat 'applicant' sub-dict (from guest_form_data.json)
+        # Priority 1: top-level fields from run_parameters
+        # Priority 2: flat 'applicant' sub-dict
+        # Priority 3: applicant.address (where state/zip live in run_parameters)
         _applicant_raw = self.config_data.get("applicant", {})
+        _address = _applicant_raw.get("address", {})
         applicant = {
-            "first_name":  self.config_data.get("first_name")  or _applicant_raw.get("first_name"),
-            "last_name":   self.config_data.get("last_name")   or _applicant_raw.get("last_name"),
-            "email":       self.config_data.get("email")       or _applicant_raw.get("email"),
-            "phone":       self.config_data.get("phone")       or _applicant_raw.get("phone"),
-            # Backend puts state and zip_code at the top level of the JSON
-            "zip_code":    self.config_data.get("zip_code")    or _applicant_raw.get("zip_code"),
-            "state":       self.config_data.get("state")       or _applicant_raw.get("state"),
-            "country":     self.config_data.get("country")     or _applicant_raw.get("country", "United States"),
+            "first_name": (
+                self.config_data.get("first_name")
+                or _applicant_raw.get("first_name")
+            ),
+            "last_name": (
+                self.config_data.get("last_name")
+                or _applicant_raw.get("last_name")
+            ),
+            "email": (
+                self.config_data.get("email")
+                or _applicant_raw.get("email")
+            ),
+            "phone": (
+                self.config_data.get("phone")
+                or _applicant_raw.get("phone")
+            ),
+            # state lives inside applicant.address in run_parameters
+            "state": (
+                self.config_data.get("state")
+                or _applicant_raw.get("state")
+                or _address.get("state")
+            ),
+            # zip_code lives inside applicant.address in run_parameters
+            # Fallback to "75034" (Frisco, TX) when backend sends null
+            "zip_code": (
+                self.config_data.get("zip_code")
+                or _applicant_raw.get("zip_code")
+                or _address.get("zip_code")
+                or "75034"
+            ),
+            "country": (
+                self.config_data.get("country")
+                or _applicant_raw.get("country")
+                or _address.get("country", "United States")
+            ),
         }
         apply_initiator = self.get_sel("application", "apply_initiator")
 

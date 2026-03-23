@@ -66,11 +66,6 @@ class EngineRunner:
         started_at = datetime.utcnow().isoformat()
 
         try:
-            # 1. Start Browser
-            logger.info("Initializing browser...")
-            self.browser = browser_service.start_browser()
-            logger.info("Browser started successfully")
-
             # 2. Get Active Sites from DuckDB
             conn = db.get_connection()
 
@@ -178,21 +173,6 @@ class EngineRunner:
             except Exception as re:
                 logger.debug(f"Could not print final report: {re}")
 
-            if self.browser:
-                try:
-                    from config.settings import settings
-
-                    if getattr(settings, "KEEP_BROWSER_OPEN", False):
-                        logger.info(
-                            "\nKEEP_BROWSER_OPEN is True - leaving browser open for inspection"
-                        )
-                    else:
-                        logger.info("\nStopping browser...")
-                        browser_service.stop_browser()
-                        logger.info("Browser closed")
-                except Exception:
-                    browser_service.stop_browser()
-
             # Close DuckDB connection so WAL is flushed to disk
             try:
                 db.get_connection().close()
@@ -214,6 +194,10 @@ class EngineRunner:
         logger.info("-" * 60)
 
         try:
+            # Start fresh browser for THIS site specifically
+            logger.info("Initializing fresh browser session for site...")
+            self.browser = browser_service.start_browser()
+            
             # Load selectors from DuckDB
             selectors = self._load_selectors(conn, site)
 
@@ -356,6 +340,23 @@ class EngineRunner:
             import traceback
 
             traceback.print_exc()
+
+        finally:
+            if self.browser:
+                try:
+                    from config.settings import settings
+
+                    if getattr(settings, "KEEP_BROWSER_OPEN", False):
+                        logger.info(
+                            "\nKEEP_BROWSER_OPEN is True - leaving browser open for inspection"
+                        )
+                    else:
+                        logger.info("\nStopping browser for site cleanup...")
+                        browser_service.stop_browser()
+                        logger.info("Browser closed")
+                except Exception:
+                    browser_service.stop_browser()
+                self.browser = None
 
     def _load_selectors(self, conn, site: _SiteRow) -> dict:
         """

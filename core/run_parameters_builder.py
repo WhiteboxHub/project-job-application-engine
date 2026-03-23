@@ -33,14 +33,45 @@ class RunParametersBuilder:
             elif name_parts:
                 first_name = name_parts[0].title()
 
-        # Parse realistic city/state strings if provided in Address manually
+        # US state abbreviation → full name lookup
+        _STATE_MAP = {
+            "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+            "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+            "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
+            "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+            "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+            "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+            "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+            "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+            "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+            "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+            "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+            "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+            "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia",
+        }
+
+        # Parse city/state from address string like "5325 Hazeltine Lane, Dublin, CA-94568"
         city = "San Ramon"
         state = "California"
         if db_address and "," in db_address:
             address_parts = [p.strip() for p in db_address.split(",")]
-            city = address_parts[0]
-            if len(address_parts) > 1:
-                state = address_parts[1]
+            # Second part is typically the city
+            if len(address_parts) >= 2:
+                city = address_parts[1].strip()
+            # Last part may be "CA-94568" or "CA 94568" or just "CA"
+            if len(address_parts) >= 3:
+                last_seg = address_parts[-1].strip()
+                # Extract the 2-letter state code before any digit/dash
+                import re as _re
+                m = _re.match(r"([A-Za-z]{2})", last_seg)
+                if m:
+                    abbr = m.group(1).upper()
+                    state = _STATE_MAP.get(abbr, abbr)
+                    # Also try to extract zip from the same segment if not provided
+                    if not db_zip_code:
+                        zm = _re.search(r"(\d{5})", last_seg)
+                        if zm:
+                            db_zip_code = zm.group(1)
 
         # 2. Re-Implemented: Download (but do NOT parse) the Resume so the WebDriver can upload it
         local_resume_path = ""
@@ -51,11 +82,26 @@ class RunParametersBuilder:
             except Exception as e:
                 logger.error(f"Failed to download physical resume for upload: {e}")
 
-        # 3. Construct the clean, minimal JSON
+        # 3. Extract keywords from Whitebox API or use new AI/GenAI defaults
+        api_keywords = candidate_data.get("keywords", [])
+        if not api_keywords:
+            api_keywords = [
+                "AI Data Scientist",
+                "MLOps Engineer",
+                "Data Scientist (AI)",
+                "AI Engineer",
+                "Machine Learning Engineer",
+                "Generative AI Engineer",
+                "LLM Engineer",
+                "AI",
+                "PYTHON"
+            ]
+
+        # 4. Construct the clean, minimal JSON
         run_parameters = {
             "search": {
                 "distance": "0",
-                "keywords": ["AI", "Python"],
+                "keywords": api_keywords,
                 "location": "United States"
             },
             "applicant": {

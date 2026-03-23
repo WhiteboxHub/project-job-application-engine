@@ -164,19 +164,15 @@ class LanceSoftStrategy(BaseStrategy):
             location = search_config.get("location", "USA")
             distance = search_config.get("distance", "50")
 
-            # Priority 1: keywords from backend candidate_data
+            # STRICTION: Use ONLY keywords from run_parameters (Whitebox API)
             keywords = search_config.get("keywords", [])
             if not keywords:
                 keywords = [kw for kw in [search_config.get("keyword")] if kw]
 
-            # Priority 2: keywords from DB (site_selectors listing config)
-            if not keywords:
-                keywords = self.selectors.get("listing", {}).get("search_keywords", [])
-
             if not keywords:
                 logger.error(
-                    "[ERROR] LanceSoft: No search keywords found in candidate data "
-                    "or DB! Run init_db.py to seed search_keywords."
+                    "[ERROR] LanceSoft: No search keywords found in candidate data! "
+                    "Ensure Whitebox API is sending keywords."
                 )
                 return 0
 
@@ -234,19 +230,15 @@ class LanceSoftStrategy(BaseStrategy):
             location = search_config.get("location", "Chicago, IL")
             distance = search_config.get("distance", "50")
 
-            # Priority 1: keywords from backend candidate_data
+            # STRICTION: Use ONLY keywords from run_parameters (Whitebox API)
             keywords = search_config.get("keywords", [])
             if not keywords:
                 keywords = [kw for kw in [search_config.get("keyword")] if kw]
 
-            # Priority 2: keywords from DB (site_selectors listing config)
-            if not keywords:
-                keywords = self.selectors.get("listing", {}).get("search_keywords", [])
-
             if not keywords:
                 logger.error(
-                    "[ERROR] LanceSoft: No search keywords found in candidate data "
-                    "or DB! Run init_db.py to seed search_keywords."
+                    "[ERROR] LanceSoft: No search keywords found in candidate data! "
+                    "Ensure Whitebox API is sending keywords."
                 )
                 return []
 

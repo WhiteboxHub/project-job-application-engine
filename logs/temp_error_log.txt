@@ -1,0 +1,92 @@
+﻿	undetected_chromedriver!GetHandleVerifier [0xf27c13+10dd3]
+	undetected_chromedriver!GetHandleVerifier [0xf27d44+10f04]
+	undetected_chromedriver!(No symbol) [0xd01d8e]
+	undetected_chromedriver!(No symbol) [0xd3f2b5]
+	undetected_chromedriver!(No symbol) [0xd6d7c6]
+	undetected_chromedriver!(No symbol) [0xd68c41]
+	undetected_chromedriver!(No symbol) [0xd68262]
+	undetected_chromedriver!(No symbol) [0xcd517e]
+	undetected_chromedriver!(No symbol) [0xcd571e]
+	undetected_chromedriver!(No symbol) [0xcd5bfd]
+	undetected_chromedriver!GetHandleVerifier [0x1184509+26d6c9]
+	undetected_chromedriver!GetHandleVerifier [0x117fb43+268d03]
+	undetected_chromedriver!GetHandleVerifier [0x119d85b+286a1b]
+	undetected_chromedriver!GetHandleVerifier [0xf41668+2a828]
+	undetected_chromedriver!GetHandleVerifier [0xf497fd+329bd]
+	undetected_chromedriver!(No symbol) [0xcd4ee9]
+	undetected_chromedriver!(No symbol) [0xcd4530]
+	undetected_chromedriver!GetHandleVerifier [0x12cdc9f+3b6e5f]
+	KERNEL32!BaseThreadInitThunk [0x76745d49+19]
+	ntdll!RtlInitializeExceptionChain [0x776fd81b+6b]
+	ntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]
+
+2026-03-23 09:02:04,121 - job_engine - INFO -     [YES] No more pages
+2026-03-23 09:02:04,121 - job_engine - INFO - 
+  [STATS] Search complete: Applied to 8 jobs
+2026-03-23 09:02:07,845 - job_engine - INFO - 
+[OK] Workflow complete: 75 applications submitted
+2026-03-23 09:02:07,847 - job_engine - INFO - Completed LanceSoft: 75 applications submitted
+2026-03-23 09:02:07,847 - job_engine - INFO - 
+------------------------------------------------------------
+2026-03-23 09:02:07,847 - job_engine - INFO - Processing: KForce
+2026-03-23 09:02:07,847 - job_engine - INFO - ------------------------------------------------------------
+2026-03-23 09:02:07,851 - job_engine - INFO - Loaded 2 selector configuration(s)
+2026-03-23 09:02:07,851 - job_engine - INFO - Strategy: strategies.custom.KForceStrategy
+2026-03-23 09:02:07,853 - job_engine - INFO - Loaded strategy: KForceStrategy from strategies.custom
+2026-03-23 09:02:07,853 - job_engine - INFO - Using dynamically injected candidate_data
+2026-03-23 09:02:07,853 - job_engine - WARNING - [WARNING] KForce: No database session - strategy may fail if selectors not pre-loaded
+2026-03-23 09:02:07,853 - job_engine - INFO - Attempting login...
+2026-03-23 09:02:07,853 - job_engine - INFO - KForce: Checking login requirements...
+2026-03-23 09:02:07,853 - job_engine - INFO - Login successful (or not required)
+2026-03-23 09:02:07,853 - job_engine - INFO - Discovering jobs...
+2026-03-23 09:02:07,853 - job_engine - INFO - KForce: Starting job discovery phase...
+2026-03-23 09:02:07,853 - job_engine - INFO - 
+============================================================
+2026-03-23 09:02:07,853 - job_engine - INFO - [SEARCH] KForce Search: AI Engineer (Location: None)
+2026-03-23 09:02:07,854 - job_engine - INFO - ============================================================
+2026-03-23 09:02:07,855 - job_engine - ERROR - KForce: Error during search for AI Engineer: Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception
+Stacktrace:
+	undetected_chromedriver!GetHandleVerifier [0xf27c13+10dd3]
+	undetected_chromedriver!GetHandleVerifier [0xf27d44+10f04]
+	undetected_chromedriver!(No symbol) [0xd01d8e]
+	undetected_chromedriver!(No symbol) [0xd3f2b5]
+	undetected_chromedriver!(No symbol) [0xd6d7c6]
+	undetected_chromedriver!(No symbol) [0xd68c41]
+	undetected_chromedriver!(No symbol) [0xd68262]
+	undetected_chromedriver!(No symbol) [0xcd517e]
+	undetected_chromedriver!(No symbol) [0xcd571e]
+	undetected_chromedriver!(No symbol) [0xcd5bfd]
+	undetected_chromedriver!GetHandleVerifier [0x1184509+26d6c9]
+	undetected_chromedriver!GetHandleVerifier [0x117fb43+268d03]
+	undetected_chromedriver!GetHandleVerifier [0x119d85b+286a1b]
+	undetected_chromedriver!GetHandleVerifier [0xf41668+2a828]
+	undetected_chromedriver!GetHandleVerifier [0xf497fd+329bd]
+	undetected_chromedriver!(No symbol) [0xcd4ee9]
+	undetected_chromedriver!(No symbol) [0xcd4530]
+	undetected_chromedriver!GetHandleVerifier [0x12cdc9f+3b6e5f]
+	KERNEL32!BaseThreadInitThunk [0x76745d49+19]
+	ntdll!RtlInitializeExceptionChain [0x776fd81b+6b]
+	ntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]
+
+2026-03-23 09:02:07,855 - job_engine - INFO - KForce: Added 0 unique jobs from this search
+2026-03-23 09:02:07,855 - job_engine - INFO - KForce: Finished discovery. Total unique jobs to process: 0
+2026-03-23 09:02:07,855 - job_engine - INFO - Found 0 job(s)
+2026-03-23 09:02:07,855 - job_engine - INFO - [INFO] No jobs found to apply to
+2026-03-23 09:02:07,855 - job_engine - INFO - 
+============================================================
+2026-03-23 09:02:07,855 - job_engine - INFO - ENGINE RUN SUMMARY
+2026-03-23 09:02:07,855 - job_engine - INFO - ============================================================
+2026-03-23 09:02:07,855 - job_engine - INFO - Applications submitted: 75/9999
+2026-03-23 09:02:07,855 - job_engine - INFO - Dry run mode: False
+2026-03-23 09:02:07,855 - job_engine - INFO - ============================================================
+2026-03-23 09:02:07,861 - job_engine - INFO - Saved run report to data/output.json
+2026-03-23 09:02:07,899 - job_engine - INFO - [EMAIL] Attached output.json to the email.
+2026-03-23 09:02:07,899 - job_engine - INFO - [EMAIL] connecting to smtp.gmail.com:587 to send report...
+2026-03-23 09:02:10,762 - job_engine - INFO - [EMAIL] Successfully sent report to sairam818595@gmail.com,mahendarbathini34@gmail.com,sampath.velupula@gmail.com
+2026-03-23 09:02:10,762 - job_engine - INFO - 
+Stopping browser...
+2026-03-23 09:02:10,764 - job_engine - INFO - Browser closed
+2026-03-23 09:02:10,777 - job_engine - INFO - DuckDB connection closed cleanly
+============================================================ 
+ JOB ENGINE END: 23-03-2026  9:02:11.76  ExitCode=0 
+============================================================ 
