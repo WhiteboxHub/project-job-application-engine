@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 
@@ -63,11 +64,34 @@ def main():
         if candidate_id:
             backend_client.update_run_parameters(candidate_id, run_parameters)
 
+        # 3b. Create a "running" execution log row for workflow log grid (if metadata exists)
+        backend_client.create_workflow_log(run_parameters)
+
         # 4. Execute Engine using the pristine, fully-built JSON payload
         runner = EngineRunner()
         runner.run(site_filter=args.site, candidate_data=run_parameters)
 
+        # 5. Push final output.json metadata to workflow logs for UI visibility
+        output_path = os.path.join("data", "output.json")
+        report_payload = {}
+        if os.path.exists(output_path):
+            try:
+                with open(output_path, "r", encoding="utf-8") as f:
+                    report_payload = json.load(f)
+            except Exception as parse_err:
+                logger.warning(f"Could not parse output report for workflow log update: {parse_err}")
+
+        backend_client.update_workflow_log(run_parameters, report_payload)
+
     except Exception as e:
+        # Attempt to mark workflow execution log as failed when run_id is available.
+        try:
+            if "run_parameters" in locals():
+                backend_client.update_workflow_log(
+                    run_parameters, {}, error=str(e)
+                )
+        except Exception:
+            pass
         logger.critical(f"Fatal error: {e}")
         import traceback
 
