@@ -193,6 +193,13 @@ class EngineRunner:
                 except Exception:
                     browser_service.stop_browser()
 
+            # Close DuckDB connection so WAL is flushed to disk
+            try:
+                db.get_connection().close()
+                logger.info("DuckDB connection closed cleanly")
+            except Exception:
+                pass
+
     def _process_site(self, conn, site: _SiteRow, candidate_data=None):
         """
         Process a single job site.

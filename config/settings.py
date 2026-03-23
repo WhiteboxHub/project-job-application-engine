@@ -3,10 +3,13 @@ from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Absolute path to the project root (config/ -> ..)
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     # Database - DuckDB (file-based, no server needed)
-    DUCKDB_PATH: str = "data/job_engine.duckdb"
+    DUCKDB_PATH: str = str(_PROJECT_ROOT / "data" / "job_engine.duckdb")
     MOTHERDUCK_TOKEN: Optional[str] = None
 
     # Backend API

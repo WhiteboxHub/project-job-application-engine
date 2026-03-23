@@ -78,7 +78,7 @@ class RunParametersBuilder:
         
         # Inject the file path for the LanceSoft upload button!
         if local_resume_path:
-            run_parameters["resume"] = {"path": local_resume_path}
+            run_parameters["resume_path"] = local_resume_path
 
         logger.info(f"Successfully built clean run_parameters for {first_name} {last_name}")
         return run_parameters

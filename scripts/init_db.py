@@ -463,6 +463,103 @@ def init_db():
 
     logger.info("site_selectors seeded for KForce [OK]")
 
+    # -----------------------------------------------------------------------
+    # Cleanup: Remove stale rows that db/schema.sql may have inserted.
+    # schema.sql used IDs 1-4 for Insight Global and LanceSoft selectors,
+    # but init_db.py uses IDs 9-16. Having both causes duplicate/conflicting
+    # selector configs for the same job_site_id.
+    # -----------------------------------------------------------------------
+    for stale_id in [1, 2, 3, 4]:
+        conn.execute("DELETE FROM site_selectors WHERE id = ?", [stale_id])
+    logger.info("Stale schema.sql selector rows (IDs 1-4) removed [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for Wipro (job_site_id = 3)
+    # Wipro uses SAP SuccessFactors career portal at https://careers.wipro.com/
+    # Key names MUST match what wipro.py reads via self.selectors_config.get("key")
+    # -----------------------------------------------------------------------
+    wipro_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
+        "cookie_accept_button": "button#onetrust-accept-btn-handler, button.accept-cookies",
+        "expand_search_button": "//button[contains(@class,'searchOptions') or contains(text(),'More options')]",
+        "keyword_input": "//input[@placeholder='Keyword or Job ID' or @id[contains(.,'keyword')]]",
+        "location_input": "//input[@placeholder='Location' or @id[contains(.,'location')]]",
+        "search_button": "//button[contains(@class,'searchButton') or @data-automation-id='search-button' or contains(text(),'Search')]",
+        "next_page": "//a[@data-automation-id='pagination-next-link' and not(contains(@class,'disabled'))] | //a[contains(@title,'Next')][not(contains(@class,'disabled'))]",
+    }
+
+    wipro_application_selectors = {
+        "apply_button_dropdown": "//button[@id='applyNowDropdown'] | //button[contains(@class,'apply-dropdown') or contains(text(),'Apply')]",
+        "apply_button_menu_item": "//a[@data-automation='btn-Apply-Now'] | //a[contains(text(),'Apply Now')]",
+        "login_email_input": "//input[@id='username' or @name='username' or @type='email']",
+        "login_password_input": "//input[@id='password' or @name='password' or @type='password']",
+        "login_submit_button": "//button[@type='submit' or contains(text(),'Sign In') or contains(text(),'Log In')]",
+        "first_name_input": "//input[@id[contains(.,'firstName')] or @data-automation-id='formField-firstName']",
+        "last_name_input": "//input[@id[contains(.,'lastName')] or @data-automation-id='formField-lastName']",
+        "email_input": "//input[@id[contains(.,'email')] or @data-automation-id='formField-email']",
+        "phone_input": "//input[@id[contains(.,'phoneNumber')] or @data-automation-id='formField-phone']",
+        "preferred_name_input": "//input[@id[contains(.,'preferredName')] or @data-automation-id='formField-preferredName']",
+        "social_account_url_input": "//input[@id[contains(.,'socialAccount')] or @id[contains(.,'linkedin')]]",
+        "country_code_select": "//select[@id[contains(.,'countryCode')] or @data-automation-id='formField-countryCode']",
+        "gender_select": "//select[@id[contains(.,'gender')] or @data-automation-id='formField-gender']",
+        "disability_assistance_select": "//select[@id[contains(.,'disability')] or @data-automation-id='formField-disabilityAssistance']",
+        "disability_assistance_explain_input": "//input[@id[contains(.,'disabilityExplain')] or @data-automation-id='formField-disabilityExplain']",
+        "address_input": "//input[@id[contains(.,'address')] or @data-automation-id='formField-address']",
+        "city_input": "//input[@id[contains(.,'city')] or @data-automation-id='formField-city']",
+        "zip_input": "//input[@id[contains(.,'postalCode')] or @id[contains(.,'zipCode')]]",
+        "country_select": "//select[@id[contains(.,'country')] and not(@id[contains(.,'countryCode')])] | //select[@data-automation-id='formField-country']",
+        "state_select": "//select[@id[contains(.,'state')] or @data-automation-id='formField-state']",
+        "employee_id_input": "//input[@id[contains(.,'employeeId')] or @data-automation-id='formField-employeeId']",
+        "employed_before_select": "//select[@id[contains(.,'employedBefore')] or @data-automation-id='formField-employedBefore']",
+        "experience_section_trigger": "//div[contains(@class,'rcmFormSectionTopBar')][.//*[contains(text(),'Professional Experience')]]",
+        "job_title_input": "//input[@id[contains(.,'jobTitle')] or @data-automation-id='formField-jobTitle']",
+        "company_input": "//input[@id[contains(.,'company')] or @data-automation-id='formField-company']",
+        "start_date_input": "//ui5-date-picker-xweb-calendar-widget[@title='Start Date'][not(ancestor::*[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]])]",
+        "end_date_input": "//ui5-date-picker-xweb-calendar-widget[@title='End Date'][not(ancestor::*[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]])]",
+        "exp_country_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//select[@id[contains(.,'country')]]",
+        "exp_state_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//select[@id[contains(.,'state')]]",
+        "exp_city_input": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Professional Experience')]]//input[@id[contains(.,'city')]]",
+        "education_section_trigger": "//div[contains(@class,'rcmFormSectionTopBar')][.//*[contains(text(),'Education')]]",
+        "edu_type_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//select[@id[contains(.,'eduType')] or @id[contains(.,'educationType')]]",
+        "edu_degree_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//select[@id[contains(.,'degree')]]",
+        "edu_school_input": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//input[@id[contains(.,'school')] or @id[contains(.,'university')]]",
+        "edu_major_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//select[@id[contains(.,'major')]]",
+        "edu_start_date": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//ui5-date-picker-xweb-calendar-widget[@title='Start Date']",
+        "edu_end_date": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//ui5-date-picker-xweb-calendar-widget[@title='End Date']",
+        "edu_grad_date": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//ui5-date-picker-xweb-calendar-widget[@title='Year Of Passing']",
+        "edu_country_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//select[@id[contains(.,'country')]]",
+        "edu_state_select": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//select[@id[contains(.,'state')]]",
+        "edu_city_input": "//div[contains(@class,'rcmFormSection')][.//*[contains(text(),'Education')]]//input[@id[contains(.,'city')]]",
+        "auth_country_select": "//select[@id[contains(.,'authCountry')] or @data-automation-id='formField-authorizationCountry']",
+        "auth_work_country_select": "//select[@id[contains(.,'authWorkCountry')] or @data-automation-id='formField-authWorkCountry']",
+        "visa_status_select": "//select[@id[contains(.,'visaStatus')] or @data-automation-id='formField-visaStatus']",
+        "sponsorship_future_select": "//select[@id[contains(.,'sponsorship')] or @data-automation-id='formField-sponsorshipFuture']",
+        "citizenship_select": "//select[@id[contains(.,'citizenship')] or @data-automation-id='formField-citizenship']",
+        "govt_employed_select": "//select[@id[contains(.,'govtEmployed')] or @data-automation-id='formField-govtEmployed']",
+        "race_select": "//select[@id[contains(.,'race')] or @data-automation-id='formField-race']",
+        "veteran_select": "//select[@id[contains(.,'veteran')] or @data-automation-id='formField-veteran']",
+        "disability_select": "//select[@id[contains(.,'disability')] and not(@id[contains(.,'Assistance')])]",
+        "terms_checkbox": "//input[@type='checkbox'][@id[contains(.,'terms')] or @id[contains(.,'consent')]]",
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (15, 3, 'listing', ?)",
+        [_json.dumps(wipro_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (16, 3, 'application', ?)",
+        [_json.dumps(wipro_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 15",
+        [_json.dumps(wipro_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 16",
+        [_json.dumps(wipro_application_selectors)],
+    )
+    logger.info("site_selectors seeded for Wipro [OK]")
+
     # Indexes
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active)"

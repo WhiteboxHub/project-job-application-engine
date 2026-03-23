@@ -79,6 +79,10 @@ class BrowserService:
         if proxy_arg:
             options.add_argument(proxy_arg)
 
+        # Essential stability flags to prevent "DevToolsActivePort file doesn't exist" crashes in Task Scheduler
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
         if settings.HEADLESS:
             options.add_argument("--headless=new")
 
@@ -90,14 +94,14 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
-                # User is on version 145; explicitly set it to avoid v146 mismatch
-                # use_subprocess=False fixes 'blank chrome' / 'window not found' on some Windows setups
+                # User is on version 146; explicitly set it to avoid mismatch
+                # use_subprocess=True is required on Windows to prevent 'chrome not reachable'
                 self.driver = uc.Chrome(
-                    options=options, use_subprocess=False, version_main=145
+                    options=options, use_subprocess=True, version_main=146
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
                 logger.info(
-                    "Browser started successfully (undetected-chromedriver v145)."
+                    "Browser started successfully (undetected-chromedriver v146)."
                 )
             except Exception as e:
                 logger.warning(
@@ -111,15 +115,13 @@ class BrowserService:
                 from selenium.webdriver.chrome.service import Service as ChromeService
                 from webdriver_manager.chrome import ChromeDriverManager
 
-                # Force version 145 in fallback as well
-                driver_path = ChromeDriverManager(
-                    driver_version="145.0.7632.117"
-                ).install()
+                # Auto-detect driver version based on local Chrome installation
+                driver_path = ChromeDriverManager().install()
                 service = ChromeService(driver_path)
                 self.driver = webdriver.Chrome(service=service, options=options)
                 time.sleep(2)
                 logger.info(
-                    "Browser started successfully (webdriver-manager fallback v145)."
+                    "Browser started successfully (webdriver-manager fallback auto-detect)."
                 )
             except Exception as e2:
                 logger.error(f"Failed to start browser with fallback: {e2}")
