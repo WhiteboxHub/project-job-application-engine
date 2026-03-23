@@ -25,11 +25,13 @@ class KForceStrategy(BaseStrategy):
     - Human-like form filling
     - Guest application support
     """
+    use_single_phase = True
 
     def __init__(
         self, driver, job_site, selectors, db_session=None, candidate_data=None
     ):
         super().__init__(driver, job_site, selectors, db_session, candidate_data)
+        self.use_single_phase = True
         self.db_session = db_session
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=30)
@@ -141,8 +143,8 @@ class KForceStrategy(BaseStrategy):
         seen_urls = set()
 
         for keyword in keywords:
-            logger.info(f"\n[SEARCH] Keyword: '{keyword}'")
-            listings = self._perform_search(keyword)
+            logger.info(f"\n[SEARCH] Executing Portal Search: '{keyword}'")
+            listings = self._perform_search(keyword, all_keywords=keywords)
 
             new_count = 0
             for listing in listings:
@@ -157,10 +159,6 @@ class KForceStrategy(BaseStrategy):
             logger.info(
                 f"  [+] {new_count} new jobs added (total so far: {len(all_listings)})"
             )
-
-            # Human-like pause between searches
-            if len(keywords) > 1:
-                time.sleep(random.uniform(3, 6))
 
         logger.info(
             f"\n[OK] Phase 1 complete. Found {len(all_listings)} unique jobs total."
@@ -235,8 +233,8 @@ class KForceStrategy(BaseStrategy):
         )
         return all_listings
 
-    def _perform_search(self, keyword, location=None):
-        """Internal method for a single search iteration  uses multi-fallback selectors."""
+    def _perform_search(self, keyword, location=None, all_keywords=None):
+        """Internal method for a single optimized search iteration."""
 
         # Database-provided selectors — 'search_button' is the correct DB key
         db_input = self.get_sel("listing", "search_input", required=False)
@@ -336,30 +334,133 @@ class KForceStrategy(BaseStrategy):
                 except Exception:
                     time.sleep(3)
 
-            # Extract job links from results
+            # 1. Sort by Newest
+            try:
+                logger.info("  [INFO] Sorting by Newest")
+                sort_dropdown = None
+                dropdown_xpaths = [
+                    '//*[@id="react-select-12--value"]/div[1]',
+                    '//*[@id="react-select-12--value-item"]',
+                    '//*[@id="react-select-3--value"]/div[1]',
+                    '//*[@id="react-select-3--value-item"]'
+                ]
+                for xpath in dropdown_xpaths:
+                    try:
+                        sort_dropdown = WebDriverWait(self.driver, 2).until(
+                            EC.element_to_be_clickable((By.XPATH, xpath))
+                        )
+                        if sort_dropdown: break
+                    except:
+                        pass
+                
+                if sort_dropdown:
+                    self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", sort_dropdown)
+                    self.human.human_click(sort_dropdown)
+                    time.sleep(1)
+                    
+                    from selenium.webdriver.common.keys import Keys
+                    from selenium.webdriver.common.action_chains import ActionChains
+                    ac = ActionChains(self.driver)
+                    ac.send_keys(Keys.ARROW_DOWN).pause(0.5).send_keys(Keys.RETURN).perform()
+                    time.sleep(3)
+                    logger.info("  [YES] Selected Newest sort option")
+                else:
+                    logger.warning("  [WARNING] Could not find the Newest dropdown element on screen")
+            except Exception as e:
+                logger.warning(f"  [WARNING] Could not sort by Newest: {e}")
+
+            # 2. Extract listings using Load More
+            all_keywords_lower = [kw.lower() for kw in (all_keywords or [keyword])]
             listings = []
             seen_urls = set()
-            for sel in LINK_SELECTORS:
+            
+            logger.info("  [INFO] Starting 'Load More' pagination engine...")
+            import re
+            from datetime import datetime
+            
+            # The Load More loop
+            consecutive_failures = 0
+            while consecutive_failures < 3:
+                # Find the last job's date
                 try:
-                    links = self.driver.find_elements(By.CSS_SELECTOR, sel)
-                    for link in links:
-                        url = link.get_attribute("href") or ""
-                        title = link.text.strip()
-                        if not url or not title or url in seen_urls:
+                    last_date_el = self.driver.find_element(By.XPATH, '//*[@id="site-content"]/div/main/div/div/div/div[2]/ul/li[last()]/h2/span')
+                    job_date_str = last_date_el.text.strip()
+                    logger.info(f"    [DEBUG] Checking oldest loaded job date: '{job_date_str}'")
+                    
+                    match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", job_date_str)
+                    if match:
+                        job_date_parsed = datetime.strptime(match.group(1), "%m/%d/%Y")
+                        days_old = (datetime.now() - job_date_parsed).days
+                        
+                        if days_old > 7:
+                            logger.info(f"    [INFO] Reached jobs older than 7 days ({days_old}). Stopping engine.")
+                            break
+                    else:
+                        logger.warning(f"    [WARNING] Could not parse date format: '{job_date_str}'")
+                except Exception as e:
+                    logger.debug(f"    [DEBUG] bottom job date error/missing")
+                
+                # Click Load More
+                try:
+                    load_more_btn = self.driver.find_element(By.XPATH, '//*[@id="site-content"]/div/main/div/div/div/div[2]/div[1]/p[2]/span')
+                    if load_more_btn.is_displayed():
+                        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", load_more_btn)
+                        time.sleep(1)
+                        self.human.human_click(load_more_btn)
+                        logger.info("    [INFO] Clicked 'Load More' button")
+                        time.sleep(3) # Wait for new jobs to load
+                        consecutive_failures = 0
+                    else:
+                        logger.info("    [INFO] 'Load More' button is not visible. End of list.")
+                        break
+                except Exception as e:
+                    logger.info(f"    [INFO] 'Load More' button vanishing. End of list.")
+                    consecutive_failures += 1
+                    time.sleep(2)
+
+            # 3. Read ALL loaded job cards and filter them
+            logger.info("  [INFO] Extracting and filtering all loaded jobs...")
+            try:
+                job_cards = self.driver.find_elements(By.XPATH, '//*[@id="site-content"]/div/main/div/div/div/div[2]/ul/li')
+                logger.info(f"  [INFO] Found {len(job_cards)} total job cards on screen")
+                
+                for card in job_cards:
+                    try:
+                        title_el = card.find_element(By.CSS_SELECTOR, "h3 > a, a[class*='job-title' i], a[class*='title' i]")
+                    except:
+                        try:
+                            title_el = card.find_element(By.XPATH, ".//a")
+                        except:
                             continue
-                        if "kforce.com" not in url and not url.startswith("/"):
-                            continue
-                        seen_urls.add(url)
-                        external_id = url.rstrip("/").split("/")[-1] or "unknown"
-                        listings.append(
-                            {
-                                "job_title": title,
-                                "job_url": url,
-                                "external_id": external_id,
-                            }
-                        )
-                except Exception:
-                    continue
+                            
+                    title = title_el.text.strip()
+                    url = title_el.get_attribute("href") or ""
+                    
+                    if not title or not url or url in seen_urls:
+                        continue
+                        
+                    # Title filter check
+                    if any(kw.lower() in title.lower() for kw in all_keywords_lower):
+                        
+                        # Verify Date limit check on individual card
+                        days_old = 0
+                        try:
+                            date_el = card.find_element(By.XPATH, ".//h2/span")
+                            date_str = date_el.text.strip()
+                            match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", date_str)
+                            if match:
+                                job_date_parsed = datetime.strptime(match.group(1), "%m/%d/%Y")
+                                days_old = (datetime.now() - job_date_parsed).days
+                        except:
+                            pass
+                            
+                        if days_old <= 7:
+                            seen_urls.add(url)
+                            external_id = url.rstrip("/").split("/")[-1] or "unknown"
+                            listings.append({"job_title": title, "job_url": url, "external_id": external_id})
+                            
+            except Exception as e:
+                logger.error(f"  [ERROR] Failed to extract job cards: {e}")
 
             if listings:
                 logger.info(
