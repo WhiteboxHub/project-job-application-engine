@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 
 from core.browser import browser_service
+from core.backend_client import backend_client
 from core.candidate_loader import CandidateLoader
 from core.logger import logger
 from core.execution_logger import execution_tracker
@@ -41,13 +42,22 @@ class _PlatformRow:
         self.automation_level = automation_level or "manual"
 
 
+def _log_status_from_report(report_status: str) -> str:
+    """Map output.json status to automation_workflow_logs.status enum."""
+    if report_status == "success":
+        return "success"
+    if report_status == "completed_with_errors":
+        return "partial_success"
+    return "failed"
+
+
 class EngineRunner:
     """Main orchestrator for the job application engine"""
 
     def __init__(self):
         self.browser = None
 
-    def run(self, site_filter=None, candidate_data=None):
+    def run(self, site_filter=None, candidate_data=None, workflow_log_id=None):
         """
         Main execution workflow:
         1. Initialize Browser
@@ -66,6 +76,13 @@ class EngineRunner:
         started_at = datetime.utcnow().isoformat()
 
         try:
+            if not candidate_data:
+                candidate_data = CandidateLoader.load()
+
+            execution_tracker.initialize(
+                run_parameters=candidate_data, workflow_log_id=workflow_log_id
+            )
+
             # 2. Get Active Sites from DuckDB
             conn = db.get_connection()
 
@@ -126,13 +143,7 @@ class EngineRunner:
                     f"   - {site.company_name} ({site.domain}) [{site.platform.automation_level}]"
                 )
 
-            # 3. Load candidate data (from JSON if not passed directly)
-            if not candidate_data:
-                candidate_data = CandidateLoader.load()
-                
-            execution_tracker.initialize(run_parameters=candidate_data)
-
-            # 4. Process each site
+            # 3. Process each site (candidate_data / tracker already initialized)
             for site in active_sites:
                 if not guards.can_apply():
                     logger.warning("Application limit reached. Stopping.")
@@ -160,15 +171,71 @@ class EngineRunner:
                 logger.info(f"Dry run mode: {stats['dry_run_mode']}")
                 logger.info("=" * 60)
 
-                # Generate output.json and dispatch email
+                # Generate output.json, sync execution_metadata to backend (same contract as
+                # hiring-cafe-engine: PUT /api/orchestrator/logs/{id}), then email — isolated
+                # so SMTP failures cannot mask a successful metadata sync.
                 try:
-                    output_path = execution_tracker.generate_report("data/output.json")
+                    output_path, _ = execution_tracker.generate_report("data/output.json")
                     logger.info(f"Saved run report to {output_path}")
-                    
-                    from core.email_reporter import email_reporter
-                    email_reporter.send_report(output_path)
+
+                    # Same JSON as output.json — load from disk so execution_metadata matches the file byte-for-byte intent.
+                    with open(output_path, encoding="utf-8") as f:
+                        report_payload = json.load(f)
+
+                    _es = report_payload.get("execution_summary") or {}
+                    logger.info(
+                        "[RUN_SUMMARY] runner_completed: "
+                        f"attempted={_es.get('total_applications_attempted', 0)}, "
+                        f"successful={_es.get('total_applications_successful', 0)}, "
+                        f"failed={_es.get('total_applications_failed', 0)}"
+                    )
+
+                    lid = execution_tracker.workflow_log_id
+                    if lid:
+                        summary = report_payload.get("execution_summary") or {}
+                        ok = backend_client.update_workflow_log(
+                            lid,
+                            _log_status_from_report(report_payload.get("status", "failed")),
+                            records_processed=int(
+                                summary.get("total_applications_successful", 0)
+                            ),
+                            records_failed=int(summary.get("total_applications_failed", 0)),
+                            execution_metadata=report_payload,
+                        )
+                        if not ok:
+                            logger.error(
+                                f"[WORKFLOW_LOG] PUT failed for log id={lid}; check ERROR line above."
+                            )
+                        else:
+                            logger.info(
+                                f"[WORKFLOW_LOG] execution_metadata synced for log id={lid}"
+                            )
+                    else:
+                        logger.warning(
+                            "[WORKFLOW_LOG] No workflow_log_id on this run — automation_workflow_logs "
+                            "was not created at start (see main.py warnings) or create_log failed."
+                        )
+
+                    try:
+                        from core.email_reporter import email_reporter
+
+                        email_reporter.send_report(output_path)
+                    except Exception as email_err:
+                        logger.error(
+                            f"[EMAIL] Report email failed (run report and workflow log already saved): {email_err}"
+                        )
+
                 except Exception as out_err:
-                    logger.error(f"Failed to generate output.json or send email report: {out_err}")
+                    logger.error(
+                        f"Failed to generate output.json or sync workflow log: {out_err}"
+                    )
+                    lid = execution_tracker.workflow_log_id
+                    if lid:
+                        backend_client.update_workflow_log(
+                            lid,
+                            "failed",
+                            error_summary=str(out_err)[:255],
+                        )
 
             except Exception as re:
                 logger.debug(f"Could not print final report: {re}")

@@ -1,8 +1,9 @@
 {
-    "workflow_id": null,
+    "workflow_id": 7,
     "schedule_id": null,
-    "run_id": "RUN-20260324-1843",
-    "candidate_name": "Vasanthi Nettem",
+    "run_id": "508a2e9b-f5e6-4ac5-8866-00675696aa1f",
+    "candidate_id": 730,
+    "candidate_name": "Rajesh Kosuri",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -17,14 +18,15 @@
         "AI Engineer"
     ],
     "status": "success",
+    "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 8,
+        "total_jobs_found": 9,
         "total_applications_attempted": 0,
         "total_applications_successful": 0,
         "total_applications_failed": 0
     },
     "successful_applications": [],
     "failed_applications": [],
-    "started_at": "2026-03-24T18:43:23.830858+00:00",
-    "finished_at": "2026-03-24T18:48:48.631743+00:00"
+    "started_at": "2026-03-24T23:23:35.442899+00:00",
+    "finished_at": "2026-03-24T23:40:45.239066+00:00"
 }
