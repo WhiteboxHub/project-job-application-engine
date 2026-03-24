@@ -249,13 +249,10 @@ class LanceSoftStrategy(BaseStrategy):
 
         all_jobs = []
 
-        # Perform optimized SINGLE search using the primary keyword. 
-        # Since _extract_job_listings now checks every job against ALL keywords,
-        # we do not need to perform additional expensive web searches!
-        if search_configurations:
-            config = search_configurations[0]
+        # Perform physical searches for ALL keywords
+        for config in search_configurations:
             logger.info(f"\n{'=' * 60}")
-            logger.info(f"[SEARCH] Optimized Single Search: {config['keyword']} in {config['location']}")
+            logger.info(f"[SEARCH] Physical Search: {config['keyword']} in {config['location']}")
             logger.info(f"{'=' * 60}")
 
             # Collect all jobs from all pages for this search
