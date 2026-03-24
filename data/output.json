@@ -1,0 +1,30 @@
+{
+    "workflow_id": null,
+    "schedule_id": null,
+    "run_id": "RUN-20260324-1843",
+    "candidate_name": "Vasanthi Nettem",
+    "keywords_searched": [
+        "Generative AI",
+        "GenAI",
+        "LLM",
+        "Large Language Model",
+        "Machine Learning",
+        "Artificial Intelligence",
+        "Data Scientist",
+        "AI",
+        "PYTHON",
+        "MLOps",
+        "AI Engineer"
+    ],
+    "status": "success",
+    "execution_summary": {
+        "total_jobs_found": 8,
+        "total_applications_attempted": 0,
+        "total_applications_successful": 0,
+        "total_applications_failed": 0
+    },
+    "successful_applications": [],
+    "failed_applications": [],
+    "started_at": "2026-03-24T18:43:23.830858+00:00",
+    "finished_at": "2026-03-24T18:48:48.631743+00:00"
+}
