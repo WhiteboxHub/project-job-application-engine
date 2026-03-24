@@ -160,15 +160,29 @@ class EngineRunner:
                 logger.info(f"Dry run mode: {stats['dry_run_mode']}")
                 logger.info("=" * 60)
 
-                # Generate output.json and dispatch email
+                # Generate output.json, email report, and push same payload to workflow log (wbl-backend)
                 try:
-                    output_path = execution_tracker.generate_report("data/output.json")
-                    logger.info(f"Saved run report to {output_path}")
-                    
+                    report = execution_tracker.generate_report("data/output.json")
                     from core.email_reporter import email_reporter
-                    email_reporter.send_report(output_path)
+                    from core.run_report_logging import append_output_json_to_execution_log
+
+                    append_output_json_to_execution_log(report, source_file="data/output.json")
+                    email_reporter.send_report("data/output.json")
+
+                    try:
+                        from core.backend_client import backend_client
+
+                        backend_client.update_workflow_log(
+                            candidate_data or {}, report
+                        )
+                    except Exception as log_err:
+                        logger.warning(
+                            f"Workflow log update failed (API may be offline): {log_err}"
+                        )
                 except Exception as out_err:
-                    logger.error(f"Failed to generate output.json or send email report: {out_err}")
+                    logger.error(
+                        f"Failed to generate output.json or send email report: {out_err}"
+                    )
 
             except Exception as re:
                 logger.debug(f"Could not print final report: {re}")

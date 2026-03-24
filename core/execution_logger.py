@@ -114,10 +114,11 @@ class ExecutionTracker:
 
         # Save to file beautifully indented
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=4)
-        
-        return output_path
+
+        logger.info(f"Saved run report to {output_path}")
+        return report
 
 # Singleton instance exported for use everywhere
 execution_tracker = ExecutionTracker()

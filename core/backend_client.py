@@ -3,11 +3,54 @@ Backend Client - Communicates with wbl-backend to fetch weekly workflows.
 """
 
 from datetime import datetime, timezone
+from typing import Any
+
 import requests
 
 from config.settings import settings
 from core.logger import logger
 from core.wbl_api_auth import build_api_headers
+
+# Must match automation_workflows.workflow_key in WBL (e.g. workflow id 7:
+# "weekly_automation_application_engine") — same idea as hiring_cafe_job_extractor in Exec Metadata.
+JOB_APPLICATION_ENGINE_WORKFLOW_KEY = "weekly_automation_application_engine"
+
+
+def _merge_parameters_used(
+    run_parameters: dict | None, report: dict | None
+) -> dict[str, Any]:
+    """
+    Prefer non-null workflow identifiers from run_parameters so the UI log
+    matches the schedule row even when output.json echoed null ids from the tracker.
+    """
+    from_report = (report or {}).get("parameters_used") or {}
+    base = dict(from_report)
+    rp = run_parameters or {}
+    for key in ("workflow_id", "schedule_id", "run_id", "candidate_id"):
+        v = rp.get(key)
+        if v is not None:
+            base[key] = v
+    return base
+
+
+def build_job_application_execution_metadata(report: dict | None) -> dict[str, Any]:
+    """
+    Structured execution_metadata for automation_workflow_log, aligned with
+    hiring-cafe-engine (workflow key + summary fields + full output payload).
+    """
+    r = report or {}
+    ex = r.get("execution_summary") or {}
+    return {
+        "workflow": JOB_APPLICATION_ENGINE_WORKFLOW_KEY,
+        "timestamp": r.get("finished_at"),
+        "total_jobs_found": ex.get("total_jobs_found"),
+        "total_applications_successful": ex.get("total_applications_successful"),
+        "total_applications_failed": ex.get("total_applications_failed"),
+        "total_applications_attempted": ex.get("total_applications_attempted"),
+        "run_status": r.get("status"),
+        "candidate_name": r.get("candidate_name"),
+        "output_json": r,
+    }
 
 
 class BackendClient:
@@ -157,8 +200,8 @@ class BackendClient:
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "records_processed": records_processed,
             "records_failed": records_failed,
-            "parameters_used": (report or {}).get("parameters_used") or run_parameters or {},
-            "execution_metadata": report or {},
+            "parameters_used": _merge_parameters_used(run_parameters, report),
+            "execution_metadata": build_job_application_execution_metadata(report),
         }
         if error:
             payload["status"] = "failed"

@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     DUCKDB_PATH: str = str(_PROJECT_ROOT / "data" / "job_engine.duckdb")
     MOTHERDUCK_TOKEN: Optional[str] = None
 
-    # Backend API
-    BACKEND_URL: str = "http://localhost:8001"
+    # Backend API (include /api — routers are mounted under /api)
+    BACKEND_URL: str = "http://localhost:8001/api"
     TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
     INTERNAL_SECRET_KEY: Optional[str] = None
     # Auth for protected routes (e.g. /api/automation-workflow-log). Use one of:
@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     KEEP_BROWSER_OPEN: bool = False
     # How long to wait after clicking submit for navigation (seconds)
     SUBMIT_POST_CLICK_WAIT: int = 15
+
+    # After each run, append the full output.json payload to this file (UTF-8). Empty = disabled.
+    EXECUTION_LOG_FILE: str = str(_PROJECT_ROOT / "data" / "execution.log")
 
     # Multi-platform support (backward compatible)
     PLATFORM_FILTER: Optional[str] = (

@@ -1,96 +1,152 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-8f9f4101-7499-4a5d-a75c-74f13345407d",
+    "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
     "candidate_name": "Vasanthi Nettem",
     "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 40,
-        "total_applications_attempted": 5,
-        "total_applications_successful": 3,
-        "total_applications_failed": 2
+        "total_jobs_found": 33,
+        "total_applications_attempted": 12,
+        "total_applications_successful": 0,
+        "total_applications_failed": 12
     },
     "metrics_summary": {
-        "duration_seconds": 375.84,
-        "duration_readable": "0:06:15.836833",
-        "total_seen": 40,
-        "total_attempted": 5,
-        "total_successful": 3,
-        "total_failed": 2,
-        "total_skipped": 35,
-        "success_rate_percent": 60.0
+        "duration_seconds": 342.03,
+        "duration_readable": "0:05:42.033625",
+        "total_seen": 33,
+        "total_attempted": 12,
+        "total_successful": 0,
+        "total_failed": 12,
+        "total_skipped": 21,
+        "success_rate_percent": 0.0
     },
     "breakdown": {
-        "successful_by_site": {
-            "LanceSoft": 3
-        },
+        "successful_by_site": {},
         "failed_by_site": {
-            "LanceSoft": 2
+            "LanceSoft": 4,
+            "KForce": 8
         },
         "failure_reasons": {
-            "LanceSoft single-phase error: Resume upload input not found": 1,
-            "LanceSoft single-phase error: Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x7ecdf3+10b03]\n\tundetected_chromedriver!GetHandleVerifier [0x7ecf24+10c34]\n\tundetected_chromedriver!(No symbol) [0x5d2120]\n\tundetected_chromedriver!(No symbol) [0x61abca]\n\tundetected_chromedriver!(No symbol) [0x61ae6b]\n\tundetected_chromedriver!(No symbol) [0x65d0b2]\n\tundetected_chromedriver!(No symbol) [0x63db54]\n\tundetected_chromedriver!(No symbol) [0x65a9a5]\n\tundetected_chromedriver!(No symbol) [0x63d8a6]\n\tundetected_chromedriver!(No symbol) [0x610229]\n\tundetected_chromedriver!(No symbol) [0x610fe4]\n\tundetected_chromedriver!GetHandleVerifier [0xa548b9+2785c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa4feb5+273bc5]\n\tundetected_chromedriver!GetHandleVerifier [0xa6e06b+291d7b]\n\tundetected_chromedriver!GetHandleVerifier [0x805cc8+299d8]\n\tundetected_chromedriver!GetHandleVerifier [0x80d9fd+3170d]\n\tundetected_chromedriver!GetHandleVerifier [0x7f58c8+195d8]\n\tundetected_chromedriver!GetHandleVerifier [0x7f5a92+197a2]\n\tundetected_chromedriver!GetHandleVerifier [0x7dee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x76f55d49+19]\n\tntdll!RtlInitializeExceptionChain [0x77c2d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x77c2d7a1+231]\n": 1
+            "Application logic returned False": 8,
+            "Message: \n": 4
         },
         "retries_by_step": {}
     },
-    "successful_applications": [
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40892",
-            "job_title": "Senior Android Engineer",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "applied_at": "2026-03-23T21:53:58.409605+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40889",
-            "job_title": "Package Handler/ Mailroom Clerk",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "applied_at": "2026-03-23T21:55:12.545901+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40873",
-            "job_title": "Manager, Consumer Insights",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "applied_at": "2026-03-23T21:56:29.169416+00:00"
-        }
-    ],
+    "successful_applications": [],
     "failed_applications": [
         {
             "job_site": "LanceSoft",
             "job_id": "26-39917",
             "job_title": "Sr. Data Scientist",
             "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "error_reason": "LanceSoft single-phase error: Resume upload input not found",
-            "failed_at": "2026-03-23T21:51:41.603394+00:00"
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:40:44.880052+00:00"
         },
         {
             "job_site": "LanceSoft",
-            "job_id": "26-41036",
-            "job_title": "CAN - Supply Chain Engineer",
+            "job_id": "26-37948",
+            "job_title": "Dealer/Diagnostic Support - Supply Chain Data Analyst - Associate",
             "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "error_reason": "LanceSoft single-phase error: Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x7ecdf3+10b03]\n\tundetected_chromedriver!GetHandleVerifier [0x7ecf24+10c34]\n\tundetected_chromedriver!(No symbol) [0x5d2120]\n\tundetected_chromedriver!(No symbol) [0x61abca]\n\tundetected_chromedriver!(No symbol) [0x61ae6b]\n\tundetected_chromedriver!(No symbol) [0x65d0b2]\n\tundetected_chromedriver!(No symbol) [0x63db54]\n\tundetected_chromedriver!(No symbol) [0x65a9a5]\n\tundetected_chromedriver!(No symbol) [0x63d8a6]\n\tundetected_chromedriver!(No symbol) [0x610229]\n\tundetected_chromedriver!(No symbol) [0x610fe4]\n\tundetected_chromedriver!GetHandleVerifier [0xa548b9+2785c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa4feb5+273bc5]\n\tundetected_chromedriver!GetHandleVerifier [0xa6e06b+291d7b]\n\tundetected_chromedriver!GetHandleVerifier [0x805cc8+299d8]\n\tundetected_chromedriver!GetHandleVerifier [0x80d9fd+3170d]\n\tundetected_chromedriver!GetHandleVerifier [0x7f58c8+195d8]\n\tundetected_chromedriver!GetHandleVerifier [0x7f5a92+197a2]\n\tundetected_chromedriver!GetHandleVerifier [0x7dee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x76f55d49+19]\n\tntdll!RtlInitializeExceptionChain [0x77c2d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x77c2d7a1+231]\n",
-            "failed_at": "2026-03-23T21:52:45.692792+00:00"
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:01.951264+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-32879",
+            "job_title": "Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:19.097813+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-32279",
+            "job_title": "Medicaid Subject Matter Expert (SME)",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:35.223813+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:43:32.826426+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:43:32.842330+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:00.271312+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:00.288469+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:26.495475+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:26.506893+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:53.219097+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:53.231724+00:00"
         }
     ],
     "parameters_used": {
         "workflow_id": null,
         "schedule_id": null,
-        "run_id": "RUN-8f9f4101-7499-4a5d-a75c-74f13345407d",
+        "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
         "candidate_id": 557,
         "search": {
             "distance": "0",
             "keywords": [
-                "AI Data Scientist",
-                "MLOps Engineer",
-                "Data Scientist (AI)",
-                "AI Engineer",
-                "Machine Learning Engineer",
-                "Generative AI Engineer",
-                "LLM Engineer",
+                "Data Scientist",
+                "Machine Learning",
                 "AI",
-                "PYTHON"
+                "PYTHON",
+                "Generative AI",
+                "LLM",
+                "MLOps",
+                "AI Engineer"
             ],
             "location": "United States"
         },
@@ -112,6 +168,6 @@
         "resume_url": "https://drive.google.com/drive/folders/1Wib_JlhPDC81IbaXtlLvC-_r54mPUzTG?usp=sharing",
         "resume_path": "C:\\Users\\Innovapath\\Desktop\\job_engine\\project-job-application-engine\\resume\\downloads\\candidate_resume_downloaded.pdf"
     },
-    "started_at": "2026-03-23T21:50:19.999508+00:00",
-    "finished_at": "2026-03-23T21:56:35.836341+00:00"
+    "started_at": "2026-03-24T00:39:15.369684+00:00",
+    "finished_at": "2026-03-24T00:44:57.403309+00:00"
 }
