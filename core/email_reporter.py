@@ -5,6 +5,9 @@ from email.message import EmailMessage
 from config.settings import settings
 from core.logger import logger
 
+# SMTP / UI copy — matches project-job-application-engine (README: Job Application Engine)
+APPLICATION_NAME = "Job Application Engine"
+
 
 class EmailReporter:
     @staticmethod
@@ -24,16 +27,14 @@ class EmailReporter:
             logger.error(f"[EMAIL] Failed to open/parse {output_json_path}: {e}")
             return
 
-        # Prepare parameters summary
         display_name = data.get("candidate_name", "Unknown Candidate")
-        job_role = data.get("parameters_used", {}).get("search", {}).get("keywords", [""])[0] if data.get("parameters_used") else "Unknown Role"
 
         # HTML Template
         html_content = f"""
         <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🤖 Engine Execution Report</h2>
+                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">{APPLICATION_NAME} — run report</h2>
                     
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                         <tr>
@@ -65,7 +66,7 @@ class EmailReporter:
                     </table>
 
                     <p style="font-size: 13px; color: #95a5a6; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
-                        Job Application Engine | Automated Run
+                        {APPLICATION_NAME} · weekly workflow automation
                     </p>
                 </div>
             </body>
@@ -77,21 +78,31 @@ class EmailReporter:
         # Determine total success from new schema
         success_count = data.get('execution_summary', {}).get('total_applications_successful', 0)
         
-        msg['Subject'] = f"Engine Run Complete: {display_name} - {success_count} Applied"
+        msg["Subject"] = (
+            f"[{APPLICATION_NAME}] {display_name} — {success_count} applied"
+        )
         msg['From'] = settings.SENDER_EMAIL or settings.SMTP_USERNAME
         msg['To'] = settings.REPORT_RECEIVER_EMAIL
         
-        msg.set_content("Please enable HTML to view this email. The execution log output.json is attached.")
+        msg.set_content(
+            f"{APPLICATION_NAME}: please enable HTML to view this report. "
+            f"The run summary JSON ({APPLICATION_NAME} output) is attached."
+        )
         msg.add_alternative(html_content, subtype='html')
 
         # Attach the JSON file
         try:
             with open(output_json_path, 'rb') as f:
                 json_data = f.read()
-            msg.add_attachment(json_data, maintype='application', subtype='json', filename='output.json')
-            logger.info("[EMAIL] Attached output.json to the email.")
+            msg.add_attachment(
+                json_data,
+                maintype="application",
+                subtype="json",
+                filename="job-application-engine-output.json",
+            )
+            logger.info("[EMAIL] Attached job-application-engine-output.json to the email.")
         except Exception as file_err:
-            logger.warning(f"[EMAIL] Could not attach output.json: {file_err}")
+            logger.warning(f"[EMAIL] Could not attach JSON report: {file_err}")
 
         # Send the email
         try:
