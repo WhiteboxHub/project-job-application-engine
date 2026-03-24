@@ -269,6 +269,49 @@ class DBTracker:
 
         return self._row_to_dict(row, cols) if row else None
 
+    # ---------------------------------------------------------------------------
+    # Candidate-Aware Tracking
+    # ---------------------------------------------------------------------------
+
+    def _ensure_candidate_table(self):
+        conn = self._conn()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS candidate_applications (
+                candidate_email VARCHAR,
+                job_site_name VARCHAR,
+                job_url TEXT,
+                status VARCHAR,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(candidate_email, job_site_name, job_url)
+            )
+        """)
+
+    def is_applied_by_candidate(self, site_name: str, job_url: str, candidate_email: str) -> bool:
+        self._ensure_candidate_table()
+        norm_url = self._normalize_url(job_url)
+        conn = self._conn()
+        logger.debug(f"[DBTracker] Checking if {candidate_email} applied to {job_url} on {site_name}")
+        row = conn.execute("""
+            SELECT status FROM candidate_applications
+            WHERE candidate_email = ? AND job_site_name = ? AND (job_url = ? OR job_url = ?)
+            LIMIT 1
+        """, [candidate_email, site_name, job_url, norm_url]).fetchone()
+        
+        if row and row[0] == 'applied':
+            return True
+        return False
+        
+    def mark_applied_for_candidate(self, site_name: str, job_url: str, candidate_email: str, status: str):
+        self._ensure_candidate_table()
+        conn = self._conn()
+        try:
+            conn.execute("""
+                INSERT OR REPLACE INTO candidate_applications (candidate_email, job_site_name, job_url, status)
+                VALUES (?, ?, ?, ?)
+            """, [candidate_email, site_name, job_url, status])
+            logger.debug(f"[DBTracker] Marked {job_url} as {status} for {candidate_email}")
+        except Exception as e:
+            logger.warning(f"[DBTracker] Failed to record candidate application: {e}")
 
 # Module-level singleton — same name as before so all imports work unchanged
 tracker = DBTracker()

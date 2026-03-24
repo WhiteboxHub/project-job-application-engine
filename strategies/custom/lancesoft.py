@@ -1592,7 +1592,7 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info("  [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"  Confirmation message not found: {e}")
-                time.sleep(2)
+                raise Exception("Failed to submit initial form: JobDiva confirmation message not found.")
 
             # Step 7: Click Next button on confirmation page to go to EEO form
             logger.info("Step 7: Clicking Next button on confirmation page...")
@@ -2447,7 +2447,7 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info("      [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"      Confirmation message not found: {e}")
-                time.sleep(2)
+                raise Exception("Failed to submit initial form: JobDiva confirmation message not found.")
 
             # Step 8: Click Next button on confirmation page to go to EEO form
             logger.info("      Clicking Next button on confirmation page...")

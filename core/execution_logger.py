@@ -60,12 +60,18 @@ class ExecutionTracker:
         if not candidate_name:
             candidate_name = "Unknown Candidate"
             
+        search_params = self.parameters_used.get("search")
+        if not isinstance(search_params, dict):
+            search_params = {}
+
         report = {
             "workflow_id": self.parameters_used.get("workflow_id"),
             "schedule_id": self.parameters_used.get("schedule_id"),
             "run_id": self.parameters_used.get("run_id", f"RUN-{self.started_at.strftime('%Y%m%d-%H%M')}"),
             "candidate_name": candidate_name,
+            "keywords_searched": search_params.get("keywords", []),
             "status": status,
+
             "execution_summary": {
                 "total_jobs_found": self.total_jobs_found,
                 "total_applications_attempted": total_success + total_failed,

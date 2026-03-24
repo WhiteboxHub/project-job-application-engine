@@ -274,14 +274,13 @@ class EngineRunner:
                         break
 
                     try:
-                        # Pre-check: skip already applied
+                        # Pre-check: skip already applied FOR THIS CANDIDATE
                         job_url = job.get("job_url", "")
                         job_title = job.get("job_title", "Unknown")
-                        status_info = csv_tracker.get_job_status(
-                            site.company_name.lower(), job_url
-                        )
-                        if status_info and status_info.get("status") == "applied":
-                            logger.info(f"Skipping already applied job: {job_title}")
+                        candidate_email = candidate_data.get("applicant", {}).get("email", "default_candidate@example.com")
+                        
+                        if csv_tracker.is_applied_by_candidate(site.company_name.lower(), job_url, candidate_email):
+                            logger.info(f"Skipping already applied job for candidate {candidate_email}: {job_title}")
                             continue
 
                         logger.info(f"\nApplying to: {job_title}")
@@ -292,6 +291,8 @@ class EngineRunner:
                             # we count it. If the strategy itself handles the quota, even better.
                             guards.increment_counter()
                             applied_count += 1
+                            csv_tracker.mark_applied_for_candidate(site.company_name.lower(), job_url, candidate_email, "applied")
+
                             execution_tracker.record_success(
                                 site.company_name, 
                                 job.get("external_id", job.get("job_url", "")), 
