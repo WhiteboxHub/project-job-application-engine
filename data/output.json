@@ -1,9 +1,9 @@
 {
     "workflow_id": 7,
     "schedule_id": null,
-    "run_id": "508a2e9b-f5e6-4ac5-8866-00675696aa1f",
-    "candidate_id": 730,
-    "candidate_name": "Rajesh Kosuri",
+    "run_id": "5326ca5a-738e-4db0-bf38-980bdab314ef",
+    "candidate_id": 594,
+    "candidate_name": "Sujata Akkala",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -17,16 +17,56 @@
         "MLOps",
         "AI Engineer"
     ],
-    "status": "success",
+    "status": "completed_with_errors",
     "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 9,
-        "total_applications_attempted": 0,
-        "total_applications_successful": 0,
-        "total_applications_failed": 0
+        "total_jobs_found": 46,
+        "total_applications_attempted": 5,
+        "total_applications_successful": 2,
+        "total_applications_failed": 3
     },
-    "successful_applications": [],
-    "failed_applications": [],
-    "started_at": "2026-03-24T23:23:35.442899+00:00",
-    "finished_at": "2026-03-24T23:40:45.239066+00:00"
+    "successful_applications": [
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-34938",
+            "job_title": "Senior Manager, Learning & Development - AI & Change Leadership",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "applied_at": "2026-03-25T00:11:22.277808+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-34938",
+            "job_title": "Senior Manager, Learning & Development - AI & Change Leadership",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "applied_at": "2026-03-25T00:11:22.313074+00:00"
+        }
+    ],
+    "failed_applications": [
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-39917",
+            "job_title": "Sr. Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-25T00:10:15.492285+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2ODM3NlQxfjk5",
+            "job_title": "AI Engineer ll",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODM3NlQxfjk5/",
+            "error_reason": "Submission verification failed",
+            "failed_at": "2026-03-25T00:16:31.842928+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MjE1OVQxfjk5",
+            "job_title": "AI Engineer / Applied Data Scientist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MjE1OVQxfjk5/",
+            "error_reason": "Submission verification failed",
+            "failed_at": "2026-03-25T00:16:58.085731+00:00"
+        }
+    ],
+    "started_at": "2026-03-25T00:02:46.592261+00:00",
+    "finished_at": "2026-03-25T00:16:58.098281+00:00"
 }
