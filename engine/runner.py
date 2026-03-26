@@ -210,6 +210,25 @@ class EngineRunner:
                             logger.info(
                                 f"[WORKFLOW_LOG] execution_metadata synced for log id={lid}"
                             )
+
+                        # --- Sync schedule last_run / next_run to Workflows Scheduler UI ---
+                        schedule_id = execution_tracker.run_parameters.get("schedule_id") if hasattr(execution_tracker, "run_parameters") else None
+                        if not schedule_id:
+                            schedule_id = report_payload.get("schedule_id")
+                        if schedule_id:
+                            from datetime import timedelta
+                            now_utc = datetime.utcnow()
+                            # Next Monday = today + days_until_monday
+                            days_until_monday = (7 - now_utc.weekday()) % 7 or 7
+                            next_monday = now_utc + timedelta(days=days_until_monday)
+                            next_monday_9am = next_monday.replace(hour=9, minute=0, second=0, microsecond=0)
+                            backend_client.update_schedule(
+                                int(schedule_id),
+                                last_run_at=now_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                                next_run_at=next_monday_9am.strftime("%Y-%m-%d %H:%M:%S"),
+                            )
+                        else:
+                            logger.warning("[SCHEDULE] No schedule_id found — skipping schedule sync.")
                     else:
                         logger.warning(
                             "[WORKFLOW_LOG] No workflow_log_id on this run — automation_workflow_logs "
@@ -335,10 +354,33 @@ class EngineRunner:
                     try:
                         _ = self.browser.current_url
                     except Exception as se:
-                        logger.error(
-                            f"[FATAL] Browser session lost before applying: {se}"
+                        logger.warning(
+                            f"[SESSION] Browser session lost before applying: {se}"
                         )
-                        break
+                        # --- Recovery: restart browser and re-mount strategy ---
+                        logger.info("[SESSION] Attempting browser session recovery...")
+                        try:
+                            browser_service.stop_browser()
+                        except Exception:
+                            pass
+                        try:
+                            self.browser = browser_service.start_browser()
+                            selectors = self._load_selectors(conn, site)
+                            strategy = strategy_factory.get_strategy(
+                                site.platform.class_handler,
+                                self.browser,
+                                site,
+                                selectors,
+                                None,
+                                candidate_data,
+                            )
+                            if not strategy.login():
+                                logger.error("[SESSION] Re-login failed after recovery. Stopping site.")
+                                break
+                            logger.info("[SESSION] Browser session recovered. Resuming applications.")
+                        except Exception as re_err:
+                            logger.error(f"[SESSION] Recovery failed: {re_err}. Stopping site.")
+                            break
 
                     try:
                         # Pre-check: skip already applied FOR THIS CANDIDATE

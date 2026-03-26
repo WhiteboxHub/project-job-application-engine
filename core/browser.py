@@ -1,4 +1,6 @@
 import os
+import re
+import subprocess
 import time
 
 try:
@@ -52,8 +54,36 @@ class BrowserService:
             self.lock_file.close()
             logger.info("Released profile lock.")
 
+    @staticmethod
+    def _get_chrome_major_version() -> int | None:
+        """Read the installed Chrome major version from the Windows registry."""
+        reg_keys = [
+            r'HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon',
+            r'HKEY_LOCAL_MACHINE\SOFTWARE\Google\Chrome\BLBeacon',
+            r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Google\Chrome\BLBeacon',
+        ]
+        for key in reg_keys:
+            try:
+                out = subprocess.check_output(
+                    f'reg query "{key}" /v version',
+                    shell=True, stderr=subprocess.DEVNULL
+                ).decode(errors="ignore")
+                m = re.search(r'version\s+REG_SZ\s+(\d+)', out)
+                if m:
+                    version = int(m.group(1))
+                    logger.info(f"Detected installed Chrome major version: {version}")
+                    return version
+            except Exception:
+                continue
+        logger.warning("Could not detect Chrome version from registry; uc will auto-detect.")
+        return None
+
     def start_browser(self):
         self._acquire_lock()
+
+        # Detect installed Chrome version once so both drivers use the same version
+        chrome_version = self._get_chrome_major_version()
+
         # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
         try:
             import undetected_chromedriver as uc_local
@@ -94,14 +124,17 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
-                # use_subprocess=True is required on Windows to prevent 'chrome not reachable'
-                # version_main is omitted so uc auto-detects the installed Chrome version
+                # use_subprocess=True is required on Windows to prevent 'chrome not reachable'.
+                # version_main is set to the detected Chrome major version to avoid ChromeDriver
+                # version mismatches (e.g. uc ships driver 147 but Chrome is 146).
                 self.driver = uc.Chrome(
-                    options=options, use_subprocess=True
+                    options=options,
+                    use_subprocess=True,
+                    version_main=chrome_version,  # None = let uc auto-detect (safe fallback)
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
                 logger.info(
-                    "Browser started successfully (undetected-chromedriver, auto-detected version)."
+                    f"Browser started successfully (undetected-chromedriver, version={chrome_version})."
                 )
             except Exception as e:
                 logger.warning(
@@ -115,13 +148,15 @@ class BrowserService:
                 from selenium.webdriver.chrome.service import Service as ChromeService
                 from webdriver_manager.chrome import ChromeDriverManager
 
-                # Auto-detect driver version based on local Chrome installation
-                driver_path = ChromeDriverManager().install()
+                # Pin to detected Chrome version so webdriver-manager fetches the right driver
+                driver_path = ChromeDriverManager(
+                    driver_version=f"{chrome_version}" if chrome_version else None
+                ).install()
                 service = ChromeService(driver_path)
                 self.driver = webdriver.Chrome(service=service, options=options)
                 time.sleep(2)
                 logger.info(
-                    "Browser started successfully (webdriver-manager fallback auto-detect)."
+                    f"Browser started successfully (webdriver-manager fallback, version={chrome_version})."
                 )
             except Exception as e2:
                 logger.error(f"Failed to start browser with fallback: {e2}")

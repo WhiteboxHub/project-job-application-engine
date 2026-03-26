@@ -238,4 +238,47 @@ class BackendClient:
         return False
 
 
+    @staticmethod
+    def update_schedule(
+        schedule_id: int,
+        last_run_at: Optional[str] = None,
+        next_run_at: Optional[str] = None,
+    ) -> bool:
+        """
+        PUT /automation-workflow-schedule/{schedule_id}
+        Updates last_run_at and next_run_at on the workflow schedule so the
+        Workflows Scheduler UI always shows accurate timing after each engine run.
+        """
+        if not settings.BACKEND_URL or not schedule_id:
+            return False
+
+        base = settings.BACKEND_URL.rstrip("/")
+        url = f"{base}/automation-workflow-schedule/{schedule_id}"
+        payload: Dict[str, Any] = {}
+        if last_run_at:
+            payload["last_run_at"] = last_run_at
+        if next_run_at:
+            payload["next_run_at"] = next_run_at
+
+        if not payload:
+            return False
+
+        try:
+            response = requests.put(
+                url, headers=_api_headers(json_body=True), json=payload, timeout=15
+            )
+            if response.status_code == 200:
+                logger.info(
+                    f"[SCHEDULE] Updated schedule id={schedule_id} "
+                    f"last_run={last_run_at} next_run={next_run_at}"
+                )
+                return True
+            logger.warning(
+                f"[SCHEDULE] update_schedule failed: {response.status_code} {response.text[:200]}"
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"[SCHEDULE] update_schedule request failed: {e}")
+        return False
+
+
 backend_client = BackendClient()

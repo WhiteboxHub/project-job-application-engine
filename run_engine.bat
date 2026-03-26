@@ -8,9 +8,6 @@ if exist "venv\Scripts\activate.bat" (
     echo [WARNING] venv not found. Using system Python.
 )
 
-:: Run the engine
+:: Run the engine — output is logged to logs\scheduler_run.log
 echo Starting Job Application Engine...
-python scripts\main.py
-
-:: Keep the window open if not run from a scheduler specifically
-pause
+python scripts\main.py >> "logs\scheduler_run.log" 2>&1
