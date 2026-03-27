@@ -94,14 +94,14 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
-                # use_subprocess=True is required on Windows to prevent 'chrome not reachable'
-                # version_main is omitted so uc auto-detects the installed Chrome version
+                # version_main=146 pins ChromeDriver to match Chrome 146.0.x
+                # Change this if you update Chrome to a newer major version
                 self.driver = uc.Chrome(
-                    options=options, use_subprocess=True
+                    options=options, use_subprocess=True, version_main=146
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
                 logger.info(
-                    "Browser started successfully (undetected-chromedriver, auto-detected version)."
+                    "Browser started successfully (undetected-chromedriver v146)."
                 )
             except Exception as e:
                 logger.warning(

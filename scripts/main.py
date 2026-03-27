@@ -44,26 +44,26 @@ def main():
         logger.info(f"[LIMIT] {args.max_apps} applications per run")
 
     try:
-        # 1. Fetch pending automation parameters from the Production API
+        # 1. Fetch run_parameters strictly from the backend API
         candidate_data = backend_client.fetch_pending_candidates()
 
         if not candidate_data:
-            logger.info("[STOP] No pending weekly workflow candidate found. Exiting.")
+            logger.info("[STOP] No pending candidate found from backend API. Exiting.")
             sys.exit(0)
 
-        # 2. Transform the raw database row into structured run_parameters 
-        # (This automatically downloads the folder link resume and extracts names!)
+        # 2. Build structured run_parameters from the backend payload
         from core.run_parameters_builder import run_parameters_builder
         run_parameters = run_parameters_builder.build(candidate_data)
-        
-        logger.info("Successfully processed candidate into structured run_parameters JSON.")
+        applicant = run_parameters.get('applicant', {})
+        logger.info(f"Successfully built run_parameters for: "
+                    f"{applicant.get('first_name')} {applicant.get('last_name')}")
 
-        # 3. Save the built JSON back to the backend Database so it appears in the UI
+        # 3. Save built run_parameters back to backend DB UI
         candidate_id = candidate_data.get("candidate_id")
         if candidate_id:
             backend_client.update_run_parameters(candidate_id, run_parameters)
 
-        # 4. Execute Engine using the pristine, fully-built JSON payload
+        # 4. Execute Engine with run_parameters
         runner = EngineRunner()
         runner.run(site_filter=args.site, candidate_data=run_parameters)
 
