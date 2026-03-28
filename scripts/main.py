@@ -113,10 +113,18 @@ def main():
 
     except Exception as e:
         if workflow_log_id:
+            log_content = ""
+            try:
+                with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                    log_content = f.read()
+            except Exception:
+                pass
+                
             backend_client.update_workflow_log(
                 workflow_log_id,
                 "failed",
                 error_summary=str(e)[:255],
+                logfile=log_content,
             )
         logger.critical(f"Fatal error: {e}")
         import traceback

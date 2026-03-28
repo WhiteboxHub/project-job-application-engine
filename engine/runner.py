@@ -193,6 +193,13 @@ class EngineRunner:
                     lid = execution_tracker.workflow_log_id
                     if lid:
                         summary = report_payload.get("execution_summary") or {}
+                        log_content = ""
+                        try:
+                            with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                                log_content = f.read()
+                        except Exception:
+                            pass
+
                         ok = backend_client.update_workflow_log(
                             lid,
                             _log_status_from_report(report_payload.get("status", "failed")),
@@ -201,6 +208,7 @@ class EngineRunner:
                             ),
                             records_failed=int(summary.get("total_applications_failed", 0)),
                             execution_metadata=report_payload,
+                            logfile=log_content,
                         )
                         if not ok:
                             logger.error(
@@ -218,14 +226,18 @@ class EngineRunner:
                         if schedule_id:
                             from datetime import timedelta
                             now_utc = datetime.utcnow()
-                            # Next Monday = today + days_until_monday
-                            days_until_monday = (7 - now_utc.weekday()) % 7 or 7
-                            next_monday = now_utc + timedelta(days=days_until_monday)
-                            next_monday_9am = next_monday.replace(hour=9, minute=0, second=0, microsecond=0)
+                            # Next week at 9:30 AM local time
+                            now_local = datetime.now()
+                            next_week_local = now_local + timedelta(days=7)
+                            next_run_local = next_week_local.replace(hour=9, minute=30, second=0, microsecond=0)
+                            # Convert local 9:30 AM to UTC for the backend
+                            local_offset = now_local - now_utc
+                            next_run_utc = next_run_local - local_offset
+                            
                             backend_client.update_schedule(
                                 int(schedule_id),
                                 last_run_at=now_utc.strftime("%Y-%m-%d %H:%M:%S"),
-                                next_run_at=next_monday_9am.strftime("%Y-%m-%d %H:%M:%S"),
+                                next_run_at=next_run_utc.strftime("%Y-%m-%d %H:%M:%S"),
                             )
                         else:
                             logger.warning("[SCHEDULE] No schedule_id found — skipping schedule sync.")
@@ -250,10 +262,18 @@ class EngineRunner:
                     )
                     lid = execution_tracker.workflow_log_id
                     if lid:
+                        log_content = ""
+                        try:
+                            with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                                log_content = f.read()
+                        except Exception:
+                            pass
+                            
                         backend_client.update_workflow_log(
                             lid,
                             "failed",
                             error_summary=str(out_err)[:255],
+                            logfile=log_content,
                         )
 
             except Exception as re:
