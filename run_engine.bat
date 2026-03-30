@@ -3,7 +3,7 @@ REM ================================================================
 REM  Job Application Engine - Windows Task Scheduler Launcher
 REM ================================================================
 
-SET PROJECT_DIR=C:\Users\remot\Desktop\automation\project-job-application-engine
+SET PROJECT_DIR=C:\Users\KUMAR-MINI-PC2\OneDrive\Desktop\project-job-application-engine
 SET PYTHON=%PROJECT_DIR%\venv\Scripts\python.exe
 SET SCRIPT=%PROJECT_DIR%\scripts\main.py
 SET LOG_DIR=%PROJECT_DIR%\logs
@@ -22,7 +22,7 @@ echo ============================================================ >> "%LOG_FILE%
 echo  JOB ENGINE START: %DATE% %TIME% >> "%LOG_FILE%"
 echo ============================================================ >> "%LOG_FILE%"
 
-"%PYTHON%" "%SCRIPT%" >> "%LOG_FILE%" 2>&1
+"%PYTHON%" "%SCRIPT%" --site "Collabera" >> "%LOG_FILE%" 2>&1
 
 echo ============================================================ >> "%LOG_FILE%"
 echo  JOB ENGINE END: %DATE% %TIME%  ExitCode=%ERRORLEVEL% >> "%LOG_FILE%"

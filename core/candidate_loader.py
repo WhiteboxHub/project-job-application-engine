@@ -37,10 +37,14 @@ class CandidateLoader:
                 personal_info, address, education, work, skills,
                 search, applicant, resume_path, wipro_credentials
         """
+        print(f"DEBUG: CandidateLoader.load() path: {_GUEST_JSON}")
         resume_data = CandidateLoader._load_json(_RESUME_JSON, "parsed_resume.json")
         guest_data = CandidateLoader._load_json(_GUEST_JSON, "guest_form_data.json")
+        
+        print(f"DEBUG: guest_data keys: {list(guest_data.keys()) if guest_data else 'EMPTY'}")
 
         if not resume_data and not guest_data:
+            print("DEBUG: BOTH JSON FILES MISSING")
             logger.error("[ERROR] Both JSON files missing  cannot load candidate data")
             return {}
 

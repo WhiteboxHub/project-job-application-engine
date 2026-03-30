@@ -3,20 +3,22 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from data.db_mysql import db_mysql
-
-from models.config_models import JobSite
-
+from data.db_connection import db
 
 def list_sites():
-    session = db_mysql.SessionLocal()
+    """List all job sites from DuckDB"""
     try:
-        sites = session.query(JobSite).all()
-        print(f"Found {len(sites)} sites:")
-        for s in sites:
-            print(f"- ID: {s.id} | Name: '{s.company_name}' | Active: {s.is_active}")
-    finally:
-        session.close()
+        conn = db.get_connection()
+        rows = conn.execute("SELECT id, company_name, is_active FROM job_sites").fetchall()
+        
+        print(f"\nFound {len(rows)} sites in DuckDB:")
+        print("-" * 40)
+        for r in rows:
+            status = "[ACTIVE]" if r[2] else "[OFFLINE]"
+            print(f"- ID: {r[0]:2} | {status} | {r[1]}")
+        print("-" * 40)
+    except Exception as e:
+        print(f"Error listing sites: {e}")
 
 
 if __name__ == "__main__":

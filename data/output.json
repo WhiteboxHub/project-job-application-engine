@@ -1,427 +1,186 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260323-1642",
+    "run_id": "RUN-20260330-2008",
     "candidate_name": "Vasanthi Nettem",
-    "status": "completed_with_errors",
+    "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 28,
-        "total_applications_attempted": 54,
-        "total_applications_successful": 24,
-        "total_applications_failed": 30
+        "total_jobs_found": 48,
+        "total_applications_attempted": 21,
+        "total_applications_successful": 0,
+        "total_applications_failed": 21
     },
-    "successful_applications": [
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5",
-            "job_title": "AI/ML Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5/",
-            "applied_at": "2026-03-23T16:44:02.723127+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5",
-            "job_title": "AI/ML Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5/",
-            "applied_at": "2026-03-23T16:44:02.734364+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5",
-            "job_title": "AI Workflow Automation Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5/",
-            "applied_at": "2026-03-23T16:44:30.150199+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5",
-            "job_title": "AI Workflow Automation Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5/",
-            "applied_at": "2026-03-23T16:44:30.162254+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NzkwOVQxfjk5",
-            "job_title": "AI/ML Engineer - Salesforce Platform",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzkwOVQxfjk5/",
-            "applied_at": "2026-03-23T16:44:59.439160+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NzkwOVQxfjk5",
-            "job_title": "AI/ML Engineer - Salesforce Platform",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzkwOVQxfjk5/",
-            "applied_at": "2026-03-23T16:44:59.451834+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODM3NlQxfjk5",
-            "job_title": "AI Engineer ll",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODM3NlQxfjk5/",
-            "applied_at": "2026-03-23T16:45:28.729623+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODM3NlQxfjk5",
-            "job_title": "AI Engineer ll",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODM3NlQxfjk5/",
-            "applied_at": "2026-03-23T16:45:28.738425+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
-            "applied_at": "2026-03-23T16:45:57.319400+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
-            "applied_at": "2026-03-23T16:45:57.330343+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDU3NFQxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDU3NFQxfjk5/",
-            "applied_at": "2026-03-23T16:46:25.550570+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDU3NFQxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDU3NFQxfjk5/",
-            "applied_at": "2026-03-23T16:46:25.562234+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2OTk4MlQxfjk5",
-            "job_title": "Senior AI Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTk4MlQxfjk5/",
-            "applied_at": "2026-03-23T16:46:53.860889+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2OTk4MlQxfjk5",
-            "job_title": "Senior AI Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTk4MlQxfjk5/",
-            "applied_at": "2026-03-23T16:46:53.869083+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:22.361192+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:22.374224+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MDYzM1Axfjk5",
-            "job_title": "AI Platform Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDYzM1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:49.395074+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MDYzM1Axfjk5",
-            "job_title": "AI Platform Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDYzM1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:49.405509+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTAzNVAxfjk5",
-            "job_title": "Senior AI/ML Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTAzNVAxfjk5/",
-            "applied_at": "2026-03-23T16:48:18.742365+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTAzNVAxfjk5",
-            "job_title": "Senior AI/ML Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTAzNVAxfjk5/",
-            "applied_at": "2026-03-23T16:48:18.751920+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDY2MVQxfjk5",
-            "job_title": "Senior AI Engineer - Bilingual",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDY2MVQxfjk5/",
-            "applied_at": "2026-03-23T16:48:49.443168+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDY2MVQxfjk5",
-            "job_title": "Senior AI Engineer - Bilingual",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDY2MVQxfjk5/",
-            "applied_at": "2026-03-23T16:48:49.455386+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2Njg3MFQxfjk5",
-            "job_title": "Senior AWS Cloud & Agentic AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Njg3MFQxfjk5/",
-            "applied_at": "2026-03-23T16:49:18.362755+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2Njg3MFQxfjk5",
-            "job_title": "Senior AWS Cloud & Agentic AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Njg3MFQxfjk5/",
-            "applied_at": "2026-03-23T16:49:18.375318+00:00"
-        }
-    ],
+    "successful_applications": [],
     "failed_applications": [
         {
-            "job_site": "KForce",
-            "job_id": "#",
-            "job_title": "Search Jobs",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:43:34.391206+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368301",
+            "job_title": "Waste Management\nData Scientist\nContract: Houston, Texas, US\nSalary Range: 65.00 - 78.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nMLOps\nAWS\nAzure\nSnowflake",
+            "job_url": "https://collabera.com/job-description/?post=368301",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:14:16.702825+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "#",
-            "job_title": "Search Jobs",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:43:34.401756+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367614",
+            "job_title": "Computer/IT Services\nPython/AI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\npython\nRAG\nLLM\nLLMA\nartificial intelligence\nai/ml\nmachine learning\ndjango\nflask\nfastapi\npandas\nscripting\npython developer\nopenshift\nsql\nci/cd\nunix\napi",
+            "job_url": "https://collabera.com/job-description/?post=367614",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:15:01.423614+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODAyMFQxfjk5",
-            "job_title": "PGD Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODAyMFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:49:45.626986+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367884",
+            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nPython\nLLMs",
+            "job_url": "https://collabera.com/job-description/?post=367884",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:15:46.243033+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODAyMFQxfjk5",
-            "job_title": "PGD Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODAyMFQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:49:45.639501+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367915",
+            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 62.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nLLM",
+            "job_url": "https://collabera.com/job-description/?post=367915",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:16:31.774664+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDQxNVQxfjk5",
-            "job_title": "Site Reliability Production Engineer (AI/ML Ops)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDQxNVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:50:12.462718+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368342",
+            "job_title": "Banking\nAI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 65.00 - 70.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nGenAI\nLLM\nGenerativeAI\nPython\nJava\n.Net\nReact\nAngular\nAI concepts\nRAG",
+            "job_url": "https://collabera.com/job-description/?post=368342",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:17:17.149891+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDQxNVQxfjk5",
-            "job_title": "Site Reliability Production Engineer (AI/ML Ops)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDQxNVQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:50:12.474431+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367910",
+            "job_title": "Banking\nApplication Security Engineer\nContract: Iselin, New Jersey, US\nSalary Range: 65.00 - 69.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nSoftware Composition Analysis (SCA)\nApplication Security\nDevSecOps\nSAST\nOpen-Source Security\nSecure SDLC\nVulnerability Management\nContainer Security\nCI/CD Security\nOWASP / CWE\nPython Scripting\nPowerShell\nKubernetes\nCheckmarx\nBlackDuck\nRisk & Compliance",
+            "job_url": "https://collabera.com/job-description/?post=367910",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:18:01.547680+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MTcwMVQxfjk5",
-            "job_title": "Developer AI & Automation",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MTcwMVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:50:39.134762+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368301",
+            "job_title": "Waste Management\nData Scientist\nContract: Houston, Texas, US\nSalary Range: 65.00 - 78.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nMLOps\nAWS\nAzure\nSnowflake",
+            "job_url": "https://collabera.com/job-description/?post=368301",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:18:46.102564+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MTcwMVQxfjk5",
-            "job_title": "Developer AI & Automation",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MTcwMVQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:50:39.143925+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367584",
+            "job_title": "Computer/IT Services\nTechnical Support Engineer\nContract: Orlando, Florida, US\nSalary Range: 25.00 - 35.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nJavaScript\nHTML\nCSS\nSQL\nServiceNow\nSnow\nTroubleshoot\nsoftware engineer\nSaas\nInformation technology",
+            "job_url": "https://collabera.com/job-description/?post=367584",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:19:31.461959+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MFAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MFAxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:51:06.526528+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368069",
+            "job_title": "Other/Not Classified\nLead Analyst - Content Management System\nDirect Hire: Houston, Texas, US\nSalary Range: 140000.00 - 165000.00 | Per Annum\nRequirement\nWe are looking for candidates with the following skills\nCMS\nOracle WebCenter\nAWS\nGenerative AI",
+            "job_url": "https://collabera.com/job-description/?post=368069",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:20:16.812692+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MFAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MFAxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:51:06.540462+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368168",
+            "job_title": "Computer Software\nSenior Software Engineer (Test - Embedded Systems\nContract to Hire: seattle, Washington, US\nSalary Range: 54.00 - 64.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAWS\nTest\nEmbedded Systems\nPython\nC++",
+            "job_url": "https://collabera.com/job-description/?post=368168",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:21:02.197503+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MVAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MVAxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:51:33.540374+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368169",
+            "job_title": "Computer Software\nSenior Software Engineer (Test - Embedded Systems\nContract to Hire: seattle, Washington, US\nSalary Range: 54.00 - 64.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAWS\nTest\nEmbedded Systems\nPython\nC++",
+            "job_url": "https://collabera.com/job-description/?post=368169",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:21:47.528664+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MVAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MVAxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:51:33.551769+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368301",
+            "job_title": "Waste Management\nData Scientist\nContract: Houston, Texas, US\nSalary Range: 65.00 - 78.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nMLOps\nAWS\nAzure\nSnowflake",
+            "job_url": "https://collabera.com/job-description/?post=368301",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:22:31.658091+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyMVQxfjk5",
-            "job_title": "Accounting AI SME (Audit)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyMVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:00.656248+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367584",
+            "job_title": "Computer/IT Services\nTechnical Support Engineer\nContract: Orlando, Florida, US\nSalary Range: 25.00 - 35.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nJavaScript\nHTML\nCSS\nSQL\nServiceNow\nSnow\nTroubleshoot\nsoftware engineer\nSaas\nInformation technology",
+            "job_url": "https://collabera.com/job-description/?post=367584",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:23:15.676273+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyMVQxfjk5",
-            "job_title": "Accounting AI SME (Audit)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyMVQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:00.664341+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367915",
+            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 62.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nLLM",
+            "job_url": "https://collabera.com/job-description/?post=367915",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:23:59.794804+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQxOFQxfjk5",
-            "job_title": "Tax Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQxOFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:27.810234+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368301",
+            "job_title": "Waste Management\nData Scientist\nContract: Houston, Texas, US\nSalary Range: 65.00 - 78.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nMLOps\nAWS\nAzure\nSnowflake",
+            "job_url": "https://collabera.com/job-description/?post=368301",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:24:43.836129+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQxOFQxfjk5",
-            "job_title": "Tax Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQxOFQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:27.821093+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368232",
+            "job_title": "Banking\nProcess Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 58.00 - 62.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nProcess Engineering\nBPM\nProcess Analysis\nEngineering\nOperational Transormation",
+            "job_url": "https://collabera.com/job-description/?post=368232",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:25:29.212739+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5",
-            "job_title": "Licensed Security Professionals AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:54.879495+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368298",
+            "job_title": "Computer Software\nSalesforce AI Architect\nContract: Austin, Texas, US\nSalary Range: 87.00 - 90.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI Salesforce Architect\nSalesforce AI Architect\nAI Architect\nSalesforce Architect certification\nApex\nLWC\nAI/ML experience on Salesforce\nAgentforce\nVertex AI",
+            "job_url": "https://collabera.com/job-description/?post=368298",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:26:14.589667+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5",
-            "job_title": "Licensed Security Professionals AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:54.890707+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=368342",
+            "job_title": "Banking\nAI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 65.00 - 70.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nGenAI\nLLM\nGenerativeAI\nPython\nJava\n.Net\nReact\nAngular\nAI concepts\nRAG",
+            "job_url": "https://collabera.com/job-description/?post=368342",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:26:58.732103+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc0OFQxfjk5",
-            "job_title": "Senior Mobile Software Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc0OFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:53:21.460538+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367614",
+            "job_title": "Computer/IT Services\nPython/AI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\npython\nRAG\nLLM\nLLMA\nartificial intelligence\nai/ml\nmachine learning\ndjango\nflask\nfastapi\npandas\nscripting\npython developer\nopenshift\nsql\nci/cd\nunix\napi",
+            "job_url": "https://collabera.com/job-description/?post=367614",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:27:42.921905+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc0OFQxfjk5",
-            "job_title": "Senior Mobile Software Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc0OFQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:53:21.472429+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367884",
+            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nPython\nLLMs",
+            "job_url": "https://collabera.com/job-description/?post=367884",
+            "error_reason": "Message: \nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b2120]\n\tchromedriver!(No symbol) [0x2fabca]\n\tchromedriver!(No symbol) [0x2fae6b]\n\tchromedriver!(No symbol) [0x33d0b2]\n\tchromedriver!(No symbol) [0x31db54]\n\tchromedriver!(No symbol) [0x33a9a5]\n\tchromedriver!(No symbol) [0x31d8a6]\n\tchromedriver!(No symbol) [0x2f0229]\n\tchromedriver!(No symbol) [0x2f0fe4]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!GetHandleVerifier [0x4d58c8+195d8]\n\tchromedriver!GetHandleVerifier [0x4d5a92+197a2]\n\tchromedriver!GetHandleVerifier [0x4bee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:28:26.999174+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5",
-            "job_title": "Corporate Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:53:48.086313+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5",
-            "job_title": "Corporate Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:53:48.097464+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE1OTM3MlQxfjk5",
-            "job_title": "Senior Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE1OTM3MlQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:54:14.601679+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE1OTM3MlQxfjk5",
-            "job_title": "Senior Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE1OTM3MlQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:54:14.614553+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDUxNlQxfjk5",
-            "job_title": "AI Product Manager 5",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDUxNlQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:54:41.291643+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDUxNlQxfjk5",
-            "job_title": "AI Product Manager 5",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDUxNlQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:54:41.301760+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "find-work",
-            "job_title": "Find Work",
-            "job_url": "https://www.kforce.com/find-work/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:55:06.808193+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "find-work",
-            "job_title": "Find Work",
-            "job_url": "https://www.kforce.com/find-work/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:55:06.818962+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "solutions",
-            "job_title": "Solutions",
-            "job_url": "https://www.kforce.com/solutions/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:55:31.356185+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "solutions",
-            "job_title": "Solutions",
-            "job_url": "https://www.kforce.com/solutions/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:55:31.366971+00:00"
+            "job_site": "Collabera",
+            "job_id": "description?post=367915",
+            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 62.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nLLM",
+            "job_url": "https://collabera.com/job-description/?post=367915",
+            "error_reason": "Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception\nStacktrace:\n\tchromedriver!GetHandleVerifier [0x4ccdf3+10b03]\n\tchromedriver!GetHandleVerifier [0x4ccf24+10c34]\n\tchromedriver!(No symbol) [0x2b1f5e]\n\tchromedriver!(No symbol) [0x2ef4b7]\n\tchromedriver!(No symbol) [0x31d9c6]\n\tchromedriver!(No symbol) [0x318e42]\n\tchromedriver!(No symbol) [0x318462]\n\tchromedriver!(No symbol) [0x28534e]\n\tchromedriver!(No symbol) [0x2858ee]\n\tchromedriver!(No symbol) [0x285dcd]\n\tchromedriver!GetHandleVerifier [0x7348b9+2785c9]\n\tchromedriver!GetHandleVerifier [0x72feb5+273bc5]\n\tchromedriver!GetHandleVerifier [0x74e06b+291d7b]\n\tchromedriver!GetHandleVerifier [0x4e5cc8+299d8]\n\tchromedriver!GetHandleVerifier [0x4ed9fd+3170d]\n\tchromedriver!(No symbol) [0x284ee9]\n\tchromedriver!(No symbol) [0x284530]\n\tchromedriver!GetHandleVerifier [0x882e9f+3c6baf]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
+            "failed_at": "2026-03-30T20:28:35.606866+00:00"
         }
     ],
-    "started_at": "2026-03-23T16:42:46.987763+00:00",
-    "finished_at": "2026-03-23T16:55:31.370471+00:00"
+    "started_at": "2026-03-30T20:08:51.874638+00:00",
+    "finished_at": "2026-03-30T20:28:37.706865+00:00"
 }

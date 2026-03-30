@@ -1,5 +1,7 @@
 import os
+import re
 import time
+from pathlib import Path
 
 try:
     import fcntl
@@ -17,6 +19,112 @@ class BrowserService:
     def __init__(self):
         self.driver = None
         self.lock_file = None
+
+    def _get_chrome_binary(self):
+        """Return the first installed Chrome binary we can find."""
+        candidates = [
+            os.environ.get("CHROME_BINARY"),
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.join(
+                os.environ.get("LOCALAPPDATA", ""),
+                "Google",
+                "Chrome",
+                "Application",
+                "chrome.exe",
+            ),
+        ]
+
+        for candidate in candidates:
+            if candidate and os.path.exists(candidate):
+                return candidate
+        return None
+
+    def _get_chrome_version(self, chrome_binary):
+        """Best-effort full version detection for the installed Chrome binary."""
+        if not chrome_binary:
+            return None
+
+        try:
+            import subprocess
+
+            output = subprocess.check_output(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f"(Get-Item '{chrome_binary}').VersionInfo.ProductVersion",
+                ],
+                text=True,
+            ).strip()
+            return output or None
+        except Exception:
+            return None
+
+    def _get_chrome_major_version(self, chrome_binary):
+        """Return Chrome's major version as an int when available."""
+        version = self._get_chrome_version(chrome_binary)
+        if not version:
+            return None
+
+        match = re.match(r"(\d+)", version)
+        if not match:
+            return None
+
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
+
+    def _find_local_chromedriver(self, chrome_major_version=None):
+        """
+        Look for an already-downloaded chromedriver before attempting any
+        network-based installer.
+        """
+        explicit_path = os.environ.get("CHROMEDRIVER_PATH")
+        if explicit_path and os.path.exists(explicit_path):
+            return explicit_path
+
+        home = Path.home()
+        search_roots = [
+            Path.cwd() / "drivers",
+            Path.cwd() / "bin",
+            home / ".cache" / "selenium",
+            home / ".wdm",
+        ]
+
+        candidates = []
+        for root in search_roots:
+            if not root.exists():
+                continue
+            try:
+                candidates.extend(root.rglob("chromedriver.exe"))
+            except Exception:
+                continue
+
+        if not candidates:
+            return None
+
+        def version_key(path_obj):
+            version_text = ""
+            for part in path_obj.parts:
+                match = re.search(r"\d+(?:\.\d+)+", part)
+                if match:
+                    version_text = match.group(0)
+            if not version_text:
+                return [0]
+            return [int(piece) for piece in version_text.split(".")]
+
+        matching_candidates = []
+        if chrome_major_version is not None:
+            for candidate in candidates:
+                parsed_version = version_key(candidate)
+                if parsed_version and parsed_version[0] == chrome_major_version:
+                    matching_candidates.append(candidate)
+
+        target_candidates = matching_candidates or candidates
+        target_candidates.sort(key=version_key, reverse=True)
+        return str(target_candidates[0])
 
     def _acquire_lock(self):
         """Ensures only one instance touches the profile. On Windows (no fcntl) locking is skipped."""
@@ -54,18 +162,34 @@ class BrowserService:
 
     def start_browser(self):
         self._acquire_lock()
-        # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
-        try:
-            import undetected_chromedriver as uc_local
+        explicit_driver_path = os.environ.get("CHROMEDRIVER_PATH")
+        explicit_driver_exists = bool(
+            explicit_driver_path and os.path.exists(explicit_driver_path)
+        )
 
-            global uc
-            uc = uc_local
-        except ModuleNotFoundError as e:
-            # If undetected_chromedriver can't be imported (e.g., distutils missing), log and continue to fallback
+        # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
+        if explicit_driver_path and not explicit_driver_exists:
             logger.warning(
-                f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver."
+                f"CHROMEDRIVER_PATH was set but the file does not exist: {explicit_driver_path}"
             )
+
+        if explicit_driver_exists:
+            logger.info(
+                "CHROMEDRIVER_PATH detected; skipping undetected_chromedriver and using the explicit local driver."
+            )
+            global uc
             uc = None
+        else:
+            try:
+                import undetected_chromedriver as uc_local
+
+                uc = uc_local
+            except ModuleNotFoundError as e:
+                # If undetected_chromedriver can't be imported (e.g., distutils missing), log and continue to fallback
+                logger.warning(
+                    f"undetected_chromedriver import failed: {e}. Falling back to selenium webdriver."
+                )
+                uc = None
 
         if uc:
             options = uc.ChromeOptions()
@@ -74,6 +198,11 @@ class BrowserService:
 
             options = ChromeOptions()
         options.add_argument(f"--user-data-dir={settings.chrome_profile_path}")
+
+        chrome_binary = self._get_chrome_binary()
+        chrome_major_version = self._get_chrome_major_version(chrome_binary)
+        if chrome_binary:
+            options.binary_location = chrome_binary
 
         proxy_arg = proxy_manager.get_proxy_option()
         if proxy_arg:
@@ -95,13 +224,15 @@ class BrowserService:
         if uc:
             try:
                 # use_subprocess=True is required on Windows to prevent 'chrome not reachable'
-                # version_main is omitted so uc auto-detects the installed Chrome version
+                # version_main is set from the installed Chrome major version when available.
                 self.driver = uc.Chrome(
-                    options=options, use_subprocess=True
+                    options=options,
+                    use_subprocess=True,
+                    version_main=chrome_major_version,
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
                 logger.info(
-                    "Browser started successfully (undetected-chromedriver, auto-detected version)."
+                    "Browser started successfully (undetected-chromedriver)."
                 )
             except Exception as e:
                 logger.warning(
@@ -115,8 +246,23 @@ class BrowserService:
                 from selenium.webdriver.chrome.service import Service as ChromeService
                 from webdriver_manager.chrome import ChromeDriverManager
 
-                # Auto-detect driver version based on local Chrome installation
-                driver_path = ChromeDriverManager().install()
+                # Prefer any already-cached local chromedriver before downloading one.
+                driver_path = (
+                    explicit_driver_path
+                    if explicit_driver_exists
+                    else self._find_local_chromedriver(chrome_major_version)
+                )
+                if driver_path:
+                    logger.info(f"Using local chromedriver: {driver_path}")
+                else:
+                    logger.info(
+                        "No local chromedriver found; attempting webdriver-manager download."
+                    )
+                    manager_kwargs = {}
+                    if chrome_major_version is not None:
+                        manager_kwargs["driver_version"] = str(chrome_major_version)
+                    driver_path = ChromeDriverManager(**manager_kwargs).install()
+
                 service = ChromeService(driver_path)
                 self.driver = webdriver.Chrome(service=service, options=options)
                 time.sleep(2)
@@ -124,9 +270,15 @@ class BrowserService:
                     "Browser started successfully (webdriver-manager fallback auto-detect)."
                 )
             except Exception as e2:
+                chrome_version = self._get_chrome_version(chrome_binary)
                 logger.error(f"Failed to start browser with fallback: {e2}")
                 self._release_lock()
-                raise
+                raise RuntimeError(
+                    "Unable to start Chrome. "
+                    f"Detected Chrome at '{chrome_binary or 'not found'}'"
+                    + (f" (version {chrome_version})" if chrome_version else "")
+                    + ". Install a matching chromedriver locally or allow network access so webdriver-manager can download it."
+                ) from e2
 
         if self.driver and not settings.HEADLESS:
             try:

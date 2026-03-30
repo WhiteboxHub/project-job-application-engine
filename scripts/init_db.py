@@ -217,6 +217,7 @@ def init_db():
         (5, "kforce_custom", "strategies.custom.KForceStrategy", "full", False),
         (6, "lever", "strategies.custom.LeverStrategy", "full", False),
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
+        (8, "collabera_custom", "strategies.custom.CollaberaStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -308,6 +309,17 @@ def init_db():
             6, 'Capgemini', 'capgemini.com', 7, 'System integrator',
             'https://www.capgemini.com/careers/',
             false
+        )
+    """)
+
+    # 7. Collabera (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            7, 'Collabera', 'collabera.com', 8, 'Staffing vendor',
+            'https://collabera.com/job-search/',
+            true
         )
     """)
 
@@ -559,6 +571,66 @@ def init_db():
         [_json.dumps(wipro_application_selectors)],
     )
     logger.info("site_selectors seeded for Wipro [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for Collabera (job_site_id = 7)
+    # -----------------------------------------------------------------------
+    collabera_listing_selectors = {
+        "search_keywords": [
+            "AI Engineer",
+            "Machine Learning Engineer",
+            "Data Scientist",
+            "MLOps Engineer",
+            "Generative AI Engineer",
+            "LLM Engineer",
+            "AI Data Scientist",
+            "Python Developer",
+            "Data Engineer",
+            "Deep Learning Engineer",
+            "NLP Engineer",
+            "Computer Vision Engineer",
+            "Cloud Data Engineer",
+            "Business Intelligence Developer",
+            "AI Solutions Architect",
+        ],
+        "search_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[1]/input",
+        "location_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[2]/input",
+        "search_button": "//*[@id='main']/div/section[1]/div[2]/div/form/div/button",
+        "job_link": "//a[contains(@href, 'job-description')]",
+    }
+
+    collabera_application_selectors = {
+        "apply_button": "button.apply",
+        "form_fields": {
+            "fullName": "//*[@id='txtName']",
+            "email": "//*[@id='txtEmail']",
+            "phone": "//*[@id='txtPhone']",
+            "resume_upload": "input[type='file']",
+            "label_1": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/label",
+            "checkbox_1_label": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/div[4]/label",
+            "checkbox_2_label": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/div[5]/label",
+            "submit_btn": "//*[@id='Submit']",
+            "submit_fallback": "//button[contains(text(), 'Submit')]",
+        },
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (17, 7, 'listing', ?)",
+        [_json.dumps(collabera_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (18, 7, 'application', ?)",
+        [_json.dumps(collabera_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 17",
+        [_json.dumps(collabera_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 18",
+        [_json.dumps(collabera_application_selectors)],
+    )
+    logger.info("site_selectors seeded for Collabera [OK]")
 
     # Indexes
     conn.execute(

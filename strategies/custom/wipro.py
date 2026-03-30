@@ -64,13 +64,8 @@ class WiproStrategy(BaseStrategy):
             logger.warning("[WARNING] No database session - will only use CSV tracking")
 
     def save_screenshot(self, name):
-        """Helper to save a screenshot with a standardized name"""
-        filename = name if name.endswith(".png") else f"{name}.png"
-        try:
-            self.driver.save_screenshot(filename)
-            logger.info(f"  [DEBUG] Saved screenshot: {filename}")
-        except Exception as e:
-            logger.debug(f"Failed to save screenshot {filename}: {e}")
+        """Screenshots disabled for Wipro automation."""
+        return
 
     def _load_config(self):
         """Return dynamically injected candidate data."""
