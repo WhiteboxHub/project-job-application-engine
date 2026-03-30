@@ -24,7 +24,7 @@ The system uses a **Local DuckDB database** (`data/job_engine.duckdb`) to track 
 | Table | Purpose |
 |---|---|
 | `ats_platforms` | Platform class handler (`strategies.custom.mysite`) and `automation_level` ('full', 'semi', etc.). |
-| `job_sites` | Target portal details (e.g., LanceSoft, Wipro) and the boolean `is_active` flag. |
+| `job_sites` | Target portal details (e.g., LanceSoft, Experis) and the boolean `is_active` flag. |
 | `site_selectors` | HTML/CSS selectors per website injected at runtime to resist UI changes. |
 
 > **IMPORTANT:** When `main.py` is run without site parameters, it will automatically query the database and execute ALL sites where `is_active = true` AND `automation_level = 'full'`.
@@ -78,7 +78,7 @@ python scripts/main.py
 
 **Testing a specific site:**
 ```bash
-python scripts/main.py --site "Wipro"
+python scripts/main.py --site "Experis"
 ```
 
 ---

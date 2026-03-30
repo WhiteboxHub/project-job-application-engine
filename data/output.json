@@ -1,427 +1,58 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260323-1642",
+    "run_id": "RUN-20260330-2053",
     "candidate_name": "Vasanthi Nettem",
-    "status": "completed_with_errors",
+    "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 28,
-        "total_applications_attempted": 54,
-        "total_applications_successful": 24,
-        "total_applications_failed": 30
+        "total_jobs_found": 18,
+        "total_applications_attempted": 5,
+        "total_applications_successful": 0,
+        "total_applications_failed": 5
     },
-    "successful_applications": [
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5",
-            "job_title": "AI/ML Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5/",
-            "applied_at": "2026-03-23T16:44:02.723127+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5",
-            "job_title": "AI/ML Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NTQ1OFQxfjk5/",
-            "applied_at": "2026-03-23T16:44:02.734364+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5",
-            "job_title": "AI Workflow Automation Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5/",
-            "applied_at": "2026-03-23T16:44:30.150199+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5",
-            "job_title": "AI Workflow Automation Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc3M1Qxfjk5/",
-            "applied_at": "2026-03-23T16:44:30.162254+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NzkwOVQxfjk5",
-            "job_title": "AI/ML Engineer - Salesforce Platform",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzkwOVQxfjk5/",
-            "applied_at": "2026-03-23T16:44:59.439160+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NzkwOVQxfjk5",
-            "job_title": "AI/ML Engineer - Salesforce Platform",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzkwOVQxfjk5/",
-            "applied_at": "2026-03-23T16:44:59.451834+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODM3NlQxfjk5",
-            "job_title": "AI Engineer ll",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODM3NlQxfjk5/",
-            "applied_at": "2026-03-23T16:45:28.729623+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODM3NlQxfjk5",
-            "job_title": "AI Engineer ll",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODM3NlQxfjk5/",
-            "applied_at": "2026-03-23T16:45:28.738425+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
-            "applied_at": "2026-03-23T16:45:57.319400+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
-            "applied_at": "2026-03-23T16:45:57.330343+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDU3NFQxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDU3NFQxfjk5/",
-            "applied_at": "2026-03-23T16:46:25.550570+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDU3NFQxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDU3NFQxfjk5/",
-            "applied_at": "2026-03-23T16:46:25.562234+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2OTk4MlQxfjk5",
-            "job_title": "Senior AI Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTk4MlQxfjk5/",
-            "applied_at": "2026-03-23T16:46:53.860889+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2OTk4MlQxfjk5",
-            "job_title": "Senior AI Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTk4MlQxfjk5/",
-            "applied_at": "2026-03-23T16:46:53.869083+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:22.361192+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:22.374224+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MDYzM1Axfjk5",
-            "job_title": "AI Platform Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDYzM1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:49.395074+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MDYzM1Axfjk5",
-            "job_title": "AI Platform Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDYzM1Axfjk5/",
-            "applied_at": "2026-03-23T16:47:49.405509+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTAzNVAxfjk5",
-            "job_title": "Senior AI/ML Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTAzNVAxfjk5/",
-            "applied_at": "2026-03-23T16:48:18.742365+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTAzNVAxfjk5",
-            "job_title": "Senior AI/ML Data Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTAzNVAxfjk5/",
-            "applied_at": "2026-03-23T16:48:18.751920+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDY2MVQxfjk5",
-            "job_title": "Senior AI Engineer - Bilingual",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDY2MVQxfjk5/",
-            "applied_at": "2026-03-23T16:48:49.443168+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDY2MVQxfjk5",
-            "job_title": "Senior AI Engineer - Bilingual",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDY2MVQxfjk5/",
-            "applied_at": "2026-03-23T16:48:49.455386+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2Njg3MFQxfjk5",
-            "job_title": "Senior AWS Cloud & Agentic AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Njg3MFQxfjk5/",
-            "applied_at": "2026-03-23T16:49:18.362755+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2Njg3MFQxfjk5",
-            "job_title": "Senior AWS Cloud & Agentic AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2Njg3MFQxfjk5/",
-            "applied_at": "2026-03-23T16:49:18.375318+00:00"
-        }
-    ],
+    "successful_applications": [],
     "failed_applications": [
         {
-            "job_site": "KForce",
-            "job_id": "#",
-            "job_title": "Search Jobs",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:43:34.391206+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "#",
-            "job_title": "Search Jobs",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/",
+            "job_site": "Experis",
+            "job_id": "390883",
+            "job_title": "Site Reliability Engineer",
+            "job_url": "https://www.experis.com/en/job/390883/site-reliability-engineer",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:43:34.401756+00:00"
+            "failed_at": "2026-03-30T21:00:39.535991+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODAyMFQxfjk5",
-            "job_title": "PGD Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODAyMFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:49:45.626986+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2ODAyMFQxfjk5",
-            "job_title": "PGD Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2ODAyMFQxfjk5/",
+            "job_site": "Experis",
+            "job_id": "392517",
+            "job_title": "CE Facility Support Engineer - Electrical 2",
+            "job_url": "https://www.experis.com/en/job/392517/ce-facility-support-engineer-electrical-2",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:49:45.639501+00:00"
+            "failed_at": "2026-03-30T21:01:13.886393+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDQxNVQxfjk5",
-            "job_title": "Site Reliability Production Engineer (AI/ML Ops)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDQxNVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:50:12.462718+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MDQxNVQxfjk5",
-            "job_title": "Site Reliability Production Engineer (AI/ML Ops)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MDQxNVQxfjk5/",
+            "job_site": "Experis",
+            "job_id": "392527",
+            "job_title": "CE Facility Support Engineer - Electrical 2",
+            "job_url": "https://www.experis.com/en/job/392527/ce-facility-support-engineer-electrical-2",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:50:12.474431+00:00"
+            "failed_at": "2026-03-30T21:01:41.606907+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MTcwMVQxfjk5",
-            "job_title": "Developer AI & Automation",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MTcwMVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:50:39.134762+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MTcwMVQxfjk5",
-            "job_title": "Developer AI & Automation",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MTcwMVQxfjk5/",
+            "job_site": "Experis",
+            "job_id": "392532",
+            "job_title": "Senior Data Ops Engineer",
+            "job_url": "https://www.experis.com/en/job/392532/senior-data-ops-engineer",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:50:39.143925+00:00"
+            "failed_at": "2026-03-30T21:02:19.385047+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MFAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MFAxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:51:06.526528+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MFAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MFAxfjk5/",
+            "job_site": "Experis",
+            "job_id": "392546",
+            "job_title": "Senior SIM / eSIM Telecom Engineer",
+            "job_url": "https://www.experis.com/en/job/392546/senior-sim-esim-telecom-engineer",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:51:06.540462+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MVAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MVAxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:51:33.540374+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MTg1MVAxfjk5",
-            "job_title": "SOC Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MTg1MVAxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:51:33.551769+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyMVQxfjk5",
-            "job_title": "Accounting AI SME (Audit)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyMVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:00.656248+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyMVQxfjk5",
-            "job_title": "Accounting AI SME (Audit)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyMVQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:00.664341+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQxOFQxfjk5",
-            "job_title": "Tax Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQxOFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:27.810234+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQxOFQxfjk5",
-            "job_title": "Tax Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQxOFQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:27.821093+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5",
-            "job_title": "Licensed Security Professionals AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:52:54.879495+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5",
-            "job_title": "Licensed Security Professionals AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzcwM1Qxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:52:54.890707+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc0OFQxfjk5",
-            "job_title": "Senior Mobile Software Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc0OFQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:53:21.460538+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTc0OFQxfjk5",
-            "job_title": "Senior Mobile Software Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc0OFQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:53:21.472429+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5",
-            "job_title": "Corporate Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:53:48.086313+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5",
-            "job_title": "Corporate Accounting AI SME",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTQyM1Qxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:53:48.097464+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE1OTM3MlQxfjk5",
-            "job_title": "Senior Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE1OTM3MlQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:54:14.601679+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE1OTM3MlQxfjk5",
-            "job_title": "Senior Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE1OTM3MlQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:54:14.614553+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDUxNlQxfjk5",
-            "job_title": "AI Product Manager 5",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDUxNlQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-03-23T16:54:41.291643+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5UVlR-MjE3MDUxNlQxfjk5",
-            "job_title": "AI Product Manager 5",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5UVlR-MjE3MDUxNlQxfjk5/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:54:41.301760+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "find-work",
-            "job_title": "Find Work",
-            "job_url": "https://www.kforce.com/find-work/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:55:06.808193+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "find-work",
-            "job_title": "Find Work",
-            "job_url": "https://www.kforce.com/find-work/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:55:06.818962+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "solutions",
-            "job_title": "Solutions",
-            "job_url": "https://www.kforce.com/solutions/",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x837c13+10dd3]\n\tundetected_chromedriver!GetHandleVerifier [0x837d44+10f04]\n\tundetected_chromedriver!(No symbol) [0x611f50]\n\tundetected_chromedriver!(No symbol) [0x65a9aa]\n\tundetected_chromedriver!(No symbol) [0x65ac4b]\n\tundetected_chromedriver!(No symbol) [0x69cee2]\n\tundetected_chromedriver!(No symbol) [0x67d954]\n\tundetected_chromedriver!(No symbol) [0x69a7de]\n\tundetected_chromedriver!(No symbol) [0x67d6a6]\n\tundetected_chromedriver!(No symbol) [0x650029]\n\tundetected_chromedriver!(No symbol) [0x650de4]\n\tundetected_chromedriver!GetHandleVerifier [0xa94509+26d6c9]\n\tundetected_chromedriver!GetHandleVerifier [0xa8fb43+268d03]\n\tundetected_chromedriver!GetHandleVerifier [0xaad85b+286a1b]\n\tundetected_chromedriver!GetHandleVerifier [0x851668+2a828]\n\tundetected_chromedriver!GetHandleVerifier [0x8597fd+329bd]\n\tundetected_chromedriver!GetHandleVerifier [0x840588+19748]\n\tundetected_chromedriver!GetHandleVerifier [0x840752+19912]\n\tundetected_chromedriver!GetHandleVerifier [0x8299da+2b9a]\n\tKERNEL32!BaseThreadInitThunk [0x76745d49+19]\n\tntdll!RtlInitializeExceptionChain [0x776fd81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x776fd7a1+231]\n",
-            "failed_at": "2026-03-23T16:55:31.356185+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "solutions",
-            "job_title": "Solutions",
-            "job_url": "https://www.kforce.com/solutions/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-03-23T16:55:31.366971+00:00"
+            "failed_at": "2026-03-30T21:02:57.604050+00:00"
         }
     ],
-    "started_at": "2026-03-23T16:42:46.987763+00:00",
-    "finished_at": "2026-03-23T16:55:31.370471+00:00"
+    "started_at": "2026-03-30T20:53:40.399638+00:00",
+    "finished_at": "2026-03-30T21:03:17.205609+00:00"
 }

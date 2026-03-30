@@ -1,5 +1,5 @@
 """
-One-time patch: set only LanceSoft (id=2) and KForce (id=5) as active.
+One-time patch: set only LanceSoft (id=2), KForce (id=5), and Experis (id=7) as active.
 All other job sites are deactivated.
 """
 import os
@@ -22,8 +22,8 @@ else:
 # Deactivate all sites first
 conn.execute("UPDATE job_sites SET is_active = false")
 
-# Activate only LanceSoft (id=2) and KForce (id=5)
-conn.execute("UPDATE job_sites SET is_active = true WHERE id IN (2, 5)")
+# Activate only LanceSoft (id=2), KForce (id=5), and Experis (id=7)
+conn.execute("UPDATE job_sites SET is_active = true WHERE id IN (2, 5, 7)")
 
 # Show result
 rows = conn.execute(
