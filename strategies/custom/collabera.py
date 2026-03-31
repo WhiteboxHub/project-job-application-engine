@@ -35,6 +35,12 @@ class CollaberaStrategy(BaseStrategy):
 
         # Load applicant data from dynamically injected data
         self.config_data = self._load_config()
+
+        # Merge in candidate-specific data (overrides JSON defaults)
+        if candidate_data and isinstance(candidate_data, dict):
+            self.config_data = {**self.config_data, **candidate_data}
+            logger.info("[OK] Collabera: Candidate-specific data merged into config")
+
         self.selectors_config = self._load_selectors()
 
         self.portal_url = "https://collabera.com/job-search/"
@@ -245,46 +251,145 @@ class CollaberaStrategy(BaseStrategy):
 
     def find_and_apply_jobs(self):
         """
-        Search for jobs and apply sequentially.
+        Search for jobs and apply sequentially (Single-Phase).
+        This matches the robust patterns used in LanceSoft and Kforce.
         """
-        print(f"DEBUG: Entering find_and_apply_jobs for Collabera")
-        logger.info("[SEARCH] Collabera: Starting find-and-apply workflow")
+        from engine.guards import guards
+        logger.info("[SEARCH] Collabera: Starting single-phase find-and-apply workflow")
 
-        _search = self.config_data.get("search", {})
-        keywords = _search.get("keywords")
-
-        if not keywords:
-            logger.error("Collabera: No keywords found in run_parameters.")
+        if not self.config_data:
+            logger.error("Collabera: No configuration data available")
             return 0
 
-        # Phase 1: Collect Jobs
-        all_listings = []
-        for keyword in keywords:
-            listings = self.find_jobs_for_keyword(keyword)
-            all_listings.extend(listings)
-            time.sleep(random.uniform(3, 5))
+        # Support both 'keywords' list and legacy 'keyword' string
+        search_config = self.config_data.get("search", {})
+        keywords = search_config.get("keywords", [])
+        if not keywords:
+            keywords = [kw for kw in [search_config.get("keyword")] if kw]
 
-        csv_tracker.add_discovered_jobs("collabera", all_listings)
-        execution_tracker.add_jobs_found(len(all_listings))
-        logger.info(f"[STATS] Collabera: {len(all_listings)} total unique jobs found.")
+        if not keywords:
+            logger.error("[ERROR] Collabera: No search keywords found in candidate data!")
+            return 0
 
-        # Phase 2: Apply (with dedup guard)
         total_applied = 0
-        for listing in all_listings:
-            job_url = listing.get("job_url", "")
-            job_id  = listing.get("external_id", job_url)
+        for keyword in keywords:
+            if not guards.can_apply():
+                logger.warning("[LIMIT] Application limit reached. Stopping searches.")
+                break
 
-            if db_duckdb.is_already_applied(job_id, "Collabera"):
-                logger.info(f"  [SKIP] Already applied: {listing.get('job_title')} — skipping.")
-                continue
+            logger.info(f"\n{'=' * 60}")
+            logger.info(f"[SEARCH] Collabera: Search for '{keyword}'")
+            logger.info(f"{'=' * 60}")
 
-            if self.apply(listing):
-                total_applied += 1
-                db_duckdb.mark_applied(job_id, "Collabera", listing.get("job_title", ""))
-                logger.info(f"  [YES] Applied! ({total_applied} successful so far)")
-                time.sleep(random.uniform(2, 4))
+            applied_count = self._search_and_apply_immediately(keyword)
+            total_applied += applied_count
 
+            # Human-like delay between keyword searches
+            if len(keywords) > 1:
+                time.sleep(random.uniform(5, 10))
+
+        logger.info(f"\n[OK] Collabera workflow complete: {total_applied} applications submitted")
         return total_applied
+
+    def _search_and_apply_immediately(self, keyword):
+        """
+        Search and apply to jobs immediately on each page.
+        """
+        from engine.guards import guards
+        
+        applied_in_search = 0
+        seen_urls = set()
+        max_pages = self.config_data.get("search", {}).get("max_pages", 3)
+        listing_selectors = self.selectors_config.get("listing", {})
+        link_selector = listing_selectors.get("job_link")
+
+        if not link_selector:
+            logger.error("Collabera: 'job_link' selector is missing!")
+            return 0
+
+        for page in range(1, max_pages + 1):
+            if not guards.can_apply():
+                break
+
+            try:
+                if page == 1:
+                    logger.info(f"Collabera: [PAGE 1] Opening job search page")
+                    self._open_job_search_page()
+
+                    search_input_sel   = listing_selectors.get("search_input")
+                    location_input_sel = listing_selectors.get("location_input")
+                    search_btn_sel     = listing_selectors.get("search_button")
+                    search_location    = self._get_search_location()
+
+                    if search_input_sel and search_btn_sel:
+                        try:
+                            self._submit_search_form(
+                                keyword, search_input_sel, location_input_sel,
+                                search_location, search_btn_sel, link_selector
+                            )
+                        except Exception as e:
+                            logger.warning(f"Collabera: Form-based search failed ({e}), falling back to direct URL")
+                            self._open_search_results_url(keyword, search_location, page=1)
+                    else:
+                        self._open_search_results_url(keyword, search_location, page=1)
+                else:
+                    self._open_search_results_url(keyword, self._get_search_location(), page=page)
+
+                time.sleep(random.uniform(5, 7))
+
+                elements = self.driver.find_elements(*self._by(link_selector))
+                logger.info(f"Collabera: [PAGE {page}] Found {len(elements)} jobs")
+
+                if not elements:
+                    logger.info(f"Collabera: No jobs on page {page}. Stopping.")
+                    break
+
+                # Extract URLs beforehand to avoid stale elements during navigations
+                listings_on_page = []
+                for el in elements:
+                    try:
+                        url = el.get_attribute("href")
+                        title = el.text.strip()
+                        if url and url not in seen_urls:
+                            seen_urls.add(url)
+                            external_id = url.split("-")[-1].replace("/", "") if "-" in url else url
+                            listings_on_page.append({
+                                "job_title": title,
+                                "job_url": url,
+                                "external_id": external_id
+                            })
+                    except: continue
+
+                execution_tracker.add_jobs_found(len(listings_on_page))
+
+                # Now apply to each job found on this page
+                for listing in listings_on_page:
+                    if not guards.can_apply():
+                        break
+
+                    job_id = listing["external_id"]
+                    if db_duckdb.is_already_applied(job_id, "Collabera"):
+                        logger.info(f"  [SKIP] Already applied: {listing['job_title']}")
+                        continue
+
+                    if self.apply(listing):
+                        applied_in_search += 1
+                        guards.increment_counter()
+                        db_duckdb.mark_applied(job_id, "Collabera", listing["job_title"])
+                        logger.info(f"  [YES] Applied! ({applied_in_search} for this keyword)")
+                        time.sleep(random.uniform(3, 6))
+
+                    # Navigate back to search results if necessary (or rely on self.apply to stay in session)
+                    # For Collabera, self.apply navigates to job_url, so we MUST go back or re-search for the next page.
+                    # Re-searching is safer for session health.
+
+                # After processing a page, the next iteration of the 'page' loop will navigate to the next results URL.
+
+            except Exception as e:
+                logger.error(f"Collabera: Error on page {page}: {e}")
+                break
+
+        return applied_in_search
 
     def find_jobs_for_keyword(self, keyword):
         """
@@ -409,29 +514,58 @@ class CollaberaStrategy(BaseStrategy):
             self.driver.get(job_url)
             time.sleep(5)
 
-            # ── Step 1: Click the Apply button on the job posting page ─────────
+            # ── Step 1: Click Apply Button on Job Posting (if needed) ───────────
             apply_btn_sel = self.selectors_config.get("application", {}).get("apply_button")
-            if apply_btn_sel:
+            form_fields = self.selectors_config.get("application", {}).get("form_fields", {})
+            first_field_sel = form_fields.get("fullName")
+
+            # Check if form is already visible
+            form_visible = False
+            if first_field_sel:
                 try:
+                    self.driver.find_element(*self._by(first_field_sel))
+                    form_visible = True
+                    logger.info("Collabera: Application form already visible. Skipping trigger click.")
+                except Exception:
+                    form_visible = False
+
+            if not form_visible and apply_btn_sel:
+                try:
+                    logger.info(f"Collabera: Looking for Apply trigger: {apply_btn_sel}")
                     apply_btn = WebDriverWait(self.driver, 10).until(
-                        EC.element_to_be_clickable(self._by(apply_btn_sel))
-                    )
-                    self.human.human_click(apply_btn)
-                    logger.info("Collabera: Clicked Apply button on posting.")
+                        EC.presence_of_all_elements_located(self._by(apply_btn_sel))
+                    )[0]
+                    
+                    # Scroll to the apply trigger
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", apply_btn)
+                    time.sleep(1)
+
+                    try:
+                        self.human.human_click(apply_btn)
+                    except Exception:
+                        logger.warning("Collabera: Standard click failed, using JavaScript click.")
+                        self.driver.execute_script("arguments[0].click();", apply_btn)
+                        
+                    logger.info("Collabera: Clicked Apply trigger.")
                     time.sleep(4)
                 except Exception as e:
-                    logger.warning(f"Collabera: Could not click Apply button: {e}")
+                    logger.warning(f"Collabera: Could not click Apply trigger: {e}")
+                    # Continue anyway in case the form is already open
 
             # ── Step 2: Fill Name / Email / Phone ─────────────────────────────
-            # Collabera uses a SINGLE full-name field (#txtName) — no first/last split
-            applicant_data = self.config_data.get("applicant", {})
-            first_name = self.config_data.get("first_name") or applicant_data.get("first_name", "")
-            last_name  = self.config_data.get("last_name")  or applicant_data.get("last_name", "")
-            full_name  = f"{first_name} {last_name}".strip()
-            email = self.config_data.get("email") or applicant_data.get("email", "")
-            phone = self.config_data.get("phone") or applicant_data.get("phone", "")
+            # Robust data resolution (matching Kforce pattern)
+            _raw = self.config_data.get("applicant", {})
+            applicant = {
+                "first_name": self.config_data.get("first_name") or _raw.get("first_name", ""),
+                "last_name":  self.config_data.get("last_name")  or _raw.get("last_name", ""),
+                "email":      self.config_data.get("email")      or _raw.get("email", ""),
+                "phone":      self.config_data.get("phone")      or _raw.get("phone", ""),
+            }
+            full_name = f"{applicant['first_name']} {applicant['last_name']}".strip()
+            email = applicant["email"]
+            phone = applicant["phone"]
 
-            form_fields = self.selectors_config.get("application", {}).get("form_fields", {})
+            # form_fields already loaded in Step 1
 
             logger.info("Collabera: Filling applicant details...")
             for field_key, value in [("fullName", full_name), ("email", email), ("phone", phone)]:
@@ -457,14 +591,15 @@ class CollaberaStrategy(BaseStrategy):
                 cb_sel = form_fields.get(cb_key)
                 if cb_sel:
                     try:
-                        el = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located(self._by(cb_sel))
-                        )
-                        self.driver.execute_script(
-                            "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", el
-                        )
-                        time.sleep(0.4)
-                        self.safe_actions.safe_click(cb_sel, by=self._by(cb_sel)[0])
+                        try:
+                            # Scroll to make label visible
+                            label_el = self.driver.find_element(*self._by(cb_sel))
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", label_el)
+                            time.sleep(0.5)
+                            
+                            self.safe_actions.safe_click(cb_sel, by=self._by(cb_sel)[0])
+                        except Exception as e:
+                            logger.warning(f"Collabera: Failed to click consent label {cb_key}: {e}")
                         logger.info(f"  [OK] Clicked [{cb_key}]")
                         time.sleep(0.5)
                     except Exception as inner_e:

@@ -322,6 +322,7 @@ def init_db():
             true
         )
     """)
+    conn.execute("UPDATE job_sites SET is_active = true WHERE id = 7")
 
     # -----------------------------------------------------------------------
     # Seed: site_selectors for LanceSoft (job_site_id = 2)
@@ -600,7 +601,7 @@ def init_db():
     }
 
     collabera_application_selectors = {
-        "apply_button": "button.apply",
+        "apply_button": "//*[@id='main']/div/section[2]/div/div/div[2]/div/div/h5",
         "form_fields": {
             "fullName": "//*[@id='txtName']",
             "email": "//*[@id='txtEmail']",
@@ -623,14 +624,14 @@ def init_db():
         [_json.dumps(collabera_application_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 17",
+        "UPDATE site_selectors SET job_site_id = 7, type = 'listing', config_json = ? WHERE id = 17",
         [_json.dumps(collabera_listing_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 18",
+        "UPDATE site_selectors SET job_site_id = 7, type = 'application', config_json = ? WHERE id = 18",
         [_json.dumps(collabera_application_selectors)],
     )
-    logger.info("site_selectors seeded for Collabera [OK]")
+    logger.info("site_selectors seeded and updated for Collabera [OK]")
 
     # Indexes
     conn.execute(
