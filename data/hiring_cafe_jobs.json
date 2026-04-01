@@ -2,12 +2,15 @@
   "source": "hiring.cafe",
   "categorized_by": "ats_platform",
   "platforms": [
+    "adp",
     "ashby",
+    "bamboohr",
     "greenhouse",
-    "icims",
-    "jobvite",
+    "indeed",
+    "lever",
+    "oraclecloud",
+    "rippling",
     "smartrecruiters",
-    "successfactors",
     "taleo",
     "ultipro",
     "unknown",
@@ -15,241 +18,482 @@
     "workday"
   ],
   "by_ats": {
+    "bamboohr": [
+      {
+        "job_id": "0rarn06n43obxj7j",
+        "title": "1d\nAI Performance Engineer\nAustin, Texas, United States\nRemote\nFull Time\nCornelis Networks: High-performance networking solutions for AI and HPC datacenters.\n5+ YOEExperience running AI/ML at cluster ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/0rarn06n43obxj7j",
+        "ats_url": "https://cornelisnetworks.bamboohr.com/careers/198"
+      },
+      {
+        "job_id": "2puz2467ij1s9vtf",
+        "title": "1d\nSoftware Engineer (NH-2)\nAnnapolis Junction, Maryland, United States\n$180k-$205k/yr\nOnsite\nFull Time\nLegato: Provides IT engineering services to the intelligence community.\n14+ YOEPython, Docker/Ku",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/2puz2467ij1s9vtf",
+        "ats_url": "https://legato.bamboohr.com/careers/108"
+      }
+    ],
+    "unknown": [
+      {
+        "job_id": "24agzhvg72fuwyvm",
+        "title": "1d\nAI Engineer, Agent Systems\nPalo Alto or San Francisco\n$173k-$260k/yr\nOnsite\nFull Time\nSalesforce\nNYSE: CRM\n: Provides customer relationship management software and cloud-based business applications",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/24agzhvg72fuwyvm",
+        "ats_url": "https://careers.mail.salesforce.com/accommodations-request-form"
+      },
+      {
+        "job_id": "y0im57i78q2497b0",
+        "title": "1d\nAI Solutions Engineer\nSioux Falls, South Dakota, United States\nOnsite\nFull Time\nVance Thompson Vision: Provides advanced surgical vision correction and specialized eye care.\n3+ YOE3-5 years in data",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/y0im57i78q2497b0",
+        "ats_url": null
+      },
+      {
+        "job_id": "3iex4e4nih14eq38",
+        "title": "1d\nSenior AI Engineer\nNorristown, Pennsylvania, United States\nRemote\nFull Time\nMRO: Manages secure medical record exchange for healthcare organizations\n5+ YOE5+ years in AI deployment or applied ML; s",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/3iex4e4nih14eq38",
+        "ats_url": null
+      },
+      {
+        "job_id": "rts0e79ktyp04yvr",
+        "title": "1d\nAI Solutions Engineer\nChicago, Illinois, United States\n$81k-$118k/yr\nHybrid\nFull Time\nConagra Brands\nNYSE: CAG\n: Manufactures and markets branded consumer packaged food products.\n5+ YOE5+ years of ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/rts0e79ktyp04yvr",
+        "ats_url": null
+      },
+      {
+        "job_id": "aotvbo5qkmmnz4an",
+        "title": "1d\nSoftware AI Engineer - US\nSan Jose, California, United States\nHybrid\nFull Time, Contract\nJade Global: Enterprise IT services and digital transformation consulting provider\n8+ YOE8-10 years of exper",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/aotvbo5qkmmnz4an",
+        "ats_url": null
+      },
+      {
+        "job_id": "uqg4bu94yhk1da6l",
+        "title": "1d\nAI Engineer - Experienced Associate\nChicago, Illinois, United States\n$63k-$140k/yr\nOnsite\nFull Time\nPwC: Provides global professional audit, tax, and consulting services.\n2+ YOEBachelor's degree; a",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/uqg4bu94yhk1da6l",
+        "ats_url": null
+      },
+      {
+        "job_id": "me8l65n56h59uk5m",
+        "title": "1d\nAI/ML Engineer\nUnknown, Unknown, United States\nHybrid\nFull Time\nUnitedHealth Group\nNYSE: UNH\n: Provides global health insurance and technology-enabled healthcare services.\n3+ YOE3+ years software e",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/me8l65n56h59uk5m",
+        "ats_url": null
+      },
+      {
+        "job_id": "rri2ryprec08htgh",
+        "title": "1d\nAI Engineer - Agent Team\nSan Francisco, California, United States\n$150k-$250k/yr\nOnsite\nFull Time\nFurtherAI: Automates complex insurance workflows using specialized AI agents.\n3+ YOE3+ years in ML/",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/rri2ryprec08htgh",
+        "ats_url": null
+      },
+      {
+        "job_id": "8o0yy6n07hck4ytf",
+        "title": "1d\nLead Applied AI Engineer\nNew York City or Louisville or Washington or Frisco or Tampa or Boston\n$171k-$235k/yr\nRemote\nFull Time\nHumana\nNYSE: HUM\n: Provides health insurance plans and integrated hea",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/8o0yy6n07hck4ytf",
+        "ats_url": null
+      },
+      {
+        "job_id": "ghmjmonqelzetqjv",
+        "title": "1d\nLegal AI Engineer\nNew York, New York, United States\n$175k-$260k/yr\nRemote\nFull Time\nEpiq: Provides technology and services for the global legal profession.\n2+ YOEJD with active or prior bar; 2\u20138+ y",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ghmjmonqelzetqjv",
+        "ats_url": null
+      },
+      {
+        "job_id": "y0w2uu4qjq0cjrmd",
+        "title": "23h\nSoftware Engineer AI\nPlano, Texas, United States\n$115k-$145k/yr\nHybrid\nFull Time\nWIS International: Provides physical inventory counting and retail data collection services.\n3+ YOE3+ years softwar",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/y0w2uu4qjq0cjrmd",
+        "ats_url": null
+      },
+      {
+        "job_id": "l9thmmcwly126psy",
+        "title": "23h\nClasslink Inc - AI Agentics Engineer\nUnited States\n$120k-$165k/yr\nRemote\nFull Time\nClassLink: Access and analytics platform for schools and educators.\n5+ YOE5+ years software engineering; 1+ year ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/l9thmmcwly126psy",
+        "ats_url": null
+      },
+      {
+        "job_id": "yyxyv4bvlzoh35t6",
+        "title": "1d\nAI Engineer - Telework Oppty!\nAnnapolis Junction, Maryland, United States\n$145k-$196k/yr\nHybrid\nFull Time\nGeneral Dynamics Information Technology\nNYSE: GD\n: Delivers IT and mission services to gove",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/yyxyv4bvlzoh35t6",
+        "ats_url": null
+      },
+      {
+        "job_id": "dbvr5zvwfl9b65l2",
+        "title": "10h\nAI Application Engineer Intern\nSan Diego, California, United States\nOnsite\nInternship, Full Time\nAdvantest\nTokyo Stock Exchange: 6857\n: Manufacturer of automated test equipment for the semiconduct",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/dbvr5zvwfl9b65l2",
+        "ats_url": null
+      },
+      {
+        "job_id": "6tx3e7fvuzf892j5",
+        "title": "1d\nAI Lead Engineer for Banking Technology\nNew York or Jersey City\n$177k-$265k/yr\nHybrid\nFull Time\nCiti\nNYSE: C\n: Global financial institution providing retail, corporate, and investment banking servi",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/6tx3e7fvuzf892j5",
+        "ats_url": null
+      },
+      {
+        "job_id": "1fgwv69w5nhwgrqa",
+        "title": "11h\nForward Deployed AI Engineer\nSan Diego, California, United States\n$80k-$120k/yr\nOnsite\nFull Time\nCadre AI: Strategic AI consulting and custom implementation services for business transformation.\n5",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/1fgwv69w5nhwgrqa",
+        "ats_url": null
+      },
+      {
+        "job_id": "e10cahwptazhto4z",
+        "title": "16h\nAI/ML Engineer I\nUnited States\nRemote\nFull Time\nQuzara: Provides cybersecurity compliance advisory and managed security operations services.\n1+ YOEBachelor's in CS/Engineering/Data Science; 1-3 ye",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/e10cahwptazhto4z",
+        "ats_url": null
+      },
+      {
+        "job_id": "xq4ew7oabui8ymyh",
+        "title": "1d\nAI Platform Engineer\nUnited States\n$69k-$131k/yr\nRemote\nFull Time\nRTX\nNYSE: RTX\n: Designs and manufactures aircraft engines and defense systems.\n2+ YOEUniversity degree or equivalent experience, 2+",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/xq4ew7oabui8ymyh",
+        "ats_url": null
+      },
+      {
+        "job_id": "xgcrixngqcatqkm0",
+        "title": "1d\nAI Engineer - Telework Oppty!\nAnnapolis Junction, Maryland, United States\n$145k-$196k/yr\nHybrid\nFull Time\nGDIT\nNYSE: GD\n: Provides IT and mission services to government agencies.\n6+ YOEMinimum 6 ye",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/xgcrixngqcatqkm0",
+        "ats_url": null
+      },
+      {
+        "job_id": "577idorzee7lz3kd",
+        "title": "1d\nIntern - AI Engineer\nPittsburgh, Pennsylvania, United States\n$20/hr\nOnsite\nSeasonal\nConnectiveRx: Helps patients access and afford specialty and branded medications.\n0+ YOEActive college student; p",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/577idorzee7lz3kd",
+        "ats_url": null
+      },
+      {
+        "job_id": "zcabind0koiiv67h",
+        "title": "1d\nApplied AI Developer\nYork, Pennsylvania, United States\nHybrid\nFull Time\nWestfalia Technologies: Designs and manufactures automated warehouse storage and retrieval systems.\n3+ YOEProficiency in ML f",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/zcabind0koiiv67h",
+        "ats_url": null
+      },
+      {
+        "job_id": "hqbnksiv6hllrwr0",
+        "title": "20h\nStaff Software Engineer, Applied AI\nSeattle or Austin\n$230k-$280k/yr\nHybrid\nFull Time\nHackerOne: Platform for crowdsourced security testing and vulnerability disclosure.\n8+ YOE8+ years in software",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/hqbnksiv6hllrwr0",
+        "ats_url": null
+      },
+      {
+        "job_id": "fq7kxmgtrakn1qpw",
+        "title": "1d\nAI Agent Developer Intern\nUnited States\nOnsite\nFull Time, Internship\nAmbarella\nNASDAQ: AMBA\n: Develops high-performance AI vision processors for edge devices.\n0+ YOEPursuing B.S., M.S., or Ph.D. in",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/fq7kxmgtrakn1qpw",
+        "ats_url": null
+      },
+      {
+        "job_id": "gdkzl4stu53oiff1",
+        "title": "1d\nLead AI/DevOps Engineer\nNew York City or Arlington or O'Fallon or San Francisco or New York City\n$168k-$277k/yr\nHybrid\nFull Time\nMastercard\nNYSE: MA\n: Facilitates global electronic payment transact",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/gdkzl4stu53oiff1",
+        "ats_url": null
+      },
+      {
+        "job_id": "v8jay1pjew7n05e3",
+        "title": "1d\nFull Stack AI Engineer\nChicago, Illinois, United States\n$150k-$165k/yr\nHybrid\nFull Time\nHarbor Capital Advisors: Provides actively managed investment solutions through a manager-of-managers model.\n",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/v8jay1pjew7n05e3",
+        "ats_url": null
+      },
+      {
+        "job_id": "eubowecapr58xjvn",
+        "title": "15h\nAI Automation Engineer\nMiami, Florida, United States\nOnsite\nFull Time\nEdFed - Educational Federal Credit Union: Member-owned financial cooperative serving the South Florida educational community.\n",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/eubowecapr58xjvn",
+        "ats_url": null
+      },
+      {
+        "job_id": "dhkaemwp1osjaw01",
+        "title": "1d\nSenior Principal AI/ML Engineer\nSanta Clara, California, United States\n$149k-$297k/yr\nOnsite\nFull Time\nAbbott\nNYSE: ABT\n: Manufactures and sells medical devices, diagnostics, and nutritional produc",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/dhkaemwp1osjaw01",
+        "ats_url": null
+      },
+      {
+        "job_id": "wntbetjii51ehye6",
+        "title": "15h\nFull Stack AI Developer\nLivermore, California, United States\n$146k-$186k/yr\nHybrid\nFull Time\nLawrence Livermore National Laboratory: Conducts scientific research and develops technology for nation",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/wntbetjii51ehye6",
+        "ats_url": null
+      },
+      {
+        "job_id": "611axjm9p37u1rch",
+        "title": "22h\nAI Research Engineer - Alpha Discovery (USA)\nStamford or New York City\n$120k-$150k/yr\nOnsite\nFull Time\nTrexquant: Develops systematic trading strategies using machine learning and data analysis.\n0",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/611axjm9p37u1rch",
+        "ats_url": null
+      },
+      {
+        "job_id": "zqvzcwy9d5e51hlg",
+        "title": "1d\nAI Lead Data Engineer\nAtlanta, Georgia, United States\n$157k/yr\nHybrid\nFull Time\nCox Enterprises: Operates global broadband, automotive services, and media businesses.\n6+ YOEBachelor\u2019s in CS/Data Sc",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/zqvzcwy9d5e51hlg",
+        "ats_url": null
+      },
+      {
+        "job_id": "otv31r54vp2aw9vn",
+        "title": "1d\nAI Cloud Data Engineer\nKansas City, Missouri, United States\n$83k-$179k/yr\nHybrid\nFull Time\nUMB\nNASDAQ: UMBF\n: Provides commercial, personal, and institutional banking and wealth management.\n7+ YOEB",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/otv31r54vp2aw9vn",
+        "ats_url": null
+      },
+      {
+        "job_id": "wdpkkxnu5ru9cvwu",
+        "title": "1d\nPlatform AI Engineer\nCharlotte, North Carolina, United States\nOnsite\nFull Time\nInfosys\nNYSE: INFY\n: Global provider of digital services and business consulting.\n4+ YOEBachelor's degree or foreign e",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/wdpkkxnu5ru9cvwu",
+        "ats_url": null
+      },
+      {
+        "job_id": "ssuvx9pt746t0paj",
+        "title": "16h\nAsset & Wealth Management - AI Engineer - Associate - Salt Lake City\nSalt Lake City, Utah, United States\nOnsite\nFull Time\nGoldman Sachs\nNYSE: GS\n: Provides investment banking, securities, and inve",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ssuvx9pt746t0paj",
+        "ats_url": "http://gs.com/careers"
+      },
+      {
+        "job_id": "q0vzuks2er66khdg",
+        "title": "1d\nSoftware Development Engineer In Test, Verifications\nDenver, Colorado, United States\n$100k-$135k/yr\nHybrid\nFull Time\nbet365: Operates a global online platform for sports betting and gaming.\nDesign ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/q0vzuks2er66khdg",
+        "ats_url": null
+      },
+      {
+        "job_id": "pid5a1b64qwvpgsv",
+        "title": "1d\nSenior Android Mobile Developer\nSeattle, Washington, United States\n$151k-$204k/yr\nHybrid\nFull Time\nRedfin: Provides residential real estate brokerage and mortgage lending services.\n5+ YOE5+ years s",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/pid5a1b64qwvpgsv",
+        "ats_url": null
+      },
+      {
+        "job_id": "9g4rko85c7ma4q09",
+        "title": "19h\nSenior Web Developer\nPhiladelphia or Atlanta or Blue Bell or Boston or Charlotte or Dallas or Exton or Greensboro or Greenville or Kansas City or Miami or Oklahoma City or Pittsburgh or Raleigh or",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/9g4rko85c7ma4q09",
+        "ats_url": null
+      },
+      {
+        "job_id": "49u0f3x3hc2nbvjx",
+        "title": "1d\nFront End Engineer - UI / UX\nSan Jose, California, United States\n$114k-$215k/yr\nOnsite\nFull Time\nAdobe\nNASDAQ: ADBE\n: Providing software for creative design and digital experience management.\n4+ YO",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/49u0f3x3hc2nbvjx",
+        "ats_url": "https://www.adobe.com/content/dam/cc/en/careers/pdfs/executed-eeo.pdf"
+      },
+      {
+        "job_id": "aucfdj9zvafrszkm",
+        "title": "22h\nSenior Technical Product Marketing Manager- AI\nUnited States\n$171k-$282k/yr\nRemote\nFull Time\nKong: Provides infrastructure to manage and secure software connectivity.\n5+ YOE5+ years in technical p",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/aucfdj9zvafrszkm",
+        "ats_url": null
+      },
+      {
+        "job_id": "ypkf7a430k1bvrcz",
+        "title": "1d\nSr Staff Software Engineer\nBellevue, Washington, United States\n$166k-$248k/yr\nHybrid\nFull Time\nGE HealthCare\nNasdaq: GEHC\n: Manufacturing medical imaging systems and digital health solutions.\n8+ YO",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ypkf7a430k1bvrcz",
+        "ats_url": null
+      },
+      {
+        "job_id": "ku9axlzi8e1m0ojr",
+        "title": "12h\nLead QA Automation Engineer with Selenium and Playwright\nUnited States\n$58k-$122k/yr\nOnsite\nFull Time\nPerficient: Global consultancy delivering digital transformation and AI solutions.\nExtensive Q",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ku9axlzi8e1m0ojr",
+        "ats_url": null
+      },
+      {
+        "job_id": "lm31aj911udxbcki",
+        "title": "1d\nSenior Manager, Network Engineering & Operations\nBurbank, California, United States\n$188k-$253k/yr\nHybrid\nFull Time\nDisney\nNYSE: DIS\n: Produces entertainment media and operates global theme park re",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/lm31aj911udxbcki",
+        "ats_url": null
+      },
+      {
+        "job_id": "zw3k2o3d32ykijdr",
+        "title": "1d\nSoftware Engineering Intern - AI Agents\nDraper, Utah, United States\nOnsite\nInternship\nProofpoint: Provides cybersecurity and compliance solutions to protect people and data.\nPursuing a technical de",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/zw3k2o3d32ykijdr",
+        "ats_url": null
+      },
+      {
+        "job_id": "jhve13yj1mc631mi",
+        "title": "1d\nUndergraduate Intern - AI Enablement Intern (Remote)\nSanta Ana or United States\n$15-$20/hr\nRemote\nMultiple Commitments Available\nFirst American\nNYSE: FAF\n: Provides title insurance and settlement s",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/jhve13yj1mc631mi",
+        "ats_url": null
+      },
+      {
+        "job_id": "jzd6owus4bn8bnkc",
+        "title": "20h\nTech Lead - Vehicle Electrical Software Systems Engineering, Ecosystem of AI Tools\nDearborn, Michigan, United States\nOnsite\nFull Time\nFord\nNYSE: F\n: Designs, manufactures, and services a global fl",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/jzd6owus4bn8bnkc",
+        "ats_url": null
+      },
+      {
+        "job_id": "5r49ofes2qf0xxi0",
+        "title": "1d\nPrinciple Solutions Architect\nAnnapolis Junction or Reston or Denver\n$137k-$302k/yr\nOnsite\nFull Time\nCACI\nNYSE: CACI\n: Provides information technology services to government defense agencies.\n12+ Y",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/5r49ofes2qf0xxi0",
+        "ats_url": null
+      },
+      {
+        "job_id": "z2r474zgyf8mnuk5",
+        "title": "1d\nExternal Technology Engineering Intern\nReston, Virginia, United States\n$48k-$87k/yr\nOnsite\nInternship\nLeidos\nNYSE: LDOS\n: Delivers engineering and information technology services to government agen",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/z2r474zgyf8mnuk5",
+        "ats_url": null
+      },
+      {
+        "job_id": "tkxpt8ed8fi177b4",
+        "title": "1d\nEng II - Sys\nFort Walton Beach, Florida, United States\n$65k-$110k/yr\nOnsite\nFull Time\nBAE Systems\nLondon Stock Exchange: BA.\n: Manufactures advanced defense, aerospace, and security solutions.\n2+ Y",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/tkxpt8ed8fi177b4",
+        "ats_url": null
+      },
+      {
+        "job_id": "2si9sgbl25gj5itb",
+        "title": "1d\nHead of Engineering - Technology, Media & Telecom\nSan Francisco, California, United States\n$300k/yr\nOnsite\nFull Time\nFractal\nNational Stock Exchange of India: FRACTAL\n: Provides artificial intellig",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/2si9sgbl25gj5itb",
+        "ats_url": null
+      },
+      {
+        "job_id": "z0u34fjlw8jotrah",
+        "title": "1d\nSummer 2026 Software Engineering, Agentic AI Internship\nBellevue, Washington, United States\n$20-$40/hr\nOnsite\nFull Time, Internship\nT-Mobile\nNASDAQ: TMUS\n: T-Mobile provides wireless voice and data",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/z0u34fjlw8jotrah",
+        "ats_url": null
+      },
+      {
+        "job_id": "dp4j8aw7y4kk7x9c",
+        "title": "1d\nStaff Technical Program Manager - AI Security\nBellevue or Menlo Park\n$194k-$278k/yr\nOnsite\nFull Time\nSnowflake\nNYSE: SNOW\n: Provides a cloud-based platform for data storage and analysis\n7+ YOE7+ ye",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/dp4j8aw7y4kk7x9c",
+        "ats_url": "http://careers.snowflake.com/"
+      },
+      {
+        "job_id": "9mcc6mis0rlpyaqa",
+        "title": "1d\nSenior Manager, Network Product Architecture, Engineering & Operations\nBurbank, California, United States\n$188k-$253k/yr\nOnsite\nFull Time\nDisney\nNYSE: DIS\n: Operates global entertainment, theme par",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/9mcc6mis0rlpyaqa",
+        "ats_url": null
+      },
+      {
+        "job_id": "l7gar2ry9z66cmql",
+        "title": "1d\nSr. Engineering Manager - Customer Experience Intelligence (CXI)\nMountain View or San Francisco\n$222k-$313k/yr\nHybrid\nFull Time\nDatabricks: Unified platform for enterprise data analytics and artifi",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/l7gar2ry9z66cmql",
+        "ats_url": null
+      },
+      {
+        "job_id": "2uol2fi93t3no7ow",
+        "title": "9h\nSenior Conversation Designer, Chat & Voice AI (Palo Alto, CA, US, 94304)\nPalo Alto, California, United States\n$196k-$332k/yr\nHybrid\nFull Time\nSAP\nFrankfurt Stock Exchange: SAP\n: Provides enterprise",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/2uol2fi93t3no7ow",
+        "ats_url": null
+      },
+      {
+        "job_id": "ok4wrzyeip7wlwnt",
+        "title": "1d\nEng II - Sys\nFort Walton Beach, Florida, United States\n$65k-$110k/yr\nRemote\nFull Time\nBAE Systems\nLondon Stock Exchange: BA\n: Global manufacturer of aerospace, defense, and security products.\n2+ YO",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ok4wrzyeip7wlwnt",
+        "ats_url": null
+      },
+      {
+        "job_id": "u56e5xxy4sogu3y4",
+        "title": "9h\nGrid Innovation Delivery Intern - Remote Grid Engineering (Oakland, CA, US, 94612)\nOakland, California, United States\n$29-$30/hr\nHybrid\nFull Time, Internship\nPG&E\nNYSE: PCG\n: Provides natural gas a",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/u56e5xxy4sogu3y4",
+        "ats_url": null
+      },
+      {
+        "job_id": "srwqsoc2lyaqd9sl",
+        "title": "1d\nDirector of Engineering \u2013 Supply Chain Technology - Hybrid - Seattle,WA\nSeattle, Washington, United States\n$201k-$332k/yr\nHybrid\nFull Time\nNordstrom: Operates luxury department stores and off-price",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/srwqsoc2lyaqd9sl",
+        "ats_url": "https://careers.nordstrom.com/#/contact-us/faq"
+      },
+      {
+        "job_id": "fsref8o8660jio1i",
+        "title": "1d\nContract Technical Recruiter & Sourcer (AI Insurance SaaS)\nNew York City or New York\n$45-$50/hr\nHybrid\nAll Commitments Available\nEvolutionIQ: AI-powered claims guidance platform for insurance carri",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/fsref8o8660jio1i",
+        "ats_url": null
+      },
+      {
+        "job_id": "djemozszm4ux34t5",
+        "title": "15h\nSenior Director, Advanced Computing Business\nUnited States\n$157k-$291k/yr\nRemote\nFull Time\nD-Wave Quantum\nNYSE: QBTS\n: Develops commercial quantum computing systems and cloud-based software.\n15+ Y",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/djemozszm4ux34t5",
+        "ats_url": null
+      },
+      {
+        "job_id": "ljftolsuduj8wqzh",
+        "title": "1d\nSr. Principal Engineer_ Salesforce Platform\nPlano, Texas, United States\nOnsite\nFull Time\nToyota Financial Services\nNYSE: TM\n: Provides automotive financing, leasing, and insurance to vehicle owners",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ljftolsuduj8wqzh",
+        "ats_url": null
+      },
+      {
+        "job_id": "emgcrscw36j4zmub",
+        "title": "1d\nQA Automation Manager\nSan Diego, California, United States\n$110k-$140k/yr\nOnsite\nFull Time\nAxos Financial\nNYSE: AX\n: Digital bank providing online banking, lending, and investment services\n7+ YOE1+",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/emgcrscw36j4zmub",
+        "ats_url": "https://www.axosbank.com/Careers"
+      },
+      {
+        "job_id": "ixffelybeof65fmy",
+        "title": "22h\nCons - TC - AI and Data - Enterp Data - Data Eng and Arch - Data Eng - Mgr - MP - 1688246 (Seattle, WA, US, 98104)\nSeattle, Washington, United States\n$178k/yr\nHybrid\nFull Time\nEY: Global provider ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ixffelybeof65fmy",
+        "ats_url": "https://careers.ey.com/ey/job/Seattle-Cons-TC-AI-and-Data-Enterp-Data-Data-Eng-and-Arch-Data-Eng-Mgr-MP-1688246-WA-98104/1367837833/"
+      },
+      {
+        "job_id": "rbavhbrk6giu8gst",
+        "title": "1d\nDirector, Protein Engineering and Structural Biology\nVancouver, Washington, United States\n$165k-$230k/yr\nOnsite\nFull Time\nAbsci\nNasdaq: ABSI\n: Generative AI-driven therapeutic design and drug disco",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/rbavhbrk6giu8gst",
+        "ats_url": "https://www.absci.com/careers/roles/?gh_jid=7644215003"
+      },
+      {
+        "job_id": "hgzra5kd8vlnltwa",
+        "title": "1d\nProduct Manager, Consumer\nSan Francisco or New York City\n$385k-$460k/yr\nHybrid\nFull Time\nAnthropic: Develops safe and steerable artificial intelligence systems.\n8+ YOEFounder or 8+ years in product",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/hgzra5kd8vlnltwa",
+        "ats_url": "http://anthropic.com/careers"
+      },
+      {
+        "job_id": "z34nt342nrt1tvzb",
+        "title": "1d\nIT Cloud Software Architect\nCentennial or Lincoln or Madison\n$140k/yr\nHybrid\nFull Time\nNelnet\nNYSE: NNI\n: Provides loan servicing, education technology, and fiber-optic internet.\n10+ YOEBachelor\u2019s ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/z34nt342nrt1tvzb",
+        "ats_url": "http://nelnetinc.com/careers/benefits/"
+      },
+      {
+        "job_id": "6jjgrh8r5kmj5j8b",
+        "title": "19h\nDirector, Technology and Business Consulting\nArlington, Virginia, United States\n$196k-$225k/yr\nHybrid\nFull Time\nPariveda: Strategic technology consulting and custom software development services.\n",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/6jjgrh8r5kmj5j8b",
+        "ats_url": "https://parivedasolutions.com/careers/"
+      },
+      {
+        "job_id": "1l8dgjrrqmyt8hms",
+        "title": "1d\nSenior Data Scientist\nHazelwood or Daytona Beach\n$151k-$220k/yr\nOnsite\nFull Time\nBoeing\nNYSE: BA\n: Designs, manufactures, and sells airplanes, satellites, and defense systems.\n9+ YOEBachelor\u2019s in M",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/1l8dgjrrqmyt8hms",
+        "ats_url": "http://www.boeing.com/careers/recruitment-fraud-warning.page"
+      },
+      {
+        "job_id": "380k8u2qs9uxfmib",
+        "title": "15h\nDevOps / ML-Ops Engineer\nArlington, Virginia, United States\nHybrid\nFull Time\nDeepSig: Developing AI software for wireless signal processing and sensing.\nExperience with CI/CD, cloud/on-prem, AWS, ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/380k8u2qs9uxfmib",
+        "ats_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/3949807"
+      },
+      {
+        "job_id": "56pkqbj6ly8fpaq9",
+        "title": "19h\nSenior Software Engineer, AI/ML, Google Cloud\nKirkland, Washington, United States\n$166k-$244k/yr\nOnsite\nFull Time\nGoogle\nNASDAQ: GOOGL\n: Provides internet search, digital advertising, and cloud co",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/56pkqbj6ly8fpaq9",
+        "ats_url": "https://careers.google.com/benefits/"
+      },
+      {
+        "job_id": "ecjkbnavndwpp5sb",
+        "title": "1d\nAI Engineer, ML Systems\nSan Francisco or Palo Alto\n$173k-$260k/yr\nOnsite\nFull Time\nSalesforce\nNYSE: CRM\n: Provides customer relationship management software and cloud-based business applications.\n5",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/ecjkbnavndwpp5sb",
+        "ats_url": "https://careers.mail.salesforce.com/accommodations-request-form"
+      }
+    ],
+    "indeed": [
+      {
+        "job_id": "brfr43ux7bfgste5",
+        "title": "1d\nAI Developer\nAlpharetta or New York\n$100k-$120k/yr\nOnsite\nFull Time\neClerx\nNational Stock Exchange of India: ECLERX\n: Provide business process management, automation, and data analytics services.\n5",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/brfr43ux7bfgste5",
+        "ats_url": "https://www.indeed.com/cmp/Eclerx/about"
+      }
+    ],
     "workday": [
       {
-        "job_id": "g5581xk1s389wl3j",
-        "title": "22h\nAI/ML Engineer\nAberdeen, Maryland, United States\n$90k-$190k/yr\nHybrid\nFull Time\nCACI\nNYSE: CACI\n: Delivers technology solutions for national security and government modernization.\nMid-level AI/ML ",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/g5581xk1s389wl3j",
-        "ats_url": "https://caci.wd1.myworkdayjobs.com/external/job/US-MD-Aberdeen-Proving-Ground/AI-ML-Engineer_322381"
-      },
-      {
-        "job_id": "sha1cznks39kkxlf",
-        "title": "22h\nAI Junior Software Engineer\nBrooklyn, New York, United States\n$58k-$105k/yr\nOnsite\nFull Time\nLeidos\nNYSE: LDOS\n: Provides science and technology solutions for defense and intelligence sectors.\n0+ ",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/sha1cznks39kkxlf",
-        "ats_url": "https://leidos.wd5.myworkdayjobs.com/external/job/6317-Brooklyn-NY-Home-Office/AI-Junior-Software-Engineer_R-00176549"
-      },
-      {
-        "job_id": "7urhylsm6k2uj2cs",
-        "title": "22h\nSenior Site Reliability Engineer, AI Factory\nSanta Clara or United States\n$176k-$334k/yr\nHybrid\nFull Time\nNVIDIA\nNasdaq: NVDA\n: Designs graphics processing units and AI computing hardware.\n10+ YOE",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/7urhylsm6k2uj2cs",
-        "ats_url": "https://nvidia.wd5.myworkdayjobs.com/nvidiaexternalcareersite/job/US-CA-Santa-Clara/Senior-Site-Reliability-Engineer--AI-Factory_JR2013738"
-      },
-      {
-        "job_id": "abykqyx8jlaefk2s",
-        "title": "1d\nFirmware Engineering Manager - HPC/AI\nSpring or Chippewa Falls\n$137k-$315k/yr\nHybrid\nFull Time\nHewlett Packard Enterprise\nNYSE: HPE\n: Provides enterprise IT infrastructure and hybrid cloud solution",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/abykqyx8jlaefk2s",
-        "ats_url": "https://hpe.wd5.myworkdayjobs.com/acjobsite/job/Spring-Texas-United-States-of-America/Firmware-Engineering-Manager---HPC-AI_1201443-2"
-      },
-      {
-        "job_id": "pb7rgwgklmepka72",
-        "title": "1d\nFirmware Engineering Manager - HPC/AI\nSpring or Chippewa Falls\n$137k-$315k/yr\nHybrid\nFull Time\nHewlett Packard Enterprise\nNYSE: HPE\n: Provides enterprise technology infrastructure, software, and cl",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/pb7rgwgklmepka72",
-        "ats_url": "https://hpe.wd5.myworkdayjobs.com/jobsathpe/job/Spring-Texas-United-States-of-America/Firmware-Engineering-Manager---HPC-AI_1201443"
-      },
-      {
-        "job_id": "dhx734l7rxjj06p7",
-        "title": "1d\nFirmware Engineering Manager - HPC/AI\nSpring or Chippewa Falls\n$137k-$315k/yr\nHybrid\nFull Time\nHewlett Packard Enterprise\nNYSE: HPE\n: Provides enterprise IT infrastructure and hybrid cloud solution",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/dhx734l7rxjj06p7",
-        "ats_url": "https://hpe.wd5.myworkdayjobs.com/wfmathpe/job/Spring-Texas-United-States-of-America/Firmware-Engineering-Manager---HPC-AI_1201443-3"
-      },
-      {
-        "job_id": "hqne1xicp6v9rnzl",
-        "title": "22h\nData Lake Engineer\nDoral, Florida, United States\n$99k-$225k/yr\nHybrid\nFull Time\nBooz Allen Hamilton\nNYSE: BAH\n: Provides technology and management consulting services to government agencies.\n2+ YO",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/hqne1xicp6v9rnzl",
-        "ats_url": "https://bah.wd1.myworkdayjobs.com/bah_jobs/job/Doral-FL/Data-Lake-Engineer_R0234412"
-      },
-      {
-        "job_id": "fm0tk4wtse5s617o",
-        "title": "22h\nLead Software Engineer- IVR & Omnichannel APIs\nUnited States\n$129k-$178k/yr\nRemote\nFull Time\nHumana\nNYSE: HUM\n: Provides health insurance and clinical healthcare services.\n8+ YOE8+ years cloud dev",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/fm0tk4wtse5s617o",
-        "ats_url": "https://humana.wd5.myworkdayjobs.com/humana_external_career_site/job/Remote-Nationwide/Lead-Software-Engineer---IVR---Omnichannel-APIs_R-399650"
-      },
-      {
-        "job_id": "rsf8eniilt10n7qg",
-        "title": "22h\nPrincipal Digital Architect\nChicago or Peoria or Dallas or Denver\n$148k-$240k/yr\nOnsite\nFull Time\nCaterpillar\nNYSE: CAT\n: Manufactures heavy machinery, engines, and power systems globally.\n10+ YOE",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/rsf8eniilt10n7qg",
-        "ats_url": "https://cat.wd5.myworkdayjobs.com/caterpillarcareers/job/Chicago-Illinois/Principal-Digital-Architect_R0000350561"
-      },
-      {
-        "job_id": "uqe0fyci0njzdemp",
-        "title": "22h\nMachine Intelligence Intern\nCambridge, Massachusetts, United States\n$15-$225/yr\nOnsite\nFull Time, Internship\nDraper: Develops advanced engineering and technology for national security and space.\nE",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/uqe0fyci0njzdemp",
-        "ats_url": "https://draper.wd5.myworkdayjobs.com/en-US/Draper_Careers/introduceYourself"
-      },
-      {
-        "job_id": "8w3423m1k3gdbn60",
-        "title": "22h\nGenAI Enterprise Technology Solution Engineering & Reusability Lead\nIselin or Irving or Charlotte\n$215k-$355k/yr\nHybrid\nFull Time\nWells Fargo\nNYSE: WFC\n: Provides diversified financial services in",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/8w3423m1k3gdbn60",
-        "ats_url": "https://wf.wd1.myworkdayjobs.com/wellsfargojobs/job/ISELIN-NJ/GenAI-Enterprise-Technology-Solution-Engineering---Reusability-Lead_R-523416"
-      },
-      {
-        "job_id": "ah2ieumcfn4tntnt",
-        "title": "22h\nSenior Staff Product Manger - Identity & Access Management\nSeattle or Austin or Denver or Boston or Salt Lake City or San Diego or McLean\n$176k-$288k/yr\nRemote\nFull Time\nCisco\nNASDAQ: CSCO\n: Provi",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/ah2ieumcfn4tntnt",
-        "ats_url": "https://cisco.wd5.myworkdayjobs.com/cisco_careers/job/Seattle-Washington-US/Senior-Staff-Product-Manger---Identity---Access-Management_2004060-1"
-      },
-      {
-        "job_id": "rvorjo48nmmepzhn",
-        "title": "22h\nHead of Commercial Functions Internal Audit\nRaleigh or Zurich\n$207k-$346k/yr\nOnsite\nFull Time\nABB\nSIX Swiss Exchange: ABBN\n: Provides electrification and automation technologies for industry and u",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/rvorjo48nmmepzhn",
-        "ats_url": "https://abb.wd3.myworkdayjobs.com/external_career_page/job/USA-NC-Raleigh/Head-of-Commercial-Functions-Internal-Audit_JR00025614"
-      },
-      {
-        "job_id": "4ja6dits8nai69fk",
-        "title": "22h\nData Scientist\nFort Bragg, North Carolina, United States\n$111k-$150k/yr\nOnsite\nFull Time\nGDIT\nNYSE: GD\n: Provides IT and mission services to government agencies.\n5+ YOE5+ years related experience;",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/4ja6dits8nai69fk",
-        "ats_url": "https://gdit.wd5.myworkdayjobs.com/external_career_site/job/USA-NC-Fort-Bragg/Data-Scientist_RQ215257-1"
-      },
-      {
-        "job_id": "jjylbjvlsa942yb3",
-        "title": "22h\nSenior Principal Scientist, Microbial Process Operations\nRahway, New Jersey, United States\n$187k-$294k/yr\nOnsite\nFull Time\nMerck & Co.\nNYSE: MRK\n: Develops and manufactures medicines, vaccines, an",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/jjylbjvlsa942yb3",
-        "ats_url": "https://wd5.myworkday.com/msd/d/task/1422$6687.htmld"
-      }
-    ],
-    "greenhouse": [
-      {
-        "job_id": "3tunr4fg2z13nryt",
-        "title": "16h\nStaff AI/ML Engineer\nSan Francisco or New York City or London\n$240k-$270k/yr\nOnsite\nFull Time\nSigma Computing: Cloud analytics platform providing spreadsheet-like data exploration.\n10+ YOEBachelor",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/3tunr4fg2z13nryt",
-        "ats_url": "https://job-boards.greenhouse.io/sigmacomputing/jobs/7639799003"
-      },
-      {
-        "job_id": "wnq4meiqxpz912eg",
-        "title": "9h\nAdvanced Capabilities Software Engineer\nDayton, Ohio, United States\nOnsite\nFull Time\nTenet3: Develops software tools for cyber risk and hardware assurance.\n3+ YOE3+ years full-stack software develo",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/wnq4meiqxpz912eg",
-        "ats_url": "https://job-boards.greenhouse.io/tenet3/jobs/8431802002"
-      },
-      {
-        "job_id": "7n2a7gddoov6ir2f",
-        "title": "14h\nSenior Software Engineer\nChicago, Illinois, United States\nOnsite\nFull Time\nproject44: Real-time global supply chain visibility and shipment tracking platform.\n4+ YOE4+ years of experience building",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/7n2a7gddoov6ir2f",
-        "ats_url": "https://job-boards.greenhouse.io/project44?error=true"
-      },
-      {
-        "job_id": "y4izjd2xr5h0ipz9",
-        "title": "1d\nBackend Developer\nNorth America\nRemote\nFull Time\nAutoDS\nNYSE: FVRR\n: Automates dropshipping tasks for e-commerce retailers.\n4+ YOE4+ years Python experience; proficiency in another OO language; SQL",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/y4izjd2xr5h0ipz9",
-        "ats_url": "https://job-boards.greenhouse.io/autods/jobs/5128640008"
-      },
-      {
-        "job_id": "t73jqrk8ezrrah0d",
-        "title": "8h\nEngineering Manager, Sports Core\nPhiladelphia or Canada\n$150k-$200k/yr\nRemote\nFull Time\nPenn Interactive\nNASDAQ: PENN\n: Operates digital sports wagering and online casino gaming platforms.\n8+ YOE3+",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/t73jqrk8ezrrah0d",
-        "ats_url": "https://job-boards.greenhouse.io/penninteractive/jobs/5810498004"
-      },
-      {
-        "job_id": "d44ti78g8lwghqrc",
-        "title": "7h\nSoftware Engineering Intern\nNew York City or Miami\nOnsite\nInternship\nDorsia: Members-only platform for booking reservations at exclusive restaurants.\nPursuing a bachelor's in CS/SE, junior-level CS",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/d44ti78g8lwghqrc",
-        "ats_url": "https://job-boards.greenhouse.io/dorsia/jobs/5059393007"
-      }
-    ],
-    "taleo": [
-      {
-        "job_id": "76tkn0jqw9ts5190",
-        "title": "5h\nPython / AI Engineer\nWashington, District of Columbia, United States\nOnsite\nFull Time\nCognizant\nNasdaq: CTSH\n: Provides IT consulting and business process outsourcing services globally.\n3+ YOEDegre",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/76tkn0jqw9ts5190",
-        "ats_url": "https://cognizant.taleo.net/careersection/lateral/jobdetail.ftl?job=00067750621&lang=en"
-      },
-      {
-        "job_id": "m4nkpq6vvah97muu",
-        "title": "5h\nPython / AI Engineer\nWashington, District of Columbia, United States\nOnsite\nFull Time\nCognizant\nNasdaq: CTSH\n: Provides IT consulting, software development, and business process services.\n3+ YOEDes",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/m4nkpq6vvah97muu",
-        "ats_url": "https://tas-cognizant.taleo.net/careersection/lateral/jobdetail.ftl?job=00067750621&lang=en"
-      },
-      {
-        "job_id": "nlw9l8skgaeov246",
-        "title": "6h\nAI/ML Engineer\nUnited States\nHybrid\nFull Time\nUnitedHealth Group\nNYSE: UNH\n: Provides health insurance plans and healthcare services.\nBachelor's degree or equivalent; experience with ML frameworks ",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/nlw9l8skgaeov246",
-        "ats_url": "https://uhg.taleo.net/careersection/10780/jobdetail.ftl?job=2339456&lang=en"
-      },
-      {
-        "job_id": "syrw9u6u5ad6ohlc",
-        "title": "12h\nAssociate AI/ML Engineer\nUnited States\nHybrid\nFull Time\nUnitedHealth Group\nNYSE: UNH\n: Provides health insurance and technology-enabled health services.\nUndergraduate degree or equivalent experien",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/syrw9u6u5ad6ohlc",
-        "ats_url": "https://tas-uhg.taleo.net/careersection/10780/jobdetail.ftl?job=2346491&lang=en"
-      },
-      {
-        "job_id": "w6lcpb7fyql8fgbx",
-        "title": "23h\nSenior Principal Consultant - Site Reliability Engineering/DevOps Lead\nDanville, Illinois, United States\n$95k-$99k/yr\nOnsite\nFull Time\nGenpact\nNYSE: G\n: Provides digital transformation and outsour",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/w6lcpb7fyql8fgbx",
-        "ats_url": "https://genpact.taleo.net/careersection/sgy_external_career_section/jobdetail.ftl?job=INS031378&lang=en"
-      }
-    ],
-    "unknown": [],
-    "ultipro": [
-      {
-        "job_id": "woqfah4dk12r0loe",
-        "title": "9h\nSenior Computer Vision AI/ML Engineer (TS/SCI) {S}\nAurora, Colorado, United States\n$130k-$200k/yr\nOnsite\nFull Time\nARKA Group: Provides advanced optical and sensor solutions for national security.\n",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/woqfah4dk12r0loe",
-        "ats_url": "https://recruiting.ultipro.com/dan1006dmt/JobBoard/a399ee9b-808f-4940-b954-93049fa1186c/OpportunityDetail?opportunityId=f4a85350-9c2f-4f54-8728-055e1d20feee"
-      },
-      {
-        "job_id": "zs3cwcjgwtkacurp",
-        "title": "9h\nSenior Computer Vision AI/ML Engineer (TS/SCI) {S}\nKing of Prussia, Pennsylvania, United States\nOnsite\nFull Time\nDanbury Mission Technologies: Develops high-precision optical and laser systems for ",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/zs3cwcjgwtkacurp",
-        "ats_url": "https://recruiting.ultipro.com/dan1006dmt/JobBoard/aab9b8ae-463c-48fc-8362-a25df8be0c77/OpportunityDetail?opportunityId=50d49c8c-728c-4318-83e6-9675af0368ce"
-      }
-    ],
-    "workable": [
-      {
-        "job_id": "x86bj3z2ovickaxv",
-        "title": "9h\n2026 Internship AI Platform\nMountain View, California, United States\nHybrid\nTemporary\nSamsung SDS America\nKRX: 018260\n: Provides cloud infrastructure, IT consulting, and digital logistics software.",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/x86bj3z2ovickaxv",
-        "ats_url": "https://apply.workable.com/samsung-sds-america/j/5B05A3B759/"
-      }
-    ],
-    "icims": [
-      {
-        "job_id": "u8xy31s4vnnmwgn5",
-        "title": "1d\nEarly Careers: Intern, AI Prompt Engineer\nChicago or Bannockburn\n$26/hr\nHybrid\nInternship\nAon\nNYSE: AON\n: Provides risk management, insurance brokerage, and human capital consulting.\nPursuing degre",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/u8xy31s4vnnmwgn5",
-        "ats_url": "https://us-careers-aon.icims.com/jobs/98514/job?utm_source=hiringcafe_integration&iis=Job+Board&iisn=HiringCafe&mobile=false&width=940&height=500&bga=true&needsRedirect=false&jan1offset=-480&jun1offset=-420"
-      },
-      {
-        "job_id": "x17m61etcw06dvpe",
-        "title": "1d\nSummer 2026 - Business Value Engineering & Financial Analytics Intern (Master's)\nCary, North Carolina, United States\nHybrid\nInternship\nSAS: Provides analytics and artificial intelligence software a",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/x17m61etcw06dvpe",
-        "ats_url": "https://globalcareers-sas.icims.com/jobs/40650/summer-2026-business-value-engineering-financial-analytics-intern-masters/job"
+        "job_id": "z7qg7jrqdt63ic05",
+        "title": "1d\nSenior AI Engineer\nNew York or Cambridge or McLean or San Francisco or San Jose\nHybrid\nFull Time\nCapital One\nNYSE: COF\n: Provides credit cards, auto loans, and retail banking services.\n3+ YOEBachel",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/z7qg7jrqdt63ic05",
+        "ats_url": "https://capitalone.wd12.myworkdayjobs.com/capital_one/job/New-York-NY/Senior-AI-Engineer_R236743-1"
       }
     ],
     "ashby": [
       {
-        "job_id": "p1vqcdtfgtx64lro",
-        "title": "1d\nMember of Technical Staff / Fullstack Engineer\nSan Francisco, California, United States\nRemote\nFull Time\nClera: AI-powered talent agent platform matching candidates with startups.\nStrong TypeScript",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/p1vqcdtfgtx64lro",
-        "ats_url": "https://jobs.ashbyhq.com/clera/45216103-2247-46cb-b282-d9633a85c1f4"
+        "job_id": "y9wt2rilusw5baua",
+        "title": "16h\nSenior Technical Sourcer\nSan Francisco or New York or Pittsburgh\n$149k/yr\nHybrid\nFull Time\nAbridge: AI platform for automated medical documentation and clinical summaries.\n5+ YOE5+ years in techni",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/y9wt2rilusw5baua",
+        "ats_url": "https://jobs.ashbyhq.com/abridge/1395da18-6c24-4f80-8843-a797e613c239"
       },
       {
-        "job_id": "uo24ywgiwfdclxzk",
-        "title": "17h\nHead of SoC Architecture\nSan Jose, California, United States\nOnsite\nFull Time\nEtched: Designs specialized computer chips for transformer-based AI models.\n12+ YOE12+ years in computer architecture/",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/uo24ywgiwfdclxzk",
-        "ats_url": "https://jobs.ashbyhq.com/etched/2027924b-3dc8-4ff9-8d1a-213278e26dea"
-      }
-    ],
-    "jobvite": [
+        "job_id": "54nlv9hozujohh3z",
+        "title": "16h\nMember of Technical Staff, Platform\nSan Francisco, California, United States\n$150k-$300k/yr\nOnsite\nFull Time\nListen Labs: AI-powered research platform for analyzing customer interviews to help pro",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/54nlv9hozujohh3z",
+        "ats_url": "https://jobs.ashbyhq.com/listenlabs/3de6a26e-dfd3-4eca-a243-bc8574af5dc0"
+      },
       {
-        "job_id": "ad616fp5sl3d75zo",
-        "title": "6h\nSystems Sales Engineer (Pre-Sales)\nAtlanta, Georgia, United States\n$165k-$248k/yr\nRemote\nFull Time\nNutanix\nNASDAQ: NTNX\n: Provides software for hybrid multicloud and hyperconverged infrastructure m",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/ad616fp5sl3d75zo",
-        "ats_url": "https://jobs.jobvite.com/careers/nutanix/jobs?error=404&nl=1"
-      }
-    ],
-    "successfactors": [
+        "job_id": "m7vn6svne9zqxk3b",
+        "title": "21h\nData Intern\nSan Francisco, California, United States\n$40-$45/hr\nRemote\nMultiple Commitments Available\nReady: Broadband utility intelligence and grant management platform.\nPursuing Master\u2019s or PhD ",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/m7vn6svne9zqxk3b",
+        "ats_url": "https://jobs.ashbyhq.com/ready/3db71e58-063f-461b-bf90-edf08dd53264"
+      },
       {
-        "job_id": "oe6xchz4cwues1x4",
-        "title": "9h\nSenior Data Scientist (AI/ML Specialist) (51131)\nUnited States\nRemote\nFull Time\nOpenText\nNASDAQ: OTEX\n: Provides enterprise information management and cloud software solutions.\n6+ YOE6+ years in da",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/oe6xchz4cwues1x4",
-        "ats_url": "https://career17.sapsf.com/career?career_ns=job_listing&company=Opentext&career_job_req_id=51131"
-      }
-    ],
-    "smartrecruiters": [
+        "job_id": "kf5i2l0vyrg7yay6",
+        "title": "20h\nSoftware Engineer, Applied AI\nSeattle or Austin\n$166k-$203k/yr\nHybrid\nFull Time\nHackerOne: Platform for crowdsourced security testing and vulnerability disclosure.\n3+ YOE3+ years software engineer",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/kf5i2l0vyrg7yay6",
+        "ats_url": "https://jobs.ashbyhq.com/hackerone/9721a4c7-ff1e-47ca-a89e-97688ebff96c"
+      },
       {
-        "job_id": "3wgdrerfd5cjwzw6",
-        "title": "10h\nAutomation Lead\nLone Tree, Iowa, United States\nOnsite\nFull Time\nSyngenta Group: Global supplier of seeds and crop protection chemicals.\n5+ YOE5+ years of Bachelor's in Electrical Engineering, Computer Science",
-        "hiring_cafe_url": "https://hiring.cafe/viewjob/3wgdrerfd5cjwzw6",
-        "ats_url": "https://jobs.smartrecruiters.com/SyngentaGroup/744000110741515-automation-lead"
+        "job_id": "txqeffl7ncy40yr6",
+        "title": "22h\nMachine Learning Engineer\nChicago, Illinois, United States\nOnsite\nFull Time\nCoinflow: Provides blockchain infrastructure for instant global payment settlements.\n4+ YOE4+ years in ML or applied dat",
+        "hiring_cafe_url": "https://hiring.cafe/viewjob/txqeffl7ncy40yr6",
+        "ats_url": "https://jobs.ashbyhq.com/coinflow/cfcb2581-87c7-4db1-9679-0364eea1e23c"
       }
     ]
   }
