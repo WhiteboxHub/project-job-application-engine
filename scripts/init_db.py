@@ -217,6 +217,7 @@ def init_db():
         (5, "kforce_custom", "strategies.custom.KForceStrategy", "full", False),
         (6, "lever", "strategies.custom.LeverStrategy", "full", False),
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
+        (8, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -303,11 +304,24 @@ def init_db():
     # 6. Capgemini  (company-custom portal, inactive until strategy is ready)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
-            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
             6, 'Capgemini', 'capgemini.com', 7, 'System integrator',
             'https://www.capgemini.com/careers/',
+            null,
             false
+        )
+    """)
+
+    # 7. AE Talents Group (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
+        VALUES (
+            7, 'AE Talents Group', 'aetalentsgroup.com', 8, 'Staffing vendor',
+            'https://aetalentsgroup.com/careers.php',
+            'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
+            true
         )
     """)
 
@@ -559,6 +573,49 @@ def init_db():
         [_json.dumps(wipro_application_selectors)],
     )
     logger.info("site_selectors seeded for Wipro [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for AE Talents Group (job_site_id = 7)
+    # Key names MUST match what aetalents.py reads via self.selectors_config.get("key")
+    # -----------------------------------------------------------------------
+    import json as _json
+
+    aetalents_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
+        "search_input": "input[name='search']",
+        "location_input": "input[name='location']",
+        "search_button": "button[type='submit']",
+        "job_card_link": "a[href*='p=detail']",
+    }
+
+    aetalents_application_selectors = {
+        "apply_now_button": "a[href*='p=apply']",
+        "first_name": "input[name='first_name']",
+        "last_name": "input[name='last_name']",
+        "email": "input[name='email']",
+        "visa_status": "select[name='visa_status']",
+        "resume": "input[type='file'][name='resume']",
+        "submit_button": "button[type='submit']",
+        "success_message": "h1.reveal",
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (17, 7, 'listing', ?)",
+        [_json.dumps(aetalents_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (18, 7, 'application', ?)",
+        [_json.dumps(aetalents_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 17",
+        [_json.dumps(aetalents_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 18",
+        [_json.dumps(aetalents_application_selectors)],
+    )
+    logger.info("site_selectors seeded for AE Talents Group [OK]")
 
     # Indexes
     conn.execute(

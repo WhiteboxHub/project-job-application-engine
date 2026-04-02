@@ -196,6 +196,7 @@ class BackendClient:
         records_failed: int = 0,
         execution_metadata: Optional[Dict[str, Any]] = None,
         error_summary: Optional[str] = None,
+        logfile: Optional[str] = None,
     ) -> bool:
         """PUT /orchestrator/logs/{id} — persist execution_metadata (e.g. output.json payload)."""
         if not settings.BACKEND_URL:
@@ -208,6 +209,8 @@ class BackendClient:
             "records_processed": records_processed,
             "records_failed": records_failed,
         }
+        if logfile is not None:
+            payload["log_file"] = logfile
         if execution_metadata is not None:
             # Ensure JSON-serializable payload (mirrors hiring-cafe-engine passing plain dicts).
             try:
