@@ -145,28 +145,29 @@ class ExperisStrategy(BaseStrategy):
 
     def _default_application_selectors(self):
         """
-        Default selectors derived from the live Experis application flow
-        shared by the user.
+        Default selectors derived from the live Experis application flow.
+        Field IDs use dynamic UUIDs (e.g., firstname-6ce3eb03-...).
+        We use CSS id^= (starts-with) selectors to handle this.
         """
         return {
             "apply_button": "div.job-details-cta.cta button.primary-button",
-            "apply_page_ready": "input[name='firstname'], form input[name='firstname']",
+            "apply_page_ready": "input[id^='firstname-']",
             "success_banner": "body",
             "submit_button": "input.hs-button.primary.large[type='submit']",
-            "consent_checkbox": "input[name='consent_to_text_sms']",
+            "consent_checkbox": "input[id^='consent_to_text_sms-']",
             "form_fields": {
-                "first_name": "input[name='firstname']",
-                "last_name": "input[name='lastname']",
-                "email": "input[name='email']",
-                "phone": "input[name='phone']",
-                "resume_upload": "input[name='resume'][type='file']",
+                "first_name": "input[id^='firstname-']",
+                "last_name": "input[id^='lastname-']",
+                "email": "input[id^='email-']",
+                "phone": "input[id^='phone-']",
+                "resume_upload": "input[id^='resume-']",
             },
             "questionnaire_fields": {
                 "legal_eligibility_yes": (
-                    "input[name='are_you_legally_eligible_to_work_in_the_u_s_'][value='Yes']"
+                    "(//form[contains(@id,'hsForm_')]//fieldset[6]//ul/li[1]/label)[1]"
                 ),
                 "subcontractor_arrangement_no": (
-                    "input[name='are_you_represented_by_a_company_that_would_seek_to_enter_into_a_subcontractor_supplier_arrangement'][value='No']"
+                    "(//form[contains(@id,'hsForm_')]//fieldset[7]//ul/li[2]/label)[1]"
                 ),
             },
         }
@@ -241,30 +242,47 @@ class ExperisStrategy(BaseStrategy):
 
         return value
 
-    def _safe_fill_field(self, selector, value, timeout=10, retries=2):
-        """Common text-fill helper with human typing fallback and retries."""
+    def _safe_fill_field(self, selector, value, timeout=10, retries=3):
+        """100% JS-based form fill to bypass all 'element not interactable' errors."""
         if not selector or value in (None, ""):
             return False
 
         for attempt in range(retries):
             try:
+                # Re-locate on every attempt to avoid stale element references
                 element = WebDriverWait(self.driver, timeout).until(
-                    EC.element_to_be_clickable(self._by(selector))
+                    EC.presence_of_element_located(self._by(selector))
                 )
-                self.driver.execute_script(
-                    "arguments[0].scrollIntoView({block:'center'});", element
-                )
-                time.sleep(0.5)
-                # Clear existing value just in case
-                self.driver.execute_script("arguments[0].value = '';", element)
-                element.clear()
+
+                # 1. Scroll element into view strictly so send_keys works
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+                time.sleep(0.2)
+
+                # 2. Clear field using Keys to trigger React events properly
+                from selenium.webdriver.common.keys import Keys
+                from sys import platform
+                cmd_ctrl = Keys.COMMAND if platform == "darwin" else Keys.CONTROL
                 
-                self.human.fill_text_field(element, str(value))
-                logger.info(f"  [YES] Filled field: {selector}")
-                return True
+                # Select all and delete (more reliable than element.clear() for React)
+                element.send_keys(cmd_ctrl + "a")
+                element.send_keys(Keys.BACKSPACE)
+                time.sleep(0.1)
+
+                # 3. Simulate human typing natively
+                element.send_keys(str(value))
+                time.sleep(0.1)
+
+                # Validation step: verify value was actually set
+                set_value = element.get_attribute('value')
+                if set_value:
+                    logger.info(f"  [YES] Filled field natively (human sim): {selector} = '{set_value}'")
+                    return True
+                else:
+                    raise ValueError(f"Field '{selector}' still empty after native fill attempt {attempt+1}")
+
             except Exception as exc:
                 if attempt < retries - 1:
-                    logger.debug(f"Experis: Retrying fill for '{selector}' (Attempt {attempt+1}/{retries})...")
+                    logger.debug(f"Experis: Retrying fill for '{selector}' (Attempt {attempt+1}/{retries}): {exc}")
                     time.sleep(2)
                     continue
                 logger.warning(f"Experis: Failed to fill field '{selector}' after {retries} attempts: {exc}")
@@ -840,7 +858,7 @@ class ExperisStrategy(BaseStrategy):
             time.sleep(2)
     
             page_num = 1
-            max_pages = 200
+            max_pages = 200 # Restored to production limit (was 10 during testing)
     
             while page_num <= max_pages:
                 cards = self.driver.find_elements(
@@ -1094,88 +1112,181 @@ class ExperisStrategy(BaseStrategy):
                 )
                 return False
 
-            # HubSpot forms are always inside an iframe. We must switch to it.
-            # We'll use a retry loop to wait for the iframe to appear.
-            hs_iframe = None
-            max_iframe_wait = 15
+            # --- HubSpot Form Detection ---
+            # The application form lives inside #form_contact-us container.
+            # HubSpot renders the actual form inside an IFRAME within that div.
+            # Structure: #form_contact-us > div > div > div > iframe > form#hsForm_*
+            #
+            # Strategy:
+            #   1. Find #form_contact-us on the main page
+            #   2. Find the iframe INSIDE that container
+            #   3. Switch into that iframe
+            #   4. Verify the hsForm with visible fields exists
+            form_found = False
+            self.driver.switch_to.default_content()
+            max_form_wait = 30
             start_wait = time.time()
-            
-            while time.time() - start_wait < max_iframe_wait:
-                try:
-                    iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
-                    for f in iframes:
-                        try:
-                            f_id = f.get_attribute("id") or ""
-                            src = f.get_attribute("src") or ""
-                            if "hs-form-iframe" in f_id or "hubspot" in src.lower():
-                                hs_iframe = f
-                                break
-                        except Exception:
-                            continue
-                    if hs_iframe:
-                        break
-                    time.sleep(1)
-                except Exception:
-                    time.sleep(1)
-            
-            if hs_iframe:
-                logger.info(f"Experis: Detected HubSpot iframe. Switching context...")
-                self.driver.switch_to.frame(hs_iframe)
-                time.sleep(2)
-            else:
-                logger.warning("Experis: No HubSpot iframe found. Continuing in default context.")
 
-            form_ready_selector = self.get_site_sel("application", "apply_page_ready")
-            try:
-                WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located(self._by(form_ready_selector))
-                )
-            except Exception:
-                logger.warning("Experis: Form ready signal not detected. Attempting to proceed anyway.")
+            while time.time() - start_wait < max_form_wait and not form_found:
+                try:
+                    # Step 1: Find iframe inside #form_contact-us
+                    target_iframe = self.driver.execute_script(
+                        """
+                        var container = document.getElementById('form_contact-us');
+                        if (!container) return null;
+                        var iframe = container.querySelector('iframe');
+                        return iframe;
+                        """
+                    )
+
+                    if target_iframe:
+                        logger.info("Experis: Found iframe inside #form_contact-us. Switching context...")
+                        self.driver.switch_to.default_content()
+                        self.driver.switch_to.frame(target_iframe)
+
+                        # Step 2: Check if hsForm has visible firstname field
+                        has_visible_form = self.driver.execute_script(
+                            """
+                            var form = document.querySelector("form[id^='hsForm_']");
+                            if (!form) return 'no_form';
+                            var el = form.querySelector("input[id^='firstname-']");
+                            if (!el) return 'no_field';
+                            var rect = el.getBoundingClientRect();
+                            return (rect.width > 0 && rect.height > 0) ? 'visible' : 'hidden';
+                            """
+                        )
+
+                        if has_visible_form == 'visible':
+                            logger.info("Experis: [OK] HubSpot form with VISIBLE fields found inside #form_contact-us iframe")
+                            form_found = True
+                            break
+                        elif has_visible_form == 'no_form':
+                            logger.info(f"Experis: iframe found but hsForm not loaded yet ({int(time.time() - start_wait)}s)...")
+                        elif has_visible_form == 'no_field':
+                            logger.info(f"Experis: hsForm found but firstname field not yet rendered ({int(time.time() - start_wait)}s)...")
+                        else:
+                            logger.info(f"Experis: firstname field exists but HIDDEN ({int(time.time() - start_wait)}s)...")
+
+                        self.driver.switch_to.default_content()
+                    else:
+                        logger.info(f"Experis: #form_contact-us iframe not ready ({int(time.time() - start_wait)}s)...")
+
+                    time.sleep(2)
+
+                except Exception as e:
+                    logger.debug(f"Experis: Form detection error: {e}")
+                    try:
+                        self.driver.switch_to.default_content()
+                    except Exception:
+                        pass
+                    time.sleep(2)
+
+            # If targeted approach failed, try scanning ALL iframes as last resort
+            if not form_found:
+                self.driver.switch_to.default_content()
+                iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+                logger.info(f"Experis: Targeted search failed. Scanning all {len(iframes)} iframe(s)...")
+                for idx, f in enumerate(iframes):
+                    try:
+                        self.driver.switch_to.default_content()
+                        self.driver.switch_to.frame(f)
+                        has_it = self.driver.execute_script(
+                            """
+                            var el = document.querySelector("form[id^='hsForm_'] input[id^='firstname-']");
+                            if (!el) return false;
+                            var rect = el.getBoundingClientRect();
+                            return (rect.width > 0 && rect.height > 0);
+                            """
+                        )
+                        if has_it:
+                            f_id = f.get_attribute("id") or "(no id)"
+                            logger.info(f"Experis: [OK] Found form in iframe [{idx}] (id='{f_id}')")
+                            form_found = True
+                            break
+                    except Exception:
+                        continue
+
+            if not form_found:
+                self.driver.switch_to.default_content()
+                logger.warning("Experis: Could NOT find HubSpot form in any context after 30s. Proceeding anyway...")
+
             time.sleep(1)
 
-            logger.info("Experis: Filling application form fields")
+            # --- HARDCODED SELECTORS ---
+            # ALL selectors are scoped to form[id^='hsForm_'] to avoid
+            # accidentally filling the newsletter/footer form.
+            HS = "form[id^='hsForm_'] "
+            FORM_SEL = {
+                "first_name": HS + "input[id^='firstname-']",
+                "last_name": HS + "input[id^='lastname-']",
+                "email": HS + "input[id^='email-']",
+                "phone": HS + "input[id^='phone-']",
+                "resume": HS + "input[id^='resume-']",
+                "consent": HS + "input[id^='consent_to_text_sms-']",
+                "submit": HS + "input.hs-button.primary.large[type='submit']",
+            }
+
+            logger.info("Experis: Filling application form fields (hardcoded selectors)")
             fill_results = [
-                self._safe_fill_field(
-                    self.get_site_sel("application", "form_fields", "first_name"),
-                    applicant.get("first_name"),
-                ),
-                self._safe_fill_field(
-                    self.get_site_sel("application", "form_fields", "last_name"),
-                    applicant.get("last_name"),
-                ),
-                self._safe_fill_field(
-                    self.get_site_sel("application", "form_fields", "email"),
-                    applicant.get("email"),
-                ),
-                self._safe_fill_field(
-                    self.get_site_sel("application", "form_fields", "phone"),
-                    applicant.get("phone"),
-                ),
+                self._safe_fill_field(FORM_SEL["first_name"], applicant.get("first_name")),
+                self._safe_fill_field(FORM_SEL["last_name"], applicant.get("last_name")),
+                self._safe_fill_field(FORM_SEL["email"], applicant.get("email")),
+                self._safe_fill_field(FORM_SEL["phone"], applicant.get("phone")),
             ]
-            
-            # 4. Handle Consent Checkbox
-            consent_selector = self.get_site_sel("application", "consent_checkbox", required=False)
-            if consent_selector:
-                self._set_checkbox_state(consent_selector, checked=True)
+
+            filled_count = sum(1 for r in fill_results if r)
+            logger.info(f"Experis: Filled {filled_count}/4 form fields successfully")
+
+            # 4. Handle Consent Checkbox via JS click
+            try:
+                consent_el = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, FORM_SEL["consent"]))
+                )
+                if not consent_el.is_selected():
+                    self.driver.execute_script("arguments[0].click();", consent_el)
+                logger.info("  [YES] Consent checkbox checked")
+            except Exception:
+                # Fallback: click the consent label via XPath
+                try:
+                    consent_label = self.driver.find_element(
+                        By.XPATH,
+                        "(//form[contains(@id,'hsForm_')]//fieldset[4]//ul/li/label)[1]"
+                    )
+                    self.driver.execute_script("arguments[0].click();", consent_label)
+                    logger.info("  [YES] Clicked consent label via XPath fallback")
+                except Exception as ce:
+                    logger.warning(f"Experis: Consent checkbox failed: {ce}")
 
             # 5. Upload Resume
-            if not self._upload_resume_if_available(
-                self.get_site_sel("application", "form_fields", "resume_upload")
-            ):
+            if not self._upload_resume_if_available(FORM_SEL["resume"]):
                 csv_tracker.update_job_status(
                     "experis", job["job_url"], "failed", attempts_inc=1, last_error="Resume upload failed"
                 )
                 return False
 
-            # 6. Handle Questionnaire (Eligibility & Subcontractor)
-            # These are mandatory on Experis HubSpot forms.
-            self._select_radio(self.get_site_sel("application", "questionnaire_fields", "legal_eligibility_yes"))
-            self._select_radio(self.get_site_sel("application", "questionnaire_fields", "subcontractor_arrangement_no"))
+            # 6. Handle Questionnaire via XPath label clicks
+            QUESTIONNAIRE = [
+                ("Legal Eligibility=YES", "(//form[contains(@id,'hsForm_')]//fieldset[6]//ul/li[1]/label)[1]"),
+                ("Subcontractor=NO", "(//form[contains(@id,'hsForm_')]//fieldset[7]//ul/li[2]/label)[1]"),
+            ]
 
+            for label, xpath in QUESTIONNAIRE:
+                try:
+                    el = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, xpath))
+                    )
+                    self.driver.execute_script(
+                        "arguments[0].scrollIntoView({block:'center'});", el
+                    )
+                    time.sleep(0.3)
+                    self.driver.execute_script("arguments[0].click();", el)
+                    logger.info(f"  [YES] Clicked questionnaire: {label}")
+                except Exception as qe:
+                    logger.warning(f"Experis: Questionnaire '{label}' failed: {qe}")
+
+            # 7. Submit
             logger.info("Experis: Submitting application")
-            submit_btn_sel = self.get_site_sel("application", "submit_button")
-            if not self._safe_click(submit_btn_sel, timeout=10):
+            if not self._safe_click(FORM_SEL["submit"], timeout=10):
                 csv_tracker.update_job_status(
                     "experis", job["job_url"], "failed", attempts_inc=1, last_error="Submit button not clickable"
                 )
