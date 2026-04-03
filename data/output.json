@@ -1,34 +1,17 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260331-1911",
-    "candidate_name": "Ramsai Velupula",
-    "status": "failed",
+    "run_id": "RUN-20260402-2358",
+    "candidate_name": "Vasanthi Nettem",
+    "status": "success",
     "execution_summary": {
-        "total_jobs_found": 10,
-        "total_applications_attempted": 2,
+        "total_jobs_found": 0,
+        "total_applications_attempted": 0,
         "total_applications_successful": 0,
-        "total_applications_failed": 2
+        "total_applications_failed": 0
     },
     "successful_applications": [],
-    "failed_applications": [
-        {
-            "job_site": "Collabera",
-            "job_id": "description?post=366909",
-            "job_title": "Banking\nPython Developer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython developer\npython\ndjango\nflask\nfastapi\npandas\ncapital markets\nquartz\nsecurities\nswaps\nlibor\ntrading\nstocks\nbonds\nasset\nderivatives\ntrades\ninterest rates",
-            "job_url": "https://collabera.com/job-description/?post=366909",
-            "error_reason": "Message: \nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x58cdf3+10b03]\n\tundetected_chromedriver!GetHandleVerifier [0x58cf24+10c34]\n\tundetected_chromedriver!(No symbol) [0x372120]\n\tundetected_chromedriver!(No symbol) [0x3babca]\n\tundetected_chromedriver!(No symbol) [0x3bae6b]\n\tundetected_chromedriver!(No symbol) [0x3fd0b2]\n\tundetected_chromedriver!(No symbol) [0x3ddb54]\n\tundetected_chromedriver!(No symbol) [0x3fa9a5]\n\tundetected_chromedriver!(No symbol) [0x3dd8a6]\n\tundetected_chromedriver!(No symbol) [0x3b0229]\n\tundetected_chromedriver!(No symbol) [0x3b0fe4]\n\tundetected_chromedriver!GetHandleVerifier [0x7f48b9+2785c9]\n\tundetected_chromedriver!GetHandleVerifier [0x7efeb5+273bc5]\n\tundetected_chromedriver!GetHandleVerifier [0x80e06b+291d7b]\n\tundetected_chromedriver!GetHandleVerifier [0x5a5cc8+299d8]\n\tundetected_chromedriver!GetHandleVerifier [0x5ad9fd+3170d]\n\tundetected_chromedriver!GetHandleVerifier [0x5958c8+195d8]\n\tundetected_chromedriver!GetHandleVerifier [0x595a92+197a2]\n\tundetected_chromedriver!GetHandleVerifier [0x57ee9a+2baa]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
-            "failed_at": "2026-03-31T19:12:10.965518+00:00"
-        },
-        {
-            "job_site": "Collabera",
-            "job_id": "description?post=367614",
-            "job_title": "Computer/IT Services\nPython/AI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\npython\nRAG\nLLM\nLLMA\nartificial intelligence\nai/ml\nmachine learning\ndjango\nflask\nfastapi\npandas\nscripting\npython developer\nopenshift\nsql\nci/cd\nunix\napi",
-            "job_url": "https://collabera.com/job-description/?post=367614",
-            "error_reason": "Message: invalid session id; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#invalidsessionidexception\nStacktrace:\n\tundetected_chromedriver!GetHandleVerifier [0x58cdf3+10b03]\n\tundetected_chromedriver!GetHandleVerifier [0x58cf24+10c34]\n\tundetected_chromedriver!(No symbol) [0x371f5e]\n\tundetected_chromedriver!(No symbol) [0x3af4b7]\n\tundetected_chromedriver!(No symbol) [0x3dd9c6]\n\tundetected_chromedriver!(No symbol) [0x3d8e42]\n\tundetected_chromedriver!(No symbol) [0x3d8462]\n\tundetected_chromedriver!(No symbol) [0x34534e]\n\tundetected_chromedriver!(No symbol) [0x3458ee]\n\tundetected_chromedriver!(No symbol) [0x345dcd]\n\tundetected_chromedriver!GetHandleVerifier [0x7f48b9+2785c9]\n\tundetected_chromedriver!GetHandleVerifier [0x7efeb5+273bc5]\n\tundetected_chromedriver!GetHandleVerifier [0x80e06b+291d7b]\n\tundetected_chromedriver!GetHandleVerifier [0x5a5cc8+299d8]\n\tundetected_chromedriver!GetHandleVerifier [0x5ad9fd+3170d]\n\tundetected_chromedriver!(No symbol) [0x344ee9]\n\tundetected_chromedriver!(No symbol) [0x344530]\n\tundetected_chromedriver!GetHandleVerifier [0x942e9f+3c6baf]\n\tKERNEL32!BaseThreadInitThunk [0x75075d49+19]\n\tntdll!RtlInitializeExceptionChain [0x7721d81b+6b]\n\tntdll!RtlGetAppContainerNamedObjectPath [0x7721d7a1+231]\n",
-            "failed_at": "2026-03-31T19:12:20.611963+:00"
-        }
-    ],
-    "started_at": "2026-03-31T19:11:14.215705+00:00",
-    "finished_at": "2026-03-31T19:12:20.653609+00:00"
+    "failed_applications": [],
+    "started_at": "2026-04-02T23:58:37.110138+00:00",
+    "finished_at": "2026-04-02T23:58:47.786128+00:00"
 }

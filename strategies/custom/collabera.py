@@ -58,11 +58,48 @@ class CollaberaStrategy(BaseStrategy):
         return {}
 
     def _load_selectors(self):
-        """Load selectors directly from the database configuration."""
+        """
+        Load selectors directly from the database configuration.
+        Merges listing and application selectors into a unified config.
+        """
         listing = dict(self.selectors.get("listing", {}))
-        listing.pop("for_job_seekers_link", None)
-        application = self.selectors.get("application", {})
-        return {"listing": listing, "application": application}
+        application = dict(self.selectors.get("application", {}))
+
+        # Fallback to tmp_selectors.json if selectors are empty (useful for local testing)
+        if not listing or not application:
+            try:
+                import json
+                tmp_path = os.path.join(os.getcwd(), "tmp_selectors.json")
+                if os.path.exists(tmp_path):
+                    with open(tmp_path, "r") as f:
+                        tmp_data = json.load(f)
+                        if not listing: listing = tmp_data.get("listing", {})
+                        if not application: application = tmp_data.get("application", {})
+                        logger.info("Collabera: Loaded selectors from tmp_selectors.json fallback.")
+            except Exception as e:
+                logger.debug(f"Collabera: Could not load tmp_selectors.json fallback: {e}")
+
+        # Flatten the structure for easier access in apply()
+        # Some DB entries have 'application' nested inside 'listing' or as a top-level key.
+        # We ensure form_fields is extracted from whichever config has it.
+        app_config = application if application else listing.get("application", {})
+        
+        # If form_fields is missing from app_config, check if it's direct in listing
+        form_fields = app_config.get("form_fields", {})
+        if not form_fields and listing.get("form_fields"):
+            form_fields = listing.get("form_fields", {})
+            logger.info("Collabera: Using form_fields from listing directly.")
+
+        if not form_fields:
+            logger.error("[ERROR] Collabera: No form_fields found in database! Strategy will likely fail.")
+        else:
+            logger.info(f"Collabera: Successfully loaded {len(form_fields)} application field(s).")
+
+        return {
+            "listing": listing,
+            "application": app_config,
+            "form_fields": form_fields
+        }
 
     def _get_search_location(self):
         """Read the preferred location from run parameters."""
@@ -251,11 +288,14 @@ class CollaberaStrategy(BaseStrategy):
 
     def find_and_apply_jobs(self):
         """
-        Search for jobs and apply sequentially (Single-Phase).
-        This matches the robust patterns used in LanceSoft and Kforce.
+        Two-phase workflow:
+          Phase 1 — Collect all unique job listings across all keywords.
+          Phase 2 — Apply to each collected job sequentially.
+        Returns the number of successful applications.
         """
-        from engine.guards import guards
-        logger.info("[SEARCH] Collabera: Starting single-phase find-and-apply workflow")
+        logger.info("\n" + "=" * 60)
+        logger.info("[SEARCH] Collabera: Starting two-phase find-and-apply workflow")
+        logger.info("=" * 60)
 
         if not self.config_data:
             logger.error("Collabera: No configuration data available")
@@ -267,129 +307,85 @@ class CollaberaStrategy(BaseStrategy):
         if not keywords:
             keywords = [kw for kw in [search_config.get("keyword")] if kw]
 
+        # FALLBACK: Check if selectors_config has 'search_keywords' (from tmp_selectors.json)
         if not keywords:
-            logger.error("[ERROR] Collabera: No search keywords found in candidate data!")
+            keywords = self.selectors_config.get("listing", {}).get("search_keywords", [])
+
+        if not keywords:
+            logger.error("[ERROR] Collabera: No search keywords found!")
             return 0
+
+        # ── PHASE 1: Collect all jobs ──────────────────────────────────────
+        logger.info("\n" + "=" * 60)
+        logger.info("PHASE 1: Discovering all unique jobs across all keywords...")
+        logger.info("=" * 60)
+
+        all_listings = []
+        seen_urls = set()
+
+        for keyword in keywords:
+            logger.info(f"\n[SEARCH] Keyword: '{keyword}'")
+            listings = self.find_jobs_for_keyword(keyword)
+
+            new_count = 0
+            for listing in listings:
+                url = listing.get("job_url")
+                if url and url not in seen_urls:
+                    seen_urls.add(url)
+                    all_listings.append(listing)
+                    new_count += 1
+                else:
+                    logger.debug(f"  Duplicate skipped: {listing.get('job_title')}")
+
+            logger.info(
+                f"  [+] {new_count} new jobs added (total so far: {len(all_listings)})"
+            )
+
+            # Human-like pause between searches
+            if len(keywords) > 1:
+                time.sleep(random.uniform(3, 6))
+
+        logger.info(
+            f"\n[OK] Phase 1 complete. Found {len(all_listings)} unique jobs total."
+        )
+        
+        execution_tracker.add_jobs_found(len(all_listings))
+
+        # ── PHASE 2: Apply to each job ─────────────────────────────────────
+        logger.info("\n" + "=" * 60)
+        logger.info(f"PHASE 2: Applying to {len(all_listings)} unique jobs...")
+        logger.info("=" * 60)
 
         total_applied = 0
-        for keyword in keywords:
+        for i, listing in enumerate(all_listings, 1):
             if not guards.can_apply():
-                logger.warning("[LIMIT] Application limit reached. Stopping searches.")
+                logger.warning("[LIMIT] Application limit reached. Stopping.")
                 break
 
-            logger.info(f"\n{'=' * 60}")
-            logger.info(f"[SEARCH] Collabera: Search for '{keyword}'")
-            logger.info(f"{'=' * 60}")
+            job_id = listing.get("external_id")
+            if db_duckdb.is_already_applied(job_id, "Collabera"):
+                logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied: {listing.get('job_title')}")
+                continue
 
-            applied_count = self._search_and_apply_immediately(keyword)
-            total_applied += applied_count
-
-            # Human-like delay between keyword searches
-            if len(keywords) > 1:
-                time.sleep(random.uniform(5, 10))
-
-        logger.info(f"\n[OK] Collabera workflow complete: {total_applied} applications submitted")
-        return total_applied
-
-    def _search_and_apply_immediately(self, keyword):
-        """
-        Search and apply to jobs immediately on each page.
-        """
-        from engine.guards import guards
-        
-        applied_in_search = 0
-        seen_urls = set()
-        max_pages = self.config_data.get("search", {}).get("max_pages", 3)
-        listing_selectors = self.selectors_config.get("listing", {})
-        link_selector = listing_selectors.get("job_link")
-
-        if not link_selector:
-            logger.error("Collabera: 'job_link' selector is missing!")
-            return 0
-
-        for page in range(1, max_pages + 1):
-            if not guards.can_apply():
-                break
-
+            logger.info(
+                f"\n[{i}/{len(all_listings)}] Applying to: {listing.get('job_title')}"
+            )
             try:
-                if page == 1:
-                    logger.info(f"Collabera: [PAGE 1] Opening job search page")
-                    self._open_job_search_page()
-
-                    search_input_sel   = listing_selectors.get("search_input")
-                    location_input_sel = listing_selectors.get("location_input")
-                    search_btn_sel     = listing_selectors.get("search_button")
-                    search_location    = self._get_search_location()
-
-                    if search_input_sel and search_btn_sel:
-                        try:
-                            self._submit_search_form(
-                                keyword, search_input_sel, location_input_sel,
-                                search_location, search_btn_sel, link_selector
-                            )
-                        except Exception as e:
-                            logger.warning(f"Collabera: Form-based search failed ({e}), falling back to direct URL")
-                            self._open_search_results_url(keyword, search_location, page=1)
-                    else:
-                        self._open_search_results_url(keyword, search_location, page=1)
+                if self.apply(listing):
+                    total_applied += 1
+                    guards.increment_counter()
+                    # Tracking is now handled within self.apply() which calls _record_application()
+                    logger.info(f"  [YES] Applied! ({total_applied} successful so far)")
+                    time.sleep(random.uniform(4, 8)) # Human-like pause between applications
                 else:
-                    self._open_search_results_url(keyword, self._get_search_location(), page=page)
-
-                time.sleep(random.uniform(5, 7))
-
-                elements = self.driver.find_elements(*self._by(link_selector))
-                logger.info(f"Collabera: [PAGE {page}] Found {len(elements)} jobs")
-
-                if not elements:
-                    logger.info(f"Collabera: No jobs on page {page}. Stopping.")
-                    break
-
-                # Extract URLs beforehand to avoid stale elements during navigations
-                listings_on_page = []
-                for el in elements:
-                    try:
-                        url = el.get_attribute("href")
-                        title = el.text.strip()
-                        if url and url not in seen_urls:
-                            seen_urls.add(url)
-                            external_id = url.split("-")[-1].replace("/", "") if "-" in url else url
-                            listings_on_page.append({
-                                "job_title": title,
-                                "job_url": url,
-                                "external_id": external_id
-                            })
-                    except: continue
-
-                execution_tracker.add_jobs_found(len(listings_on_page))
-
-                # Now apply to each job found on this page
-                for listing in listings_on_page:
-                    if not guards.can_apply():
-                        break
-
-                    job_id = listing["external_id"]
-                    if db_duckdb.is_already_applied(job_id, "Collabera"):
-                        logger.info(f"  [SKIP] Already applied: {listing['job_title']}")
-                        continue
-
-                    if self.apply(listing):
-                        applied_in_search += 1
-                        guards.increment_counter()
-                        db_duckdb.mark_applied(job_id, "Collabera", listing["job_title"])
-                        logger.info(f"  [YES] Applied! ({applied_in_search} for this keyword)")
-                        time.sleep(random.uniform(3, 6))
-
-                    # Navigate back to search results if necessary (or rely on self.apply to stay in session)
-                    # For Collabera, self.apply navigates to job_url, so we MUST go back or re-search for the next page.
-                    # Re-searching is safer for session health.
-
-                # After processing a page, the next iteration of the 'page' loop will navigate to the next results URL.
-
+                    logger.warning(f"  [NO] Failed to apply to: {listing.get('job_title')}")
             except Exception as e:
-                logger.error(f"Collabera: Error on page {page}: {e}")
-                break
+                logger.error(f"  [ERROR] Exception applying to {listing.get('job_title')}: {e}")
 
-        return applied_in_search
+        logger.info(
+            f"\n[OK] Phase 2 complete. Total applications submitted: {total_applied}/{len(all_listings)}"
+        )
+        return total_applied
 
     def find_jobs_for_keyword(self, keyword):
         """
@@ -446,13 +442,28 @@ class CollaberaStrategy(BaseStrategy):
                     break
 
                 page_count = 0
+                keyword_lower = keyword.lower()
                 for el in elements:
                     try:
                         title = el.text.strip()
                         url   = el.get_attribute("href")
                         if title and url and url not in seen_urls:
+                            # TITLE FILTERING: Only include jobs that match the keyword
+                            if keyword_lower not in title.lower():
+                                logger.debug(f"  [SKIP] Title mismatch: '{title}' does not contain '{keyword}'")
+                                continue
+
                             seen_urls.add(url)
-                            external_id = url.split("-")[-1].replace("/", "") if "-" in url else url
+                            
+                            # Robust external_id extraction (handles ?post=XXXXX or slugs)
+                            if "post=" in url:
+                                external_id = url.split("post=")[-1].split("&")[0]
+                            elif "-" in url:
+                                external_id = url.split("-")[-1].replace("/", "")
+                            else:
+                                from hashlib import md5
+                                external_id = md5(url.encode()).hexdigest()[:12]
+
                             all_listings.append({
                                 "job_title":   title,
                                 "job_url":     url,
@@ -471,7 +482,10 @@ class CollaberaStrategy(BaseStrategy):
                 logger.error(f"Collabera: Error on page {page}: {e}")
                 break
 
-        logger.info(f"Collabera: Found {len(all_listings)} total unique jobs for '{keyword}'.")
+        if all_listings:
+            logger.info(f"Collabera: Found {len(all_listings)} total unique jobs for '{keyword}'.")
+            csv_tracker.add_discovered_jobs("collabera", all_listings)
+
         return all_listings
 
     def find_jobs(self):
@@ -480,229 +494,488 @@ class CollaberaStrategy(BaseStrategy):
 
     def apply(self, listing):
         """
-        Fill out the application form on Collabera for a specific job.
-
-        Flow:
-          Step 1 — Navigate to job URL and click Apply button
-          Step 2 — Fill: fullName (#txtName), email (#txtEmail), phone (#txtPhone)
-          Step 3 — Click acknowledgement labels / consent checkboxes
-          Step 4 — Upload resume
-          Step 5 — Submit (#Submit)
+        Structured application flow mimicking KForce/Lancesoft patterns.
         """
         if isinstance(listing, dict):
             job_url = listing.get("job_url")
+            job_title = listing.get("job_title", "Unknown")
+            external_id = listing.get("external_id", "Unknown")
         else:
             job_url = getattr(listing, "job_url", None)
+            job_title = getattr(listing, "job_title", "Unknown")
+            external_id = getattr(listing, "external_id", "Unknown")
 
         if not job_url:
+            logger.error("Collabera: No job URL provided for application.")
             return False
 
-        logger.info(f"Collabera: Navigating to job posting {job_url}")
-        job_title = (
-            listing.get("job_title", "Unknown")
-            if isinstance(listing, dict)
-            else getattr(listing, "job_title", "Unknown")
-        )
+        logger.info(f"\n[APPLY] Collabera [Step 1]: Navigating to job: {job_title}")
+        logger.info(f"  URL: {job_url}")
+
         try:
-            # SESSION HEALTH CHECK
-            try:
-                _ = self.driver.current_window_handle
-            except Exception:
-                logger.error("Collabera: Browser session lost before page load!")
+            # Step 1: Navigation
+            self.driver.get(job_url)
+            time.sleep(random.uniform(4, 6))
+
+            # Initial Global Body Scroll (Triggers lazy-loading for iframes)
+            logger.info("Collabera: Scrolling to bottom of page...")
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+
+            # Step 2: Candidate profile
+            logger.info(
+                "Collabera [Step 2]: Preparing candidate profile for dynamic form filling..."
+            )
+            candidate_profile = self._build_candidate_profile()
+
+            # Step 3: Handle Application Form / Iframe
+            # IMPORTANT: In Collabera, 'Apply Now' is often a TITLE, not a button.
+            # The form is typically visible immediately or hidden in an iframe.
+            logger.info("Collabera [Step 3]: Accessing application form...")
+            application_selectors = self.selectors_config.get("application", {})
+            form_fields = self.selectors_config.get("form_fields", {})
+            
+            # Default to 'iframe' if no specific selector is provided in DB
+            iframe_sel = application_selectors.get("iframe_selector") or form_fields.get("iframe_selector") or "iframe"
+            
+            # If no form fields are found at all, we can't proceed.
+            if not form_fields:
+                logger.error("  [FATAL] No form_fields found in selectors. Check DuckDB configuration.")
                 return False
 
-            self.driver.get(job_url)
-            time.sleep(5)
+            # ALWAYS attempt to switch to iframe on Collabera (it's nearly always required)
+            try:
+                logger.info(f"  Attempting to switch to iframe context (selector: {iframe_sel})...")
+                
+                # Robust Switch logic combining the specific selector with a generic iframe fallback
+                if iframe_sel and iframe_sel != "iframe":
+                    by, locator = self._by(iframe_sel)
+                    try:
+                        WebDriverWait(self.driver, 15).until(
+                            EC.frame_to_be_available_and_switch_to_it((by, locator))
+                        )
+                        logger.info(f"  [OK] Successfully switched to specified iframe: {iframe_sel}")
+                    except Exception as specific_e:
+                        logger.warning(f"  [!] Failed to switch to specific iframe ({specific_e}). Attempting generic iframe switch...")
+                        WebDriverWait(self.driver, 10).until(
+                            EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, "iframe"))
+                        )
+                        logger.info("  [OK] Switched to first available iframe (generic fallback).")
+                else:
+                    # Pure generic switch if no selector was provided
+                    logger.info("  No specific iframe selector provided. Searching for any iframe...")
+                    WebDriverWait(self.driver, 15).until(
+                        EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, "iframe"))
+                    )
+                    logger.info("  [OK] Switched to first available iframe (pure generic).")
 
-            # ── Step 1: Click Apply Button on Job Posting (if needed) ───────────
-            apply_btn_sel = self.selectors_config.get("application", {}).get("apply_button")
-            form_fields = self.selectors_config.get("application", {}).get("form_fields", {})
-            first_field_sel = form_fields.get("fullName")
+            except Exception as e:
+                logger.warning(f"  [WARNING] All iframe switch attempts failed: {e}")
+                logger.debug("    Form might be on the main page. Continuing anyway...")
 
-            # Check if form is already visible
-            form_visible = False
+            # Wait for any primary field to load inside iframe (or main page)
+            logger.info("  Waiting for form fields to render...")
+            first_field_key = "txtName" if "txtName" in form_fields else "fullName"
+            first_field_sel = form_fields.get(first_field_key)
             if first_field_sel:
                 try:
-                    self.driver.find_element(*self._by(first_field_sel))
-                    form_visible = True
-                    logger.info("Collabera: Application form already visible. Skipping trigger click.")
-                except Exception:
-                    form_visible = False
+                    WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located(self._by(first_field_sel))
+                    )
+                    logger.info(f"  [OK] Form field '{first_field_key}' detected.")
+                except:
+                    logger.warning(f"  [!] Timeout waiting for field '{first_field_key}'. Continuing anyway...")
 
-            if not form_visible and apply_btn_sel:
-                try:
-                    logger.info(f"Collabera: Looking for Apply trigger: {apply_btn_sel}")
-                    apply_btn = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_all_elements_located(self._by(apply_btn_sel))
-                    )[0]
-                    
-                    # Scroll to the apply trigger
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", apply_btn)
-                    time.sleep(1)
+            # Step 4: Fill Form Fields (Hardened Selectors)
+            logger.info("Collabera [Step 4]: Filling form fields...")
+            
+            # Use explicit mappings based on verified Collabera field names (txtName, txtEmail, txtPhone)
+            # These keys typically exist in the 'form_fields' dictionary in DuckDB
+            field_mappings = [
+                ("fullName", candidate_profile.get("full_name")),
+                ("email",    candidate_profile.get("email")),
+                ("phone",    candidate_profile.get("phone")),
+            ]
 
-                    try:
-                        self.human.human_click(apply_btn)
-                    except Exception:
-                        logger.warning("Collabera: Standard click failed, using JavaScript click.")
-                        self.driver.execute_script("arguments[0].click();", apply_btn)
-                        
-                    logger.info("Collabera: Clicked Apply trigger.")
-                    time.sleep(4)
-                except Exception as e:
-                    logger.warning(f"Collabera: Could not click Apply trigger: {e}")
-                    # Continue anyway in case the form is already open
+            for field_key, value in field_mappings:
+                selector = form_fields.get(field_key)
+                if not value: continue
 
-            # ── Step 2: Fill Name / Email / Phone ─────────────────────────────
-            # Robust data resolution (matching Kforce pattern)
-            _raw = self.config_data.get("applicant", {})
-            applicant = {
-                "first_name": self.config_data.get("first_name") or _raw.get("first_name", ""),
-                "last_name":  self.config_data.get("last_name")  or _raw.get("last_name", ""),
-                "email":      self.config_data.get("email")      or _raw.get("email", ""),
-                "phone":      self.config_data.get("phone")      or _raw.get("phone", ""),
-            }
-            full_name = f"{applicant['first_name']} {applicant['last_name']}".strip()
-            email = applicant["email"]
-            phone = applicant["phone"]
+                filled = False
+                if selector:
+                    logger.info(f"  Filling {field_key} via DB selector...")
+                    if self.react_fill(selector, value):
+                        filled = True
 
-            # form_fields already loaded in Step 1
+                # Fallback to ChatGPT-style By.NAME selectors if DB selector fails or is missing
+                if not filled:
+                    logger.info(f"  [FALLBACK] Attempting By.NAME discovery for {field_key}...")
+                    for name_attr in [field_key, f"txt{field_key.capitalize()}", field_key.lower(), f"txt{field_key}"]:
+                        try:
+                            # Use basic ID or Name search
+                            sel = f"[name='{name_attr}'], [id='{name_attr}']"
+                            if self.react_fill(sel, value):
+                                logger.info(f"    [OK] Found and filled {field_key} via {name_attr}")
+                                filled = True
+                                break
+                        except: pass
+                
+                if not filled:
+                    logger.warning(f"  [!] Could not fill {field_key} after all attempts.")
+                
+                time.sleep(random.uniform(0.6, 1.2))
 
-            logger.info("Collabera: Filling applicant details...")
-            for field_key, value in [("fullName", full_name), ("email", email), ("phone", phone)]:
-                sel = form_fields.get(field_key)
-                if sel and value:
-                    try:
-                        el = self.driver.find_element(*self._by(sel))
-                        self.driver.execute_script(
-                            "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", el
-                        )
-                        time.sleep(0.5)
-                        self.react_fill(sel, value)
-                        logger.info(f"  [OK] Filled '{field_key}'")
-                    except Exception as fe:
-                        logger.warning(f"  [WARNING] Could not fill '{field_key}': {fe}")
+            # Optional: Dynamic filling for any other fields not in the core mapping
+            # but defined in form_fields (e.g. LinkedIn, City if they appear)
+            core_keys = {"fullName", "email", "phone", "resume_upload", "terms_checkbox", "alert_checkbox", "submit_btn"}
+            for field_key, selector in form_fields.items():
+                if field_key in core_keys: 
+                    continue
+                
+                value = self._resolve_field_value(field_key, candidate_profile)
+                if selector and value:
+                    logger.info(f"  Filling dynamic field: {field_key}")
+                    self.react_fill(selector, value)
+                    time.sleep(0.5)
 
-            # ── Step 3: Click acknowledgement labels / consent checkboxes ──────
-            # label_1          → main acknowledgement label
-            # checkbox_1_label → first consent label  (div[4]/label)
-            # checkbox_2_label → second consent label (div[5]/label)
-            logger.info("Collabera: Clicking acknowledgement labels...")
-            for cb_key in ["label_1", "checkbox_1_label", "checkbox_2_label"]:
+            # Step 5: Handle Checkboxes (Verified Labels)
+            logger.info("Collabera [Step 5]: Handling consent checkboxes...")
+            
+            # Sequence: checkbox_1_label, checkbox_2_label (from DB) or standard keys
+            checkbox_keys = ["checkbox_1_label", "checkbox_2_label", "terms_checkbox", "alert_checkbox"]
+            for cb_key in checkbox_keys:
                 cb_sel = form_fields.get(cb_key)
                 if cb_sel:
                     try:
-                        try:
-                            # Scroll to make label visible
-                            label_el = self.driver.find_element(*self._by(cb_sel))
-                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", label_el)
-                            time.sleep(0.5)
-                            
-                            self.safe_actions.safe_click(cb_sel, by=self._by(cb_sel)[0])
-                        except Exception as e:
-                            logger.warning(f"Collabera: Failed to click consent label {cb_key}: {e}")
-                        logger.info(f"  [OK] Clicked [{cb_key}]")
+                        logger.info(f"  Attempting to click {cb_key}...")
+                        cb_el = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located(self._by(cb_sel))
+                        )
+                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", cb_el)
                         time.sleep(0.5)
-                    except Exception as inner_e:
-                        logger.debug(f"  [SKIP] [{cb_key}] not found: {inner_e}")
 
-            # ── Step 4: Upload Resume ──────────────────────────────────────────
+                        # Primary: Check if it's already a label (as verified in DB)
+                        if cb_el.tag_name == "label" or "label" in cb_sel.lower():
+                            self.driver.execute_script("arguments[0].click();", cb_el)
+                            logger.info(f"    [OK] Clicked {cb_key} directly.")
+                        else:
+                            # Secondary: Smart Detection for inputs
+                            input_id = cb_el.get_attribute("id")
+                            clicked = False
+                            if input_id:
+                                try:
+                                    label = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{input_id}']")
+                                    self.driver.execute_script("arguments[0].click();", label)
+                                    clicked = True
+                                    logger.info(f"    [OK] Clicked label for {input_id}")
+                                except: pass
+                            
+                            if not clicked:
+                                try:
+                                    parent = cb_el.find_element(By.XPATH, "..")
+                                    self.driver.execute_script("arguments[0].click();", parent)
+                                    clicked = True
+                                    logger.info(f"    [OK] Clicked parent container.")
+                                except: pass
+
+                            if not clicked:
+                                self.driver.execute_script("arguments[0].click();", cb_el)
+                                logger.info(f"    [OK] Clicked input directly.")
+                        
+                        time.sleep(0.5)
+                    except Exception as e:
+                        logger.debug(f"    [SKIP] {cb_key} failed or not found: {e}")
+
+            # Step 6: Resume Upload
+            logger.info("Collabera [Step 6]: Uploading resume...")
             resume_path = self.get_resume_path()
-            resume_sel  = form_fields.get("resume_upload")
+            resume_sel = form_fields.get("resume_upload")
             if resume_path and resume_sel:
                 try:
-                    file_input = self.driver.find_element(*self._by(resume_sel))
-                    self.driver.execute_script(
-                        "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", file_input
+                    file_input = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located(self._by(resume_sel))
                     )
-                    time.sleep(1)
                     self.driver.execute_script(
-                        "arguments[0].style.display='block'; arguments[0].style.visibility='visible';",
+                        "arguments[0].style.display='block'; arguments[0].style.visibility='visible'; arguments[0].style.opacity='1';",
                         file_input,
                     )
                     file_input.send_keys(resume_path)
-                    logger.info("  [OK] Resume attached successfully.")
-                    time.sleep(2.5)
+                    logger.info("  [OK] Resume attached.")
+                    time.sleep(2)
                 except Exception as e:
                     logger.error(f"  [ERROR] Resume upload failed: {e}")
 
-            # ── Step 5: Submit Form (with DRY_RUN guard) ───────────────────────
+            # Step 7: Submit
+            logger.info("Collabera [Step 7]: Submitting application...")
             submit_btn_sel = form_fields.get("submit_btn")
             if submit_btn_sel:
-                submit_btn = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located(self._by(submit_btn_sel))
-                )
-                self.driver.execute_script(
-                    "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
-                    submit_btn,
-                )
-                time.sleep(1.5)
-
-                if guards.is_dry_run():
-                    self.driver.execute_script(
-                        "arguments[0].style.border = '5px solid orange';", submit_btn
+                try:
+                    submit_btn = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located(self._by(submit_btn_sel))
                     )
-                    logger.info("! DRY RUN — Submit button highlighted but NOT clicked.")
-                    self._record_application(listing, job_url, job_title, "success", "Dry run")
-                    return True
-                else:
-                    submit_btn = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable(self._by(submit_btn_sel))
-                    )
-                    self.human.human_click(submit_btn)
-                    logger.info("Collabera: Submit clicked — waiting for confirmation...")
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
+                    time.sleep(1)
 
-                    if self._verify_submission():
-                        logger.info("Collabera: Successfully verified application submission!")
-                        self._record_application(listing, job_url, job_title, "success")
+                    if guards.is_dry_run():
+                        self.driver.execute_script("arguments[0].style.border = '5px solid orange';", submit_btn)
+                        logger.info("  [DRY RUN] Submit button highlighted. Not clicking.")
+                        self._record_application(listing, job_url, job_title, "success", "Dry run accomplishment")
                         return True
                     else:
-                        raise Exception("Submission verification failed: Confirmation not found after click.")
+                        self.human.human_click(submit_btn)
+                        logger.info("  [OK] Submit button clicked.")
+
+                        # Fallback for click verification — Submit some more if text logic suggests it
+                        if not self._verify_submission():
+                            logger.info("  [!] Initial verification failed. Re-attempting submit with text-based fallback...")
+                            # Scroll down again for good measure
+                            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                            time.sleep(1)
+                            
+                            try:
+                                apply_btn_text_sel = "//button[contains(text(),'Apply') or contains(text(),'Submit')]"
+                                alt_btn = self.driver.find_element(By.XPATH, apply_btn_text_sel)
+                                self.driver.execute_script("arguments[0].click();", alt_btn)
+                                logger.info("    [OK] Fired click via XPATH text discovery fallback.")
+                            except: pass
+
+                        if self._verify_submission():
+                            logger.info("  [SUCCESS] Application verified.")
+                            self._record_application(listing, job_url, job_title, "success")
+                            return True
+                        else:
+                            logger.warning("  [FAIL] Verification failed. Success message not found.")
+                            return False
+                except Exception as e:
+                    logger.error(f"  [ERROR] Submit button interaction failed: {e}")
+                    return False
 
             return False
 
         except Exception as e:
-            logger.error(f"Collabera Apply Form failed: {e}")
+            logger.error(f"Collabera Application Flow failed: {e}")
             self._record_application(listing, job_url, job_title, "failed", str(e))
             return False
 
-    def _verify_submission(self):
-        """Checks if the application was actually submitted by looking for success indicators."""
-        time.sleep(5)
+        finally:
+            try:
+                self.driver.switch_to.default_content()
+                logger.debug("Collabera: Switched back to default content.")
+            except Exception:
+                pass
 
-        # 1. Check URL for common success patterns
-        if "success" in self.driver.current_url.lower() or "confirm" in self.driver.current_url.lower():
-            logger.info("  [YES] Verified via URL redirection")
+    def _build_candidate_profile(self):
+        """Build a normalized profile dict from config/candidate data."""
+        applicant_data = self.config_data.get("applicant", {}) or {}
+        address_block = applicant_data.get("address", {}) or {}
+
+        def _first_value(*values):
+            for value in values:
+                if value is None:
+                    continue
+                text = str(value).strip()
+                if text:
+                    return text
+            return None
+
+        first_name = _first_value(
+            self.config_data.get("first_name"),
+            applicant_data.get("first_name"),
+        )
+        last_name = _first_value(
+            self.config_data.get("last_name"),
+            applicant_data.get("last_name"),
+        )
+        full_name = " ".join(
+            part for part in (first_name, last_name) if part
+        ).strip()
+        if not full_name:
+            full_name = first_name or last_name
+
+        email = _first_value(
+            self.config_data.get("email"),
+            applicant_data.get("email"),
+        )
+        phone = _first_value(
+            self.config_data.get("phone"),
+            applicant_data.get("phone"),
+        )
+        street = _first_value(
+            address_block.get("street"),
+            address_block.get("street_address"),
+            applicant_data.get("street_address"),
+        )
+        city = _first_value(
+            address_block.get("city"),
+            applicant_data.get("city"),
+        )
+        state = _first_value(
+            address_block.get("state"),
+            applicant_data.get("state"),
+        )
+        zip_code = _first_value(
+            address_block.get("zip_code"),
+            address_block.get("postal_code"),
+            applicant_data.get("zip_code"),
+            self.config_data.get("zip_code"),
+        )
+        country = _first_value(
+            address_block.get("country"),
+            address_block.get("country"),
+            self.config_data.get("country"),
+            "United States",
+        )
+
+        return {
+            "first_name": first_name,
+            "last_name": last_name,
+            "full_name": full_name,
+            "email": email,
+            "phone": phone,
+            "street": street,
+            "city": city,
+            "state": state,
+            "zip_code": zip_code,
+            "country": country,
+            "workstatus": _first_value(
+                applicant_data.get("workstatus"),
+                self.config_data.get("workstatus"),
+            ),
+            "linkedin": _first_value(
+                applicant_data.get("linkedin"),
+                self.config_data.get("linkedin"),
+            ),
+            "title": _first_value(
+                applicant_data.get("title"),
+                self.config_data.get("title"),
+            ),
+            "summary": _first_value(
+                applicant_data.get("summary"),
+                self.config_data.get("summary"),
+            ),
+        }
+
+    def _resolve_field_value(self, field_key, profile):
+        """Map form field keys to candidate profile values."""
+        if not field_key or not profile:
+            return None
+
+        normalized = field_key.lower().replace("_", "").replace("-", "").strip()
+        if not normalized:
+            return None
+
+        skip_terms = (
+            "resume",
+            "submit",
+            "checkbox",
+            "label",
+            "button",
+            "iframe",
+            "frame",
+            "link",
+        )
+        if any(term in normalized for term in skip_terms):
+            return None
+
+        if "lastname" in normalized or "surname" in normalized:
+            return profile.get("last_name")
+        if "firstname" in normalized or normalized in ("fname", "first") or (
+            "first" in normalized and "name" in normalized
+        ):
+            return profile.get("first_name")
+        if "fullname" in normalized or "yourname" in normalized or normalized == "name":
+            return (
+                profile.get("full_name")
+                or profile.get("first_name")
+                or profile.get("last_name")
+            )
+        if "email" in normalized:
+            return profile.get("email")
+        if "phone" in normalized or "mobile" in normalized:
+            return profile.get("phone")
+        if "street" in normalized or normalized.endswith("address") or "addr" in normalized:
+            return profile.get("street")
+        if "city" in normalized and "citizenship" not in normalized:
+            return profile.get("city")
+        if "state" in normalized and "statement" not in normalized:
+            return profile.get("state")
+        if "zip" in normalized or "postal" in normalized:
+            return profile.get("zip_code")
+        if "country" in normalized:
+            return profile.get("country")
+        if "workstatus" in normalized:
+            return profile.get("workstatus")
+        if "linkedin" in normalized:
+            return profile.get("linkedin")
+        if "title" in normalized:
+            return profile.get("title")
+        if "summary" in normalized:
+            return profile.get("summary")
+
+        return None
+
+    def _verify_submission(self, timeout=15):
+        """Verify successful application submission on Collabera."""
+        logger.info("Collabera: Verifying submission...")
+        
+        # 1. URL change verification
+        if "thank" in self.driver.current_url.lower() or "success" in self.driver.current_url.lower():
+            logger.info("  [OK] Verified via URL (Success page detected).")
             return True
 
-        # 2. Check for common success text on the page
-        success_indicators = ["thank you", "received", "submitted", "success"]
+        # 2. Page text verification
         try:
+            success_indicators = [
+                "thank you",
+                "application submitted",
+                "successfully applied",
+                "received your application",
+                "will get back to you",
+            ]
             page_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
             for indicator in success_indicators:
                 if indicator in page_text:
-                    logger.info(f"  [YES] Verified via page text: '{indicator}'")
+                    logger.info(f"  [OK] Verified via page text ('{indicator}' found).")
                     return True
-        except Exception:
+        except:
+            pass
+
+        # 3. Success modal verification (if applicable)
+        try:
+            modal = WebDriverWait(self.driver, 5).until(
+                EC.visibility_of_element_located((By.CLASS_NAME, "modal-content"))
+            )
+            if "thank" in modal.text.lower():
+                logger.info("  [OK] Verified via success modal.")
+                return True
+        except:
             pass
 
         return False
 
-    def _record_application(self, listing, job_url, job_title, status, error=None):
-        """Record application outcome in execution tracker and CSV."""
-        external_id = (
-            listing.get("external_id", "unknown")
-            if isinstance(listing, dict)
-            else getattr(listing, "external_job_id", "unknown")
-        )
+    def _record_application(self, listing, job_url, job_title, status, error_msg=None):
+        """Record the application result in trackers."""
+        from core.execution_logger import execution_tracker
+        
+        job_id = listing.get("external_id") if isinstance(listing, dict) else getattr(listing, "external_id", "N/A")
+        
+        # Log to execution tracker
         if status == "success":
-            execution_tracker.record_success("Collabera", str(external_id), str(job_title), str(job_url))
+            execution_tracker.record_success("Collabera", str(job_id), str(job_title), str(job_url))
         else:
-            execution_tracker.record_error("Collabera", str(external_id), str(job_title), str(job_url), str(error))
+            execution_tracker.record_error("Collabera", str(job_id), str(job_title), str(job_url), str(error_msg))
 
+        # Log to CSV/DuckDB Tracker
         csv_tracker.update_job_status(
-            "collabera",
+            "Collabera",
             job_url,
             "applied" if status == "success" else "failed",
             attempts_inc=1,
-            last_error=error,
+            last_error=error_msg
         )
+        
+        # Also mark in Collabera-specific table for legacy compatibility
+        if status == "success":
+             db_duckdb.mark_applied(job_id, "Collabera", job_title)
+             
+        logger.debug(f"Collabera: Recorded {status} application for {job_id}")

@@ -46,3 +46,4 @@ db/jobs.duckdb
 # Resume files (sensitive personal data)
 resume/
 resume_json/
+chrome_profile_run/

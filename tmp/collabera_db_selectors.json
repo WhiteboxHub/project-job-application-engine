@@ -1,0 +1,63 @@
+{
+    "listing": {
+        "search_keywords": [
+            "AI Engineer",
+            "Machine Learning Engineer",
+            "Data Scientist",
+            "MLOps Engineer",
+            "Generative AI Engineer",
+            "LLM Engineer",
+            "AI Data Scientist",
+            "Python Developer",
+            "Data Engineer",
+            "Deep Learning Engineer",
+            "NLP Engineer",
+            "Computer Vision Engineer",
+            "Cloud Data Engineer",
+            "Business Intelligence Developer",
+            "AI Solutions Architect"
+        ],
+        "search_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[1]/input",
+        "location_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[2]/input",
+        "search_button": "//*[@id='main']/div/section[1]/div[2]/div/form/div/button",
+        "job_link": "//a[contains(@href, 'job-description')]",
+        "application": {
+            "apply_button": "h5.ApplyNow, div.card-body h5:contains('Apply Now')",
+            "iframe_selector": "iframe[title='Apply Now']",
+            "form_fields": {
+                "fullName": "input#txtName",
+                "email": "input#txtEmail",
+                "phone": "input#txtPhone",
+                "resume_upload": "input#fuResume",
+                "terms_checkbox": "input#myCheckbox",
+                "alert_checkbox": "input#chk_alert",
+                "submit_btn": "button#Submit.downldLink-apply1"
+            }
+        },
+        "listing": {
+            "search_input": "input.inputbox_search, input[placeholder*='Search job title' i]",
+            "location_input": "input#txtLocation, input[placeholder*='Location' i]",
+            "search_button": "button.search-btn, button#btnSearch",
+            "job_link": "div.card-body h5 a, .job-title a",
+            "search_keywords": [
+                "Python Developer",
+                "Data Analyst",
+                "AI Engineer"
+            ]
+        }
+    },
+    "application": {
+        "apply_button": "//*[@id=\"main\"]/div/section[2]/div/div/div[2]/div/div/h5",
+        "form_fields": {
+            "fullName": "//*[@id=\"txtName\"]",
+            "email": "//*[@id=\"txtEmail\"]",
+            "phone": "//*[@id=\"txtPhone\"]",
+            "resume_upload": "input[type='file']",
+            "label_1": "//*[@id=\"frmJobs\"]/div[4]/div/div/div[2]/div[1]/div/label",
+            "checkbox_1_label": "//*[@id=\"frmJobs\"]/div[4]/div/div/div[2]/div[1]/div/div[4]/label",
+            "checkbox_2_label": "//*[@id=\"frmJobs\"]/div[4]/div/div/div[2]/div[1]/div/div[5]/label",
+            "submit_btn": "//*[@id=\"Submit\"]",
+            "submit_fallback": "//button[contains(text(), 'Submit')]"
+        }
+    }
+}

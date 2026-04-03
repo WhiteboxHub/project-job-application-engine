@@ -916,6 +916,8 @@ class LanceSoftStrategy(BaseStrategy):
 
                     except Exception as e:
                         logger.error(f"    [ERROR] Error processing job {job_id}: {e}")
+                        # Record failure
+                        self._record_application(job_id, url, title, "failed", str(e))
                         # Try to recover state
                         try:
                             self.driver.back()
@@ -2666,3 +2668,29 @@ class LanceSoftStrategy(BaseStrategy):
         except Exception as e:
             logger.error(f"Error completing application: {e}")
             raise
+
+    def _record_application(self, listing, job_url, job_title, status, error=None):
+        """Record application in DB and CSV"""
+        from core.execution_logger import execution_tracker
+        
+        # safely extract external_id
+        if isinstance(listing, dict):
+            external_id = listing.get("external_id", "unknown")
+        elif listing:
+            external_id = getattr(listing, "external_id", "unknown")
+        else:
+            external_id = "unknown"
+            
+        if status == "success":
+            execution_tracker.record_success("LanceSoft", str(external_id), str(job_title), str(job_url))
+        else:
+            execution_tracker.record_error("LanceSoft", str(external_id), str(job_title), str(job_url), str(error))
+
+        # CSV/Tracker Update
+        csv_tracker.update_job_status(
+            "lancesoft",
+            job_url,
+            "applied" if status == "success" else "failed",
+            attempts_inc=1,
+            last_error=error,
+        )
