@@ -1,9 +1,9 @@
 {
     "workflow_id": 7,
     "schedule_id": null,
-    "run_id": "deddf284-a0f7-40d9-8e07-75b8b8ac5d42",
-    "candidate_id": 680,
-    "candidate_name": "Sai Madhavi Tadikonda",
+    "run_id": "458891c4-3456-4955-a630-8069be7862a2",
+    "candidate_id": 662,
+    "candidate_name": "Sri Devi Chenna",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -20,555 +20,150 @@
     "status": "completed_with_errors",
     "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 150,
-        "total_applications_attempted": 68,
-        "total_applications_successful": 4,
-        "total_applications_failed": 64
+        "total_jobs_found": 738,
+        "total_applications_attempted": 19,
+        "total_applications_successful": 17,
+        "total_applications_failed": 2
     },
     "successful_applications": [
         {
-            "job_site": "LanceSoft",
-            "job_id": "26-34938",
-            "job_title": "Senior Manager, Learning & Development - AI & Change Leadership",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-34938",
-            "applied_at": "2026-04-01T15:33:02.164413+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTYyM1Qxfjk5",
+            "job_title": "Documentation / Training Coordinator",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTYyM1Qxfjk5/",
+            "applied_at": "2026-04-03T18:09:39.022408+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "26-34938",
-            "job_title": "Senior Manager, Learning & Development - AI & Change Leadership",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-34938",
-            "applied_at": "2026-04-01T15:33:02.192822+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MzA3OFQxfjk5",
+            "job_title": "Fabric & AI Consultant",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MzA3OFQxfjk5/",
+            "applied_at": "2026-04-03T18:10:16.793622+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "26-30705",
-            "job_title": "Artificial Intelligence (AI) Engineer III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-30705",
-            "applied_at": "2026-04-01T15:34:24.293650+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MzA1MlAxfjk5",
+            "job_title": "Mid and Senior Data Scientists",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MzA1MlAxfjk5/",
+            "applied_at": "2026-04-03T18:10:53.613129+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "26-30705",
-            "job_title": "Artificial Intelligence (AI) Engineer III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-30705",
-            "applied_at": "2026-04-01T15:34:24.309052+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MzA3MVQxfjk5",
+            "job_title": "Machine Learning Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MzA3MVQxfjk5/",
+            "applied_at": "2026-04-03T18:11:30.936196+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MTgxNlAxfjk5",
+            "job_title": "Lead Product Manager - Claims",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTgxNlAxfjk5/",
+            "applied_at": "2026-04-03T18:12:08.670487+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3Mjg1N1Qxfjk5",
+            "job_title": "AI/ML Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3Mjg1N1Qxfjk5/",
+            "applied_at": "2026-04-03T18:12:47.210204+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MjkwOVAxfjk5",
+            "job_title": "Director Core IT - Enterprise Systems/Supply Chain",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjkwOVAxfjk5/",
+            "applied_at": "2026-04-03T18:13:26.403015+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
+            "job_title": "AI Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
+            "applied_at": "2026-04-03T18:14:03.995398+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
+            "job_title": "AI Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
+            "applied_at": "2026-04-03T18:14:43.736628+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MjYzM1Qxfjk5",
+            "job_title": "AI Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MjYzM1Qxfjk5/",
+            "applied_at": "2026-04-03T18:15:20.916134+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MjY2MlQxfjk5",
+            "job_title": "AI Adoption Coordinator",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjY2MlQxfjk5/",
+            "applied_at": "2026-04-03T18:15:58.888463+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE0ODUyMVAxfjk5",
+            "job_title": "Liability Claims Manager - Remote",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE0ODUyMVAxfjk5/",
+            "applied_at": "2026-04-03T18:16:36.153515+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2NzM4NFAxfjk5",
+            "job_title": "Senior Manager, Artificial Intelligence",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzM4NFAxfjk5/",
+            "applied_at": "2026-04-03T18:17:13.503775+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjYzMFQxfjk5",
+            "job_title": "Product Owner - Paid Media",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjYzMFQxfjk5/",
+            "applied_at": "2026-04-03T18:17:50.843434+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5BUUd-MjE3MjU4N1Qxfjk5",
+            "job_title": "FS Python Cloud",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjU4N1Qxfjk5/",
+            "applied_at": "2026-04-03T18:18:29.148219+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MDE1MlQxfjk5",
+            "job_title": "AI Solutions Architect",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDE1MlQxfjk5/",
+            "applied_at": "2026-04-03T18:19:06.924492+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjUzMFQxfjk5",
+            "job_title": "Principal Data Scientist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjUzMFQxfjk5/",
+            "applied_at": "2026-04-03T18:19:47.177707+00:00"
         }
     ],
     "failed_applications": [
         {
             "job_site": "LanceSoft",
-            "job_id": "26-22076",
-            "job_title": "Software Engineer-Artificial Intelligence 3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22076",
+            "job_id": "26-47472",
+            "job_title": "Facility Maintenance Supervisor",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
             "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:34:42.059618+00:00"
+            "failed_at": "2026-04-03T17:18:13.194247+00:00"
         },
         {
-            "job_site": "LanceSoft",
-            "job_id": "26-22017",
-            "job_title": "Software Engineer-Artificial Intelligence 5",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22017",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:34:58.750887+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-21988",
-            "job_title": "6J7KI4-Software Engineer-Artificial Intelligence 4 - 6J7-Artificial Intelligence",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-21988",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:35:15.422941+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-13376",
-            "job_title": "On-Site Service Engineer \u2013 AI Data Center",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-13376",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:35:31.106904+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-45067",
-            "job_title": "GFD5IB-Product Repair/Mod Tech B",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-45067",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:35:47.564231+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44912",
-            "job_title": "Hair Color & Bleach Chemistry Consultant",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44912",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:36:04.161653+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44879",
-            "job_title": "Aircraft Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44879",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:36:21.141744+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44739",
-            "job_title": "Document Control Tech Aide 3 - DCTA3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44739",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:36:38.531174+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44727",
-            "job_title": "Senior Marketing Campaign Manager",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44727",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:36:55.606835+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44598",
-            "job_title": "Maintenance Technician",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44598",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:37:14.619273+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44510",
-            "job_title": "Maintenance Mechanic III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44510",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:37:31.859792+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44474",
-            "job_title": "Operations Project Manager - Level 2 - Daily",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44474",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:37:48.911632+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44357",
-            "job_title": "Manufacturing Learning And Training Leader IV",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44357",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:38:05.490914+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44343",
-            "job_title": "GFD5IC-Product Repair/Mod Tech C",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44343",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:38:21.531979+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44140",
-            "job_title": "Maintenance Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44140",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:38:37.900521+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43214",
-            "job_title": "GFD5IB-Product Repair/Mod Tech B",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43214",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:38:54.627517+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43154",
-            "job_title": "IT Trainer",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43154",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:39:10.866762+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42884",
-            "job_title": "Maintenance Technician III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42884",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:39:27.827560+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42392",
-            "job_title": "Grounds Keeper Maintenance",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42392",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:39:44.682063+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42371",
-            "job_title": "Office/ Mail Clerk",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42371",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:40:01.660029+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-41036",
-            "job_title": "CAN - Supply Chain Engineer",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-41036",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:40:18.091658+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40889",
-            "job_title": "Package Handler/ Mailroom Clerk",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-40889",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:40:34.819802+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40780",
-            "job_title": "Mailroom Clerk",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-40780",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:40:52.069667+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44879",
-            "job_title": "Aircraft Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44879",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:41:08.164201+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44739",
-            "job_title": "Document Control Tech Aide 3 - DCTA3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44739",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:41:24.786933+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-32279",
-            "job_title": "Medicaid Subject Matter Expert (SME)",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-32279",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:41:41.579401+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44357",
-            "job_title": "Manufacturing Learning And Training Leader IV",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44357",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:41:58.094259+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44140",
-            "job_title": "Maintenance Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44140",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:42:15.849221+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43620",
-            "job_title": "GFD5IC-Product Repair/Mod Tech C",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43620",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:42:33.065193+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43214",
-            "job_title": "GFD5IB-Product Repair/Mod Tech B",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43214",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:42:50.229672+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-38476",
-            "job_title": "Maintenance Technician I - 3rd Shift",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-38476",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:43:07.095592+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-37946",
-            "job_title": "Maintenance Technician",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-37946",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:43:23.467781+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-34235",
-            "job_title": "Senior Maintenance Technician",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-34235",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:43:40.433736+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-40166",
-            "job_title": "Intern Regulatory Affairs",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-40166",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:43:57.825438+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-26956",
-            "job_title": "Medical Science Liaison III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-26956",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:44:14.680477+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-22076",
-            "job_title": "Software Engineer-Artificial Intelligence 3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22076",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:44:32.188701+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-22017",
-            "job_title": "Software Engineer-Artificial Intelligence 5",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22017",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:44:48.753265+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-39861",
-            "job_title": "BAMAI4-Systems And Data Analyst 4 - B38-Systems And Data Analyst-General",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-39861",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:45:05.739715+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-37948",
-            "job_title": "Dealer/Diagnostic Support - Supply Chain Data Analyst - Associate",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-37948",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:45:22.474041+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-32279",
-            "job_title": "Medicaid Subject Matter Expert (SME)",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-32279",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:45:39.155401+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-25957",
-            "job_title": "R&D Data Scientist",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-25957",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:45:56.041246+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-22076",
-            "job_title": "Software Engineer-Artificial Intelligence 3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22076",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:46:12.506811+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-22017",
-            "job_title": "Software Engineer-Artificial Intelligence 5",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22017",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:46:28.899077+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-21988",
-            "job_title": "6J7KI4-Software Engineer-Artificial Intelligence 4 - 6J7-Artificial Intelligence",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-21988",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:46:45.353424+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-13376",
-            "job_title": "On-Site Service Engineer \u2013 AI Data Center",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-13376",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:47:02.009675+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-34535",
-            "job_title": "Implementation Paid Media Visualization Lead",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-34535",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:47:18.956803+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-22076",
-            "job_title": "Software Engineer-Artificial Intelligence 3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-22076",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:47:36.014075+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "25-315008",
-            "job_title": "Software Engineer-Artificial Intelligence 3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/25-315008",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:47:53.307409+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-45067",
-            "job_title": "GFD5IB-Product Repair/Mod Tech B",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-45067",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:48:10.068648+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44912",
-            "job_title": "Hair Color & Bleach Chemistry Consultant",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44912",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:48:26.563715+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44879",
-            "job_title": "Aircraft Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44879",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:48:43.425152+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44739",
-            "job_title": "Document Control Tech Aide 3 - DCTA3",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44739",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:48:59.484251+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44727",
-            "job_title": "Senior Marketing Campaign Manager",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44727",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:49:16.803100+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44598",
-            "job_title": "Maintenance Technician",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44598",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:49:33.153400+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44510",
-            "job_title": "Maintenance Mechanic III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44510",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:49:49.545653+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44474",
-            "job_title": "Operations Project Manager - Level 2 - Daily",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44474",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:50:06.282382+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44357",
-            "job_title": "Manufacturing Learning And Training Leader IV",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44357",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:50:23.245380+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44343",
-            "job_title": "GFD5IC-Product Repair/Mod Tech C",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44343",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:50:39.882117+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-44140",
-            "job_title": "Maintenance Mechanic",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-44140",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:50:56.413493+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43214",
-            "job_title": "GFD5IB-Product Repair/Mod Tech B",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43214",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:51:13.742513+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-43154",
-            "job_title": "IT Trainer",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-43154",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:51:31.168310+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42884",
-            "job_title": "Maintenance Technician III",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42884",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:51:47.524555+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42392",
-            "job_title": "Grounds Keeper Maintenance",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42392",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:52:04.892640+00:00"
-        },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-42371",
-            "job_title": "Office/ Mail Clerk",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/jobs/26-42371",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-01T15:52:21.319999+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjUzMVQxfjk5",
+            "job_title": "Cybersecurity Email Analyst",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjUzMVQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-04-03T18:20:17.296560+00:00"
         }
     ],
-    "started_at": "2026-04-01T15:19:21.988013+00:00",
-    "finished_at": "2026-04-01T15:52:21.322492+00:00"
+    "started_at": "2026-04-03T16:32:07.958397+00:00",
+    "finished_at": "2026-04-03T18:20:17.308715+00:00"
 }

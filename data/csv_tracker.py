@@ -296,10 +296,23 @@ class DBTracker:
             WHERE candidate_email = ? AND job_site_name = ? AND (job_url = ? OR job_url = ?)
             LIMIT 1
         """, [candidate_email, site_name, job_url, norm_url]).fetchone()
-        
+
         if row and row[0] == 'applied':
             return True
         return False
+
+    def is_done_by_candidate(self, site_name: str, job_url: str, candidate_email: str) -> bool:
+        """Return True if this candidate already applied OR failed for this job (skip both)."""
+        self._ensure_candidate_table()
+        norm_url = self._normalize_url(job_url)
+        conn = self._conn()
+        logger.debug(f"[DBTracker] Checking if {candidate_email} is done with {job_url} on {site_name}")
+        row = conn.execute("""
+            SELECT status FROM candidate_applications
+            WHERE candidate_email = ? AND job_site_name = ? AND (job_url = ? OR job_url = ?)
+            LIMIT 1
+        """, [candidate_email, site_name, job_url, norm_url]).fetchone()
+        return row is not None and row[0] in ('applied', 'failed')
         
     def mark_applied_for_candidate(self, site_name: str, job_url: str, candidate_email: str, status: str):
         self._ensure_candidate_table()

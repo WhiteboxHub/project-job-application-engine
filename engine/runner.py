@@ -408,8 +408,8 @@ class EngineRunner:
                         job_title = job.get("job_title", "Unknown")
                         candidate_email = candidate_data.get("applicant", {}).get("email", "default_candidate@example.com")
                         
-                        if csv_tracker.is_applied_by_candidate(site.company_name.lower(), job_url, candidate_email):
-                            logger.info(f"Skipping already applied job for candidate {candidate_email}: {job_title}")
+                        if csv_tracker.is_done_by_candidate(site.company_name.lower(), job_url, candidate_email):
+                            logger.info(f"Skipping already processed job (applied/failed) for {candidate_email}: {job_title}")
                             continue
 
                         logger.info(f"\nApplying to: {job_title}")
@@ -438,6 +438,10 @@ class EngineRunner:
                                 "Application logic returned False"
                             )
                             logger.warning("Application failed")
+                            # Mark as failed so same job is skipped on next keyword iteration
+                            csv_tracker.mark_applied_for_candidate(
+                                site.company_name.lower(), job_url, candidate_email, "failed"
+                            )
                     except Exception as e:
                         logger.error(f"[ERROR] Error applying to job: {e}")
                         execution_tracker.record_error(
