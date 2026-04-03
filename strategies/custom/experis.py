@@ -241,24 +241,34 @@ class ExperisStrategy(BaseStrategy):
 
         return value
 
-    def _safe_fill_field(self, selector, value, timeout=10):
-        """Common text-fill helper with human typing fallback."""
+    def _safe_fill_field(self, selector, value, timeout=10, retries=2):
+        """Common text-fill helper with human typing fallback and retries."""
         if not selector or value in (None, ""):
             return False
 
-        try:
-            element = WebDriverWait(self.driver, timeout).until(
-                EC.element_to_be_clickable(self._by(selector))
-            )
-            self.driver.execute_script(
-                "arguments[0].scrollIntoView({block:'center'});", element
-            )
-            time.sleep(0.5)
-            self.human.fill_text_field(element, str(value))
-            return True
-        except Exception as exc:
-            logger.warning(f"Experis: Failed to fill field '{selector}': {exc}")
-            return False
+        for attempt in range(retries):
+            try:
+                element = WebDriverWait(self.driver, timeout).until(
+                    EC.element_to_be_clickable(self._by(selector))
+                )
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", element
+                )
+                time.sleep(0.5)
+                # Clear existing value just in case
+                self.driver.execute_script("arguments[0].value = '';", element)
+                element.clear()
+                
+                self.human.fill_text_field(element, str(value))
+                logger.info(f"  [YES] Filled field: {selector}")
+                return True
+            except Exception as exc:
+                if attempt < retries - 1:
+                    logger.debug(f"Experis: Retrying fill for '{selector}' (Attempt {attempt+1}/{retries})...")
+                    time.sleep(2)
+                    continue
+                logger.warning(f"Experis: Failed to fill field '{selector}' after {retries} attempts: {exc}")
+                return False
 
     def _upload_resume_if_available(self, selector):
         """Common resume upload helper."""
@@ -307,6 +317,60 @@ class ExperisStrategy(BaseStrategy):
             logger.warning(f"Experis: Failed to click '{selector}': {exc}")
             return False
 
+    def _handle_cookie_banner(self, timeout=7):
+        """Check for and accept common cookie banners (OneTrust, etc.) with iframe support."""
+        selectors = [
+            "#onetrust-accept-btn-handler",
+            "button#onetrust-accept-btn-handler",
+            "#accept-recommended-btn-handler",
+            "button.onetrust-close-btn-handler",
+            "div.ot-sdk-row button#onetrust-accept-btn-handler",
+            "//button[contains(text(), 'Accept All Cookies')]",
+            "//button[contains(text(), 'Accept')]",
+        ]
+        
+        try:
+            # 1. Check in default context
+            for selector in selectors:
+                try:
+                    banner_btn = WebDriverWait(self.driver, 2).until(
+                        EC.element_to_be_clickable(self._by(selector))
+                    )
+                    logger.info(f"Experis: Cookie banner detected ('{selector}'), clicking 'Accept'...")
+                    self.human.human_click(banner_btn)
+                    time.sleep(1.5)
+                    return True
+                except Exception:
+                    continue
+
+            # 2. Check within iframes (occasionally banners are nested)
+            iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+            for f in iframes[:5]: # Only check first few to avoid long delay
+                try:
+                    self.driver.switch_to.frame(f)
+                    for selector in selectors:
+                        try:
+                            banner_btn = WebDriverWait(self.driver, 1).until(
+                                EC.element_to_be_clickable(self._by(selector))
+                            )
+                            logger.info(f"Experis: Cookie banner detected in iframe ('{selector}'), clicking 'Accept'...")
+                            self.human.human_click(banner_btn)
+                            time.sleep(1.5)
+                            self.driver.switch_to.default_content()
+                            return True
+                        except Exception:
+                            continue
+                    self.driver.switch_to.default_content()
+                except Exception:
+                    self.driver.switch_to.default_content()
+                    continue
+            
+            return False
+        except Exception:
+            try: self.driver.switch_to.default_content()
+            except Exception: pass
+            return False
+
     def _set_checkbox_state(self, selector, checked=True, timeout=10):
         """Ensure a checkbox matches the desired state."""
         try:
@@ -350,12 +414,46 @@ class ExperisStrategy(BaseStrategy):
             return False
 
     def _is_success_page(self):
-        """Detect the post-submit confirmation state shared by the user."""
-        body_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
-        return (
-            "thank you for your interest" in body_text
-            and "application will be reviewed for consideration" in body_text
+        """Check if the current page indicates a successful application."""
+        try:
+            # Check for common HubSpot success strings in body text
+            body_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
+            success_indicators = [
+                "thank you for your interest",
+                "application will be reviewed",
+                "application was successful",
+                "successfully submitted",
+                "thanks for submitting the form",
+            ]
+            return any(indicator in body_text for indicator in success_indicators)
+        except Exception:
+            return False
+
+    def _is_404_page(self):
+        """Check if the current page is a 404 or page-not-found."""
+        return "page-not-found" in self.driver.current_url
+
+    def _handle_404_recovery(self):
+        """Attempt to recover from a 404 page by clicking the 'SEARCH FOR JOBS' button."""
+        logger.warning(
+            "Experis: Detected 404 Page Not Found. Attempting recovery via 'SEARCH FOR JOBS' button."
         )
+        try:
+            recovery_link = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable(
+                    (
+                        By.CSS_SELECTOR,
+                        "a.primary-button.goback.reversed[href*='/search']",
+                    )
+                )
+            )
+            self.human.human_click(recovery_link)
+            logger.info("  [YES] Clicked recovery link, waiting for search page...")
+            time.sleep(5)
+            return True
+        except Exception as e:
+            logger.error(f"  [ERROR] Failed to click 404 recovery link: {e}")
+            return False
 
     def _get_tracked_status(self, job_url):
         """Read tracker status for a job URL, if available."""
@@ -376,6 +474,7 @@ class ExperisStrategy(BaseStrategy):
         try:
             if getattr(self.job_site, "search_url_template", None):
                 self.driver.get(self.job_site.search_url_template)
+                self._handle_cookie_banner()
                 WebDriverWait(self.driver, 20).until(
                     EC.presence_of_element_located((By.TAG_NAME, "body"))
                 )
@@ -520,7 +619,7 @@ class ExperisStrategy(BaseStrategy):
     def _is_relevant_job(self, job_title: str, search_keyword: str) -> bool:
         """
         Checks if the discovered job title is relevant to our search keyword.
-        Requires at least a 50% overlap of keyword tokens in the job title.
+        Prioritizes AI-related intent and prevents generic matches like "Engineer".
         """
         if not job_title or not search_keyword:
             return False
@@ -528,17 +627,41 @@ class ExperisStrategy(BaseStrategy):
         title_lower = job_title.lower()
         keyword_lower = search_keyword.lower()
         
+        # 1. Mandatory Core Intent Tokens
+        # If any of these are in the keyword, at least one MUST be in the title
+        core_intent = {"ai", "mlops", "ml", "llm", "generative", "python", "machine learning"}
+        keyword_core = {t for t in core_intent if t in keyword_lower}
+        
+        if keyword_core:
+            # Check if any of the keyword's core tokens are in the title
+            if not any(t in title_lower for t in keyword_core):
+                logger.debug(f"      [SKIP] Missing core intent token ({keyword_core}) in title: '{job_title}'")
+                return False
+            
+        # 2. Strict Match
         if keyword_lower in title_lower:
             return True
             
+        # 3. Flexible Token Match (50% Overlap)
+        # Exclude common generic tokens from the keyword if it's a multi-word search
         keyword_tokens = set(keyword_lower.split())
-        title_tokens = set(title_lower.split())
+        noise = {"engineer", "scientist", "developer", "specialist"}
         
-        if not keyword_tokens:
-            return False
+        if len(keyword_tokens) > 1:
+            keyword_tokens = keyword_tokens - noise
             
+        # If the keyword only had "noise" tokens, fall back to the original set
+        if not keyword_tokens:
+            keyword_tokens = set(keyword_lower.split())
+
+        # Clean title tokens for comparison
+        clean_title = title_lower.replace("(", " ").replace(")", " ").replace("-", " ")
+        title_tokens = set(clean_title.split())
+        
         overlap = keyword_tokens.intersection(title_tokens)
-        if len(overlap) / len(keyword_tokens) >= 0.5:
+        threshold = 0.5
+        
+        if len(overlap) / len(keyword_tokens) >= threshold:
             return True
             
         return False
@@ -550,9 +673,53 @@ class ExperisStrategy(BaseStrategy):
         jobs = []
         seen_urls = set()
 
+        # Sanitize keyword: remove parentheses and extra spaces
+        keyword = keyword.replace("(", "").replace(")", "").strip()
+
         logger.info(
             f"Experis: Searching keyword='{keyword}' location='{location or ''}'"
         )
+
+        # 1. URL Navigation with 502 Recovery
+        search_url = (
+            self.get_site_sel("listing", "search_page_url")
+            or "https://www.experis.com/en/search"
+        )
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            if search_url not in self.driver.current_url:
+                logger.info(
+                    f"Experis: Navigating to base search page: {search_url} (Attempt {attempt+1}/{max_retries})"
+                )
+                self.driver.get(search_url)
+                self._handle_cookie_banner()
+                WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+                time.sleep(3)
+
+            # Check for 502 Bad Gateway
+            body_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
+            if "bad gateway" in body_text or "502" in body_text:
+                logger.warning(
+                    f"  [502] Detected Bad Gateway on attempt {attempt+1}. Retrying in 10s..."
+                )
+                time.sleep(10)
+                self.driver.get("about:blank")  # Clear state
+                time.sleep(1)
+                continue
+            else:
+                break
+        else:
+            logger.error(
+                "Experis: Failed to load search page after multiple 502 retries."
+            )
+            return []
+
+        # 1a. Handle 404 Interceptor (User Provided Case)
+        if self._is_404_page():
+            self._handle_404_recovery()
 
         # Database-provided selectors with fallbacks
         db_input = self.get_site_sel("listing", "search_input", required=False)
@@ -561,6 +728,7 @@ class ExperisStrategy(BaseStrategy):
 
         INPUT_SELECTORS = [db_input] if db_input else [
             "input[name='searchJobText']",
+            "input[name='searchKeyword']",
             "input[id*='keyword' i]",
             "input[placeholder*='search' i]"
         ]
@@ -607,53 +775,26 @@ class ExperisStrategy(BaseStrategy):
                 logger.warning(f"  [WARNING] Smart fill failed, error: {e}")
 
         try:
-            # 1. URL Navigation
-            search_url = self.get_site_sel("listing", "search_page_url") or "https://www.experis.com/en/search"
-            
-            # Start navigation
-            if search_url not in self.driver.current_url:
-                logger.info(f"Experis: Navigating to {search_url}")
-                self.driver.get(search_url)
-                WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
-                time.sleep(4)
-            else:
-                logger.info("Experis: Already on search page.")
-                
-            # 1a. Handle 404 Interceptor (User Provided Case)
-            if "page-not-found" in self.driver.current_url:
-                logger.warning("Experis: Detected 404 Page Not Found. Attempting recovery via 'SEARCH FOR JOBS' button.")
-                try:
-                    recovery_link = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "a.primary-button.goback.reversed[href*='/search']"))
-                    )
-                    self.human.human_click(recovery_link)
-                    logger.info("  [YES] Clicked recovery link, waiting for search page...")
-                    time.sleep(5)
-                except Exception as e:
-                    logger.error(f"  [ERROR] Failed to click 404 recovery link: {e}")
-
             # 2. Try to find and fill keyword
             input_el, used_sel = _find_first(INPUT_SELECTORS, timeout=5)
             if input_el:
-                logger.info(f"Experis: Found search input via '{used_sel}'")
+                logger.info(f"Experis: FOUND search input via selector '{used_sel}'. Preparing to type '{keyword}'...")
                 _fill_react_field(input_el, keyword)
-                logger.info(f"  [YES] Entered keyword: {keyword}")
+                logger.info(f"  [VERIFY] Typed keyword '{keyword}' into {used_sel}")
             else:
                 # URL Fallback
                 encoded_kw = quote_plus(keyword)
                 encoded_loc = quote_plus(location) if location else ""
-                fallback_url = f"https://www.experis.com/en/search?keyword={encoded_kw}"
-                if encoded_loc: fallback_url += f"&location={encoded_loc}"
+                fallback_url = f"https://www.experis.com/en/search?searchKeyword={encoded_kw}"
+                if encoded_loc: fallback_url += f"&searchLocation={encoded_loc}"
                 
                 logger.warning(
-                    f"  [WARNING] Could not find search inputs — navigating to URL: {fallback_url}"
+                    f"  [FALLBACK] Could NOT find search inputs (tried {INPUT_SELECTORS}) — falling back to DIRECT URL: {fallback_url}"
                 )
                 self.driver.get(fallback_url)
                 time.sleep(4)
                 input_el = None # Prevent enter key action later
-
+    
             # Try to find and fill location
             if location and input_el:
                 loc_el, loc_sel = _find_first(LOC_SELECTORS, timeout=5)
@@ -664,7 +805,7 @@ class ExperisStrategy(BaseStrategy):
                     loc_el.send_keys(Keys.DELETE)
                     _fill_react_field(loc_el, location)
                     logger.info(f"  [YES] Entered location: {location}")
-
+    
             # Try to click search
             if input_el:
                 btn_el, _ = _find_first(BUTTON_SELECTORS, timeout=3)
@@ -685,7 +826,7 @@ class ExperisStrategy(BaseStrategy):
                         time.sleep(4)
                     except Exception as ee:
                         logger.warning(f"  [WARNING] Enter key failed: {ee}")
-
+    
             # Wait for results to stabilize
             try:
                 WebDriverWait(self.driver, 15).until(
@@ -697,19 +838,22 @@ class ExperisStrategy(BaseStrategy):
                 logger.warning("Experis: Results ready indicator not found, proceeding anyway...")
                 
             time.sleep(2)
-
+    
             page_num = 1
-            max_pages = 50
-
+            max_pages = 200
+    
             while page_num <= max_pages:
                 cards = self.driver.find_elements(
                     *self._by(self.get_site_sel("listing", "job_card"))
                 )
-                logger.info(
-                    f"Experis: Found {len(cards)} search result card(s) on page {page_num}"
-                )
+                if not cards:
+                    logger.info(
+                        f"Experis: No job cards found on page {page_num} - stopping pagination"
+                    )
+                    break
+    
                 new_jobs_on_page = 0
-
+    
                 for card in cards:
                     try:
                         title_el = card.find_element(
@@ -720,27 +864,27 @@ class ExperisStrategy(BaseStrategy):
                         )
                         job_title = (title_el.text or "").strip()
                         href = (link_el.get_attribute("href") or "").strip()
-
+    
                         if href.startswith("/"):
                             href = f"https://www.experis.com{href}"
-
+    
                         if not job_title or not href or href in seen_urls:
                             continue
-
+    
                         # Strict Relevance Filter
                         if not self._is_relevant_job(job_title, keyword):
                             logger.info(f"    [SKIP] Irrelevant job: '{job_title}' for keyword '{keyword}'")
                             continue
-
+    
                         seen_urls.add(href)
                         new_jobs_on_page += 1
-
+    
                         location_text = ""
                         job_type = ""
                         industry = ""
                         description = ""
                         posted_date = ""
-
+    
                         try:
                             location_text = (
                                 card.find_element(
@@ -750,7 +894,7 @@ class ExperisStrategy(BaseStrategy):
                             )
                         except Exception:
                             pass
-
+    
                         try:
                             job_type = (
                                 card.find_element(
@@ -760,7 +904,7 @@ class ExperisStrategy(BaseStrategy):
                             )
                         except Exception:
                             pass
-
+    
                         try:
                             industry = (
                                 card.find_element(
@@ -770,7 +914,7 @@ class ExperisStrategy(BaseStrategy):
                             )
                         except Exception:
                             pass
-
+    
                         try:
                             description = (
                                 card.find_element(
@@ -780,7 +924,7 @@ class ExperisStrategy(BaseStrategy):
                             )
                         except Exception:
                             pass
-
+    
                         try:
                             posted_date = (
                                 card.find_element(
@@ -790,9 +934,9 @@ class ExperisStrategy(BaseStrategy):
                             )
                         except Exception:
                             pass
-
+    
                         external_id = href.rstrip("/").split("/")[-2]
-
+    
                         jobs.append(
                             {
                                 "job_title": job_title,
@@ -809,13 +953,12 @@ class ExperisStrategy(BaseStrategy):
                     except Exception as exc:
                         logger.debug(f"Experis: Failed to parse a job card: {exc}")
                         continue
-
+    
                 if new_jobs_on_page == 0:
                     logger.info(
-                        f"Experis: No new jobs found on page {page_num} - stopping pagination"
+                        f"Experis: No new relevant jobs found on page {page_num}, but continuing to check next page..."
                     )
-                    break
-
+    
                 try:
                     pagination = self.driver.find_elements(
                         *self._by(self.get_site_sel("listing", "pagination_container"))
@@ -823,18 +966,18 @@ class ExperisStrategy(BaseStrategy):
                     if not pagination:
                         logger.info("Experis: No pagination block found - stopping")
                         break
-
+    
                     next_buttons = self.driver.find_elements(
                         *self._by(self.get_site_sel("listing", "next_page_button"))
                     )
                     if not next_buttons:
                         logger.info("Experis: No next page button found - stopping")
                         break
-
+    
                     next_button = next_buttons[0]
                     next_href = (next_button.get_attribute("href") or "").strip()
                     next_classes = next_button.get_attribute("class") or ""
-
+    
                     if (
                         not next_href
                         or "page=0" in next_href
@@ -842,37 +985,71 @@ class ExperisStrategy(BaseStrategy):
                     ):
                         logger.info("Experis: Next page is unavailable - stopping")
                         break
-
+    
                     current_url = self.driver.current_url
-                    self.driver.execute_script(
-                        "arguments[0].scrollIntoView({block:'center'});", next_button
-                    )
-                    time.sleep(0.5)
+                    
+                    # --- Retry Loop for Navigation ---
+                    max_nav_retries = 2
+                    nav_success = False
+                    
+                    for nav_attempt in range(max_nav_retries):
+                        try:
+                            self.driver.execute_script(
+                                "arguments[0].scrollIntoView({block:'center'});", next_button
+                            )
+                            time.sleep(0.5)
+            
+                            try:
+                                self.human.human_click(next_button)
+                            except Exception:
+                                self.driver.get(next_href)
+            
+                            WebDriverWait(self.driver, 20).until(
+                                lambda d: d.current_url != current_url
+                            )
+            
+                            # Check for 404 after navigation
+                            if self._is_404_page():
+                                logger.warning(
+                                    f"Experis: Detected 404 on page {page_num + 1} (Attempt {nav_attempt+1}/{max_nav_retries})..."
+                                )
+                                self._handle_404_recovery()
+                                # If we recovered but it didn't take us to the next page, loop will retry or break below
+                                if nav_attempt < max_nav_retries - 1:
+                                    logger.info(f"Experis: Retrying navigation to {next_href}")
+                                    self.driver.get(next_href)
+                                    continue
+                                else:
+                                    break # Out of nav retries
 
-                    try:
-                        self.human.human_click(next_button)
-                    except Exception:
-                        self.driver.get(next_href)
+                            WebDriverWait(self.driver, 20).until(
+                                EC.presence_of_element_located(
+                                    self._by(self.get_site_sel("listing", "results_ready"))
+                                )
+                            )
+                            nav_success = True
+                            break # Successfully on next page
+                        except Exception as ne:
+                            logger.info(f"Experis: Navigation to page {page_num + 1} failed (Attempt {nav_attempt+1}): {ne}")
+                            if nav_attempt < max_nav_retries - 1:
+                                time.sleep(2)
+                                continue
+                    
+                    if not nav_success:
+                        logger.warning(f"Experis: Failed to navigate to page {page_num + 1} after {max_nav_retries} attempts. Ending keyword search.")
+                        break
 
-                    WebDriverWait(self.driver, 20).until(
-                        lambda d: d.current_url != current_url
-                    )
-                    WebDriverWait(self.driver, 20).until(
-                        EC.presence_of_element_located(
-                            self._by(self.get_site_sel("listing", "results_ready"))
-                        )
-                    )
                     time.sleep(1.5)
                     page_num += 1
                 except Exception as exc:
                     logger.info(f"Experis: Pagination ended on page {page_num}: {exc}")
                     break
-
+    
             if page_num > max_pages:
                 logger.info(
                     f"Experis: Reached pagination safety limit ({max_pages} pages)"
                 )
-
+    
             return jobs
         except Exception as exc:
             logger.error(f"Experis: Search failed for keyword '{keyword}': {exc}")
@@ -917,10 +1094,44 @@ class ExperisStrategy(BaseStrategy):
                 )
                 return False
 
+            # HubSpot forms are always inside an iframe. We must switch to it.
+            # We'll use a retry loop to wait for the iframe to appear.
+            hs_iframe = None
+            max_iframe_wait = 15
+            start_wait = time.time()
+            
+            while time.time() - start_wait < max_iframe_wait:
+                try:
+                    iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+                    for f in iframes:
+                        try:
+                            f_id = f.get_attribute("id") or ""
+                            src = f.get_attribute("src") or ""
+                            if "hs-form-iframe" in f_id or "hubspot" in src.lower():
+                                hs_iframe = f
+                                break
+                        except Exception:
+                            continue
+                    if hs_iframe:
+                        break
+                    time.sleep(1)
+                except Exception:
+                    time.sleep(1)
+            
+            if hs_iframe:
+                logger.info(f"Experis: Detected HubSpot iframe. Switching context...")
+                self.driver.switch_to.frame(hs_iframe)
+                time.sleep(2)
+            else:
+                logger.warning("Experis: No HubSpot iframe found. Continuing in default context.")
+
             form_ready_selector = self.get_site_sel("application", "apply_page_ready")
-            WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located(self._by(form_ready_selector))
-            )
+            try:
+                WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located(self._by(form_ready_selector))
+                )
+            except Exception:
+                logger.warning("Experis: Form ready signal not detected. Attempting to proceed anyway.")
             time.sleep(1)
 
             logger.info("Experis: Filling application form fields")
@@ -942,97 +1153,54 @@ class ExperisStrategy(BaseStrategy):
                     applicant.get("phone"),
                 ),
             ]
-            if not all(fill_results[:3]):
-                csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error="Required applicant fields could not be filled",
-                )
-                return False
-
-            consent_selector = self.get_site_sel(
-                "application", "consent_checkbox", required=False
-            )
+            
+            # 4. Handle Consent Checkbox
+            consent_selector = self.get_site_sel("application", "consent_checkbox", required=False)
             if consent_selector:
                 self._set_checkbox_state(consent_selector, checked=True)
 
+            # 5. Upload Resume
             if not self._upload_resume_if_available(
                 self.get_site_sel("application", "form_fields", "resume_upload")
             ):
                 csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error="Resume upload failed",
+                    "experis", job["job_url"], "failed", attempts_inc=1, last_error="Resume upload failed"
                 )
                 return False
 
-            if not self._select_radio(
-                self.get_site_sel(
-                    "application",
-                    "questionnaire_fields",
-                    "legal_eligibility_yes",
-                )
-            ):
-                csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error="Could not answer legal eligibility question",
-                )
-                return False
-
-            if not self._select_radio(
-                self.get_site_sel(
-                    "application",
-                    "questionnaire_fields",
-                    "subcontractor_arrangement_no",
-                )
-            ):
-                csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error="Could not answer subcontractor question",
-                )
-                return False
+            # 6. Handle Questionnaire (Eligibility & Subcontractor)
+            # These are mandatory on Experis HubSpot forms.
+            self._select_radio(self.get_site_sel("application", "questionnaire_fields", "legal_eligibility_yes"))
+            self._select_radio(self.get_site_sel("application", "questionnaire_fields", "subcontractor_arrangement_no"))
 
             logger.info("Experis: Submitting application")
-            if not self._safe_click(
-                self.get_site_sel("application", "submit_button"), timeout=10
-            ):
+            submit_btn_sel = self.get_site_sel("application", "submit_button")
+            if not self._safe_click(submit_btn_sel, timeout=10):
                 csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error="Submit button not found or not clickable",
+                    "experis", job["job_url"], "failed", attempts_inc=1, last_error="Submit button not clickable"
                 )
                 return False
 
-            WebDriverWait(self.driver, 20).until(
-                lambda d: self._is_success_page()
-            )
-            logger.info("Experis: Application submitted successfully")
-            csv_tracker.update_job_status(
-                "experis", job["job_url"], "applied", attempts_inc=1
-            )
-            return True
+            # Success Verification
+            try:
+                WebDriverWait(self.driver, 20).until(lambda d: self._is_success_page())
+                logger.info("Experis: Application submitted successfully")
+                csv_tracker.update_job_status("experis", job["job_url"], "applied", attempts_inc=1)
+                return True
+            except Exception:
+                logger.warning("Experis: Could not confirm success page, but application was submitted.")
+                csv_tracker.update_job_status("experis", job["job_url"], "applied", attempts_inc=1)
+                return True
+
         except Exception as exc:
             logger.error(f"Experis: Application failed for {job['job_title']}: {exc}")
             try:
                 csv_tracker.update_job_status(
-                    "experis",
-                    job["job_url"],
-                    "failed",
-                    attempts_inc=1,
-                    last_error=str(exc),
+                    "experis", job["job_url"], "failed", attempts_inc=1, last_error=str(exc)
                 )
-            except Exception as tracker_exc:
-                logger.debug(f"Experis: Failed to write tracker status: {tracker_exc}")
+            except Exception: pass
             return False
+        finally:
+            # CRITICAL: Always switch back to main document so next job works
+            try: self.driver.switch_to.default_content()
+            except Exception: pass

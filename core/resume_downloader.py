@@ -69,15 +69,24 @@ class ResumeDownloader:
                                 logger.error(
                                     "Downloaded file appears to be HTML (Google Drive auth wall). Make sure link is 'Anyone with the link can view'."
                                 )
+                                if os.path.exists(local_path) and os.path.getsize(local_path) > 1000:
+                                    logger.warning(f"Using last successfully downloaded resume at {local_path}")
+                                    return local_path
                                 return None
 
                     logger.info(f"Successfully saved resume to: {local_path}")
                     return local_path
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Failed to download Google Drive resume: {e}")
+                    if os.path.exists(local_path) and os.path.getsize(local_path) > 1000:
+                        logger.warning(f"Network error. Falling back to last successfully downloaded resume at {local_path}")
+                        return local_path
                     return None
             else:
                 logger.error("Could not parse file ID from Google Drive URL.")
+                if os.path.exists(local_path) and os.path.getsize(local_path) > 1000:
+                    logger.warning(f"Parsing error. Falling back to last successfully downloaded resume at {local_path}")
+                    return local_path
                 return None
 
         # Handle regular direct HTTP links if provided alternatively

@@ -576,7 +576,7 @@ def init_db():
     # Seed: site_selectors for Experis (job_site_id = 7)
     # -----------------------------------------------------------------------
     experis_listing_selectors = {
-        "search_page_url": "https://www.experis.com/en/find-work",
+        "search_page_url": "https://www.experis.com/en/search",
         "search_input": "input[name='searchJobText']",
         "location_input": "input[name='searchLocation']",
         "search_button": "button.primary-button.orange-sd[type='submit']",
