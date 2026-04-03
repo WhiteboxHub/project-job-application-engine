@@ -51,10 +51,6 @@ class LanceSoftStrategy(BaseStrategy):
         # Load selectors from centralized location
         self.selectors_config = self._load_selectors()
 
-        # In-run deduplication: track job IDs that already failed so we don't
-        # retry the same broken job dozens of times in a single run.
-        self._failed_job_ids: set = set()
-
         # Debug logging
         if self.db_session:
             logger.info("[OK] Database session available - will save to MySQL")
@@ -1375,11 +1371,6 @@ class LanceSoftStrategy(BaseStrategy):
         # except Exception:
         #     pass
 
-        # --- In-run deduplication guard ---
-        if job_id in self._failed_job_ids:
-            logger.warning(f"[SKIP] Job {job_id} already failed this run — skipping to avoid repeated failures")
-            return False
-
         logger.info(f"=" * 60)
         logger.info(f"Applying to job: {job_title}")
         logger.info(f"Job ID: {job_id}")
@@ -1393,46 +1384,19 @@ class LanceSoftStrategy(BaseStrategy):
             time.sleep(3)
             
             # Step 1.5: Search using job_id
-            # Use multiple selector strategies so DOM changes don't cause a hard failure
             logger.info(f"  Searching for job ID: {job_id}")
-            _search_selectors = [
-                # DB-configured selector (CSS) — preferred
-                ("css", self.selectors_config.get("search_input", "")),
-                # Fallback XPaths — ordered from most-specific to most-generic
-                ("xpath", '//*[@id="root"]/div/div/div[2]/div[1]/div/div[2]/form/div/input'),
-                ("xpath", '//input[contains(@placeholder,"Search job title") or contains(@placeholder,"search")]'),
-                ("xpath", '//form//input[@type="text" or @type="search"]'),
-                ("css",   'input.inputbox_search'),
-                ("css",   'input[placeholder*="Search" i]'),
-            ]
-            search_input = None
-            used_selector = None
-            for sel_type, sel_val in _search_selectors:
-                if not sel_val:
-                    continue
-                try:
-                    by = By.CSS_SELECTOR if sel_type == "css" else By.XPATH
-                    search_input = WebDriverWait(self.driver, 6).until(
-                        EC.presence_of_element_located((by, sel_val))
-                    )
-                    used_selector = f"{sel_type}:{sel_val}"
-                    break
-                except Exception:
-                    continue
-
-            if search_input is None:
-                logger.error(f"  [ERROR] Could not locate search input for job ID {job_id} — all selectors failed")
-                return False
-
+            search_input_xpath = '//*[@id="root"]/div/div/div[2]/div[1]/div/div[2]/form/div/input'
             try:
-                logger.info(f"  [YES] Found search input via: {used_selector}")
+                search_input = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, search_input_xpath))
+                )
                 search_input.clear()
                 self.human.fill_text_field(search_input, str(job_id))
                 search_input.send_keys("\n")
                 time.sleep(3)  # Wait for search results to load
                 logger.info(f"  [YES] Search results for job ID {job_id} loaded")
             except Exception as search_err:
-                logger.error(f"  [ERROR] Failed to type/submit search for job ID {job_id}: {search_err}")
+                logger.error(f"  [ERROR] Failed to search for job ID {job_id}: {search_err}")
                 return False
 
             # Step 2: Locate job in the current page
@@ -1865,10 +1829,6 @@ class LanceSoftStrategy(BaseStrategy):
             import traceback
 
             traceback.print_exc()
-
-            # Remember this job_id so we don't retry it later in the same run
-            self._failed_job_ids.add(job_id)
-            logger.warning(f"[DEDUP] Added {job_id} to failed_job_ids (will skip if encountered again)")
 
             csv_tracker.update_job_status(
                 "lancesoft", job_url, "failed", attempts_inc=1, last_error=str(e)
