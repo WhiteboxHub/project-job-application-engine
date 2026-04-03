@@ -45,65 +45,26 @@ def main():
 
     workflow_log_id = None
     try:
-        # 1. Fetch pending automation parameters from the Production API
+        # 1. Fetch run_parameters strictly from the backend API
         candidate_data = backend_client.fetch_pending_candidates()
 
         if not candidate_data:
-            logger.info("[STOP] No pending weekly workflow candidate found. Exiting.")
-            logger.info(
-                "[EXIT] no_pending_candidate_from_api — engine did not run; "
-                "no output.json from this process."
-            )
+            logger.info("[STOP] No pending candidate found from backend API. Exiting.")
             sys.exit(0)
 
-        # 2. Transform the raw database row into structured run_parameters 
-        # (This automatically downloads the folder link resume and extracts names!)
+        # 2. Build structured run_parameters from the backend payload
         from core.run_parameters_builder import run_parameters_builder
         run_parameters = run_parameters_builder.build(candidate_data)
+        applicant = run_parameters.get('applicant', {})
+        logger.info(f"Successfully built run_parameters for: "
+                    f"{applicant.get('first_name')} {applicant.get('last_name')}")
 
-        merge_orchestration_into_run_params(candidate_data, run_parameters)
-        ensure_workflow_log_ids(run_parameters)
-
-        logger.info("Successfully processed candidate into structured run_parameters JSON.")
-
-        wf_id = run_parameters.get("workflow_id")
-        sched_id = run_parameters.get("schedule_id")
-        run_id = run_parameters.get("run_id")
-        run_id_str = str(run_id).strip() if run_id is not None else ""
-        if wf_id is not None and run_id_str:
-            slim_params = {
-                "candidate_id": run_parameters.get("candidate_id"),
-                "workflow_id": wf_id,
-                "schedule_id": sched_id,
-                "run_id": run_id_str,
-            }
-            workflow_log_id = backend_client.create_workflow_log(
-                int(wf_id),
-                int(sched_id) if sched_id is not None else None,
-                run_id_str,
-                parameters_used=slim_params,
-            )
-            if workflow_log_id is not None:
-                logger.info(
-                    f"[WORKFLOW_LOG] Created row id={workflow_log_id}; will attach execution_metadata after run."
-                )
-            else:
-                logger.warning(
-                    "[WORKFLOW_LOG] create_workflow_log returned no id (check API response / auth)."
-                )
-        else:
-            logger.warning(
-                "[WORKFLOW_LOG] Skipping create: missing workflow_id or run_id in API payload. "
-                f"workflow_id={wf_id!r} run_id={run_id!r} "
-                f"top_level_keys={list(sorted(candidate_data.keys()))}"
-            )
-
-        # 3. Save the built JSON back to the backend Database so it appears in the UI
+        # 3. Save built run_parameters back to backend DB UI
         candidate_id = candidate_data.get("candidate_id")
         if candidate_id:
             backend_client.update_run_parameters(candidate_id, run_parameters)
 
-        # 4. Execute Engine using the pristine, fully-built JSON payload
+        # 4. Execute Engine with run_parameters
         runner = EngineRunner()
         runner.run(
             site_filter=args.site,

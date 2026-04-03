@@ -124,6 +124,7 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
+<<<<<<< HEAD
                 # use_subprocess=True is required on Windows to prevent 'chrome not reachable'.
                 # version_main is set to the detected Chrome major version to avoid ChromeDriver
                 # version mismatches (e.g. uc ships driver 147 but Chrome is 146).
@@ -135,6 +136,16 @@ class BrowserService:
                 time.sleep(5)  # Give the window handle time to stabilize
                 logger.info(
                     f"Browser started successfully (undetected-chromedriver, version={chrome_version})."
+=======
+                # version_main=146 pins ChromeDriver to match Chrome 146.0.x
+                # Change this if you update Chrome to a newer major version
+                self.driver = uc.Chrome(
+                    options=options, use_subprocess=True, version_main=146
+                )
+                time.sleep(5)  # Give the window handle time to stabilize
+                logger.info(
+                    "Browser started successfully (undetected-chromedriver v146)."
+>>>>>>> 3f314ca3d9809e6a903bc14e2efd88b06adbd4c9
                 )
             except Exception as e:
                 logger.warning(
