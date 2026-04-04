@@ -160,6 +160,7 @@ class CollaberaStrategy(BaseStrategy):
         """Fallback to the direct results URL when form submission is unavailable."""
         encoded_kw = quote_plus((keyword or "").strip())
         encoded_location = quote_plus((location or "").strip())
+        # Use Posteddays=7 for "Last Week" filtering
         search_url = (
             f"{self.portal_url}?Posteddays=7&industry=&keyword={encoded_kw}"
             f"&location={encoded_location}&sort_by=relevance&q={page}"
@@ -202,6 +203,67 @@ class CollaberaStrategy(BaseStrategy):
             timeout=15,
         )
         time.sleep(2)
+
+    def _apply_date_filter(self):
+        """Clicks the 'Date Posted' filter and selects 'Last Week'."""
+        try:
+            logger.info("Collabera: Applying 'Last Week' date filter via UI...")
+            # 1. Click "Date Posted" to expand accordion
+            date_btn_sel = "button.design[data-target='#collapseOne']"
+            if self.safe_actions.safe_click(date_btn_sel, by=By.CSS_SELECTOR):
+                time.sleep(2)  # Wait for toggle animation
+                # 2. Click the specific "Last Week" paragraph provided by the user
+                last_week_sel = "//p[contains(text(), 'Last Week')]"
+                if self.safe_actions.safe_click(last_week_sel, by=By.XPATH):
+                    logger.info("Collabera: 'Last Week' filter selected through UI.")
+                    time.sleep(4)  # Wait for AJAX results to refresh
+                    return True
+            return False
+        except Exception as e:
+            logger.warning(f"Collabera: Could not apply date filter UI click: {e}")
+            return False
+
+    def _get_total_pages(self):
+        """Extract the total number of pages from the 'Last' link in pagination."""
+        import re
+        try:
+            # Selector from user's HTML: <li class="page-item align-self-center"><a class="page-link" href="...&q=41">Last</a></li>
+            # Multiple attempts for robustness (By text and by class)
+            last_selectors = [
+                (By.XPATH, "//ul[contains(@class,'pagination')]//a[contains(text(),'Last')]"),
+                (By.CSS_SELECTOR, "ul.pagination li.align-self-center a.page-link"),
+                (By.XPATH, "//a[contains(@href, 'q=')]") # generic fallback to find highest q value
+            ]
+            
+            for by, sel in last_selectors:
+                try:
+                    elements = self.driver.find_elements(by, sel)
+                    if not elements: continue
+                    
+                    # If using generic fallback, we might pick the highest q value from all pagination links
+                    if by == By.XPATH and "q=" in sel:
+                        highest_q = 1
+                        for el in elements:
+                            href = el.get_attribute("href")
+                            match = re.search(r"q=(\d+)", href or "")
+                            if match:
+                                highest_q = max(highest_q, int(match.group(1)))
+                        if highest_q > 1:
+                            logger.info(f"Collabera: Detected {highest_q} max pages via generic links.")
+                            return highest_q
+                    else:
+                        # Direct "Last" link extraction
+                        href = elements[0].get_attribute("href")
+                        match = re.search(r"q=(\d+)", href or "")
+                        if match:
+                            total = int(match.group(1))
+                            logger.info(f"Collabera: Detected {total} total pages from 'Last' button.")
+                            return total
+                except:
+                    continue
+        except Exception as e:
+            logger.debug(f"Collabera: Could not detect total pages from UI: {e}")
+        return None
 
     def react_fill(self, sel, value):
         """
@@ -356,6 +418,7 @@ class CollaberaStrategy(BaseStrategy):
         logger.info(f"PHASE 2: Applying to {len(all_listings)} unique jobs...")
         logger.info("=" * 60)
 
+        total_attempted = 0
         total_applied = 0
         for i, listing in enumerate(all_listings, 1):
             if not guards.can_apply():
@@ -363,28 +426,37 @@ class CollaberaStrategy(BaseStrategy):
                 break
 
             job_id = listing.get("external_id")
+            logger.debug(f"[{i}/{len(all_listings)}] Checking job_id: {job_id}")
+            
+            # Allow re-attempt if we're in a live run and previous was dry-run, or if previously failed
             if db_duckdb.is_already_applied(job_id, "Collabera"):
-                logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied: {listing.get('job_title')}")
-                continue
+                if guards.is_dry_run():
+                    logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied (Dry Run): {listing.get('job_title')}")
+                    continue
+                else:
+                    logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied: {listing.get('job_title')}")
+                    continue
 
             logger.info(
                 f"\n[{i}/{len(all_listings)}] Applying to: {listing.get('job_title')}"
             )
+            total_attempted += 1
             try:
                 if self.apply(listing):
                     total_applied += 1
                     guards.increment_counter()
-                    # Tracking is now handled within self.apply() which calls _record_application()
                     logger.info(f"  [YES] Applied! ({total_applied} successful so far)")
-                    time.sleep(random.uniform(4, 8)) # Human-like pause between applications
+                    time.sleep(random.uniform(4, 8))
                 else:
                     logger.warning(f"  [NO] Failed to apply to: {listing.get('job_title')}")
             except Exception as e:
                 logger.error(f"  [ERROR] Exception applying to {listing.get('job_title')}: {e}")
 
         logger.info(
-            f"\n[OK] Phase 2 complete. Total applications submitted: {total_applied}/{len(all_listings)}"
+            f"\n[OK] Phase 2 complete. Total applications attempted: {total_attempted}, submitted: {total_applied}/{len(all_listings)}"
         )
+        # Update execution tracker with attempts for non-zero reports
+        execution_tracker.add_applications_attempted(total_attempted)
         return total_applied
 
     def find_jobs_for_keyword(self, keyword):
@@ -394,6 +466,8 @@ class CollaberaStrategy(BaseStrategy):
         all_listings = []
         seen_urls = set()
         max_pages = self.config_data.get("search", {}).get("max_pages", 3)
+        detected_pages = None # Will be populated once we hit page 1
+        
         listing_selectors = self.selectors_config.get("listing", {})
         link_selector = listing_selectors.get("job_link")
 
@@ -401,7 +475,14 @@ class CollaberaStrategy(BaseStrategy):
             logger.error("Collabera: 'job_link' selector is missing!")
             return []
 
-        for page in range(1, max_pages + 1):
+        page = 1
+        while True:
+            # Termination condition
+            limit = detected_pages or max_pages
+            if page > limit:
+                logger.info(f"Collabera: Reached search limit of {limit} pages.")
+                break
+
             try:
                 if page == 1:
                     logger.info(f"Collabera: [PAGE 1] Opening job search page at {self.portal_url}")
@@ -434,6 +515,16 @@ class CollaberaStrategy(BaseStrategy):
 
                 time.sleep(random.uniform(5, 7))
 
+                # On the first page, attempt to detect total pages and apply the date filter
+                if page == 1:
+                    # Apply the "Last Week" filter as requested by clicking the button/option
+                    self._apply_date_filter()
+                    
+                    total = self._get_total_pages()
+                    if total:
+                        detected_pages = total
+                        logger.info(f"Collabera: Updated search range to 1-{detected_pages} pages.")
+
                 elements = self.driver.find_elements(*self._by(link_selector))
                 logger.info(f"Collabera: [PAGE {page}] Found {len(elements)} elements with selector: {link_selector}")
 
@@ -445,12 +536,23 @@ class CollaberaStrategy(BaseStrategy):
                 keyword_lower = keyword.lower()
                 for el in elements:
                     try:
+                        # Harden title extraction: Try .text, then innerText attribute
                         title = el.text.strip()
+                        if not title:
+                            title = (el.get_attribute("innerText") or "").strip()
+                        if not title:
+                            title = (el.get_attribute("textContent") or "").strip()
+                        
                         url   = el.get_attribute("href")
                         if title and url and url not in seen_urls:
-                            # TITLE FILTERING: Only include jobs that match the keyword
-                            if keyword_lower not in title.lower():
-                                logger.debug(f"  [SKIP] Title mismatch: '{title}' does not contain '{keyword}'")
+                            # TITLE FILTERING: Include jobs that match the specific keyword OR core terms (AI, AIML, PYTHON)
+                            import re
+                            core_terms = ["ai", "aiml", "python"]
+                            pattern_parts = [re.escape(keyword_lower)] + [re.escape(t) for t in core_terms]
+                            pattern = rf"(?i)(?:^|[^a-zA-Z0-9])({'|'.join(pattern_parts)})(?:[^a-zA-Z0-9]|$)"
+                            
+                            if not re.search(pattern, title):
+                                logger.debug(f"  [SKIP] Title mismatch: '{title}' does not match keyword '{keyword}' or core terms")
                                 continue
 
                             seen_urls.add(url)
@@ -473,10 +575,10 @@ class CollaberaStrategy(BaseStrategy):
                     except Exception:
                         continue
 
-                logger.debug(f"Collabera: Found {page_count} new jobs on page {page}.")
-                if page_count == 0:
-                    logger.info(f"Collabera: No new unique jobs on page {page}. Stopping.")
-                    break
+                logger.debug(f"Collabera: Found {page_count} new keyword-matching jobs on page {page}.")
+                
+                # NAVIGATION: Move to the next page
+                page += 1
 
             except Exception as e:
                 logger.error(f"Collabera: Error on page {page}: {e}")
@@ -638,59 +740,11 @@ class CollaberaStrategy(BaseStrategy):
                     self.react_fill(selector, value)
                     time.sleep(0.5)
 
-            # Step 5: Handle Checkboxes (Verified Labels)
-            logger.info("Collabera [Step 5]: Handling consent checkboxes...")
-            
-            # Sequence: checkbox_1_label, checkbox_2_label (from DB) or standard keys
-            checkbox_keys = ["checkbox_1_label", "checkbox_2_label", "terms_checkbox", "alert_checkbox"]
-            for cb_key in checkbox_keys:
-                cb_sel = form_fields.get(cb_key)
-                if cb_sel:
-                    try:
-                        logger.info(f"  Attempting to click {cb_key}...")
-                        cb_el = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located(self._by(cb_sel))
-                        )
-                        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", cb_el)
-                        time.sleep(0.5)
-
-                        # Primary: Check if it's already a label (as verified in DB)
-                        if cb_el.tag_name == "label" or "label" in cb_sel.lower():
-                            self.driver.execute_script("arguments[0].click();", cb_el)
-                            logger.info(f"    [OK] Clicked {cb_key} directly.")
-                        else:
-                            # Secondary: Smart Detection for inputs
-                            input_id = cb_el.get_attribute("id")
-                            clicked = False
-                            if input_id:
-                                try:
-                                    label = self.driver.find_element(By.CSS_SELECTOR, f"label[for='{input_id}']")
-                                    self.driver.execute_script("arguments[0].click();", label)
-                                    clicked = True
-                                    logger.info(f"    [OK] Clicked label for {input_id}")
-                                except: pass
-                            
-                            if not clicked:
-                                try:
-                                    parent = cb_el.find_element(By.XPATH, "..")
-                                    self.driver.execute_script("arguments[0].click();", parent)
-                                    clicked = True
-                                    logger.info(f"    [OK] Clicked parent container.")
-                                except: pass
-
-                            if not clicked:
-                                self.driver.execute_script("arguments[0].click();", cb_el)
-                                logger.info(f"    [OK] Clicked input directly.")
-                        
-                        time.sleep(0.5)
-                    except Exception as e:
-                        logger.debug(f"    [SKIP] {cb_key} failed or not found: {e}")
-
-            # Step 6: Resume Upload
-            logger.info("Collabera [Step 6]: Uploading resume...")
+            # Step 5: Resume Upload (Moved BEFORE checkboxes per user request)
+            logger.info("Collabera [Step 5]: Uploading resume...")
             resume_path = self.get_resume_path()
-            resume_sel = form_fields.get("resume_upload")
-            if resume_path and resume_sel:
+            resume_sel = form_fields.get("resume_upload") or "input[type='file']"
+            if resume_path:
                 try:
                     file_input = WebDriverWait(self.driver, 10).until(
                         EC.presence_of_element_located(self._by(resume_sel))
@@ -705,50 +759,97 @@ class CollaberaStrategy(BaseStrategy):
                 except Exception as e:
                     logger.error(f"  [ERROR] Resume upload failed: {e}")
 
+            # Step 6: Handle ALL Checkboxes (Dual handling for Terms and Alerts)
+            logger.info("Collabera [Step 6]: Handling consent checkboxes (Both Terms and Alerts)...")
+            
+            # Use specific XPATH text-based selectors for high precision
+            checkbox_configs = [
+                {"name": "terms_checkbox", "sel": '//label[contains(., "Terms of Service")]', "desc": "Consent/Privacy"},
+                {"name": "alert_checkbox", "sel": '//label[contains(., "job alert notifications")]', "desc": "Job Alerts"}
+            ]
+
+            for cb in checkbox_configs:
+                try:
+                    logger.info(f"  Attempting to click {cb['desc']} checkbox...")
+                    cb_el = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located(self._by(cb['sel']))
+                    )
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", cb_el)
+                    time.sleep(1)
+
+                    # Click the label / container to trigger the custom checkbox
+                    self.driver.execute_script("arguments[0].click();", cb_el)
+                    logger.info(f"    [OK] Clicked {cb['desc']}.")
+                    time.sleep(1) # Small delay between clicks to prevent UI race conditions
+                except Exception as e:
+                    logger.warning(f"    [SKIP] {cb['desc']} failed or not found: {e}")
+
             # Step 7: Submit
             logger.info("Collabera [Step 7]: Submitting application...")
-            submit_btn_sel = form_fields.get("submit_btn")
-            if submit_btn_sel:
+            submit_btn_sel = form_fields.get("submit_btn") or "#Submit"
+            
+            try:
+                # FIX: Handle "invalid selector" by checking if it's an illegal CSS selector
                 try:
                     submit_btn = WebDriverWait(self.driver, 10).until(
                         EC.presence_of_element_located(self._by(submit_btn_sel))
                     )
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
-                    time.sleep(1)
-
-                    if guards.is_dry_run():
-                        self.driver.execute_script("arguments[0].style.border = '5px solid orange';", submit_btn)
-                        logger.info("  [DRY RUN] Submit button highlighted. Not clicking.")
-                        self._record_application(listing, job_url, job_title, "success", "Dry run accomplishment")
-                        return True
+                except Exception as locator_error:
+                    if "invalid selector" in str(locator_error).lower():
+                        logger.warning(f"  [!] Invalid CSS Selector '{submit_btn_sel}'. Falling back to #Submit or Text-based XPath.")
+                        fallback_sel = "#Submit"
+                        submit_btn = WebDriverWait(self.driver, 10).until(
+                            EC.presence_of_element_located(self._by(fallback_sel))
+                        )
                     else:
-                        self.human.human_click(submit_btn)
-                        logger.info("  [OK] Submit button clicked.")
+                        raise locator_error
 
-                        # Fallback for click verification — Submit some more if text logic suggests it
-                        if not self._verify_submission():
-                            logger.info("  [!] Initial verification failed. Re-attempting submit with text-based fallback...")
-                            # Scroll down again for good measure
-                            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                            time.sleep(1)
-                            
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
+                time.sleep(1)
+
+                if guards.is_dry_run():
+                    self.driver.execute_script("arguments[0].style.border = '5px solid orange';", submit_btn)
+                    logger.info("  [DRY RUN] Submit button highlighted. Not clicking.")
+                    # Don't mark as permanently applied in dry run to allow easier testing
+                    return True
+                else:
+                    self.human.human_click(submit_btn)
+                    logger.info("  [OK] Submit button clicked.")
+
+                    # Waiting for verification
+                    time.sleep(3)
+                    
+                    # Fallback for click verification — Submit some more if text logic suggests it
+                    if not self._verify_submission():
+                        logger.info("  [!] Initial verification failed. Re-attempting submit with text-based fallback...")
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(1)
+                        
+                        try:
+                            # Direct check for #Submit if it's still clickable
+                            alt_btn = self.driver.find_element(By.ID, "Submit")
+                            self.driver.execute_script("arguments[0].click();", alt_btn)
+                            logger.info("    [OK] Fired click via #Submit fallback.")
+                            time.sleep(3)
+                        except:
                             try:
                                 apply_btn_text_sel = "//button[contains(text(),'Apply') or contains(text(),'Submit')]"
                                 alt_btn = self.driver.find_element(By.XPATH, apply_btn_text_sel)
                                 self.driver.execute_script("arguments[0].click();", alt_btn)
                                 logger.info("    [OK] Fired click via XPATH text discovery fallback.")
+                                time.sleep(3)
                             except: pass
 
-                        if self._verify_submission():
-                            logger.info("  [SUCCESS] Application verified.")
-                            self._record_application(listing, job_url, job_title, "success")
-                            return True
-                        else:
-                            logger.warning("  [FAIL] Verification failed. Success message not found.")
-                            return False
-                except Exception as e:
-                    logger.error(f"  [ERROR] Submit button interaction failed: {e}")
-                    return False
+                    if self._verify_submission():
+                        logger.info("  [SUCCESS] Application verified.")
+                        self._record_application(listing, job_url, job_title, "success")
+                        return True
+                    else:
+                        logger.warning("  [FAIL] Verification failed. Success message not found.")
+                        return False
+            except Exception as e:
+                logger.error(f"  [ERROR] Submit button interaction failed: {e}")
+                return False
 
             return False
 
@@ -914,42 +1015,48 @@ class CollaberaStrategy(BaseStrategy):
 
         return None
 
-    def _verify_submission(self, timeout=15):
+    def _verify_submission(self, timeout=25):
         """Verify successful application submission on Collabera."""
         logger.info("Collabera: Verifying submission...")
         
-        # 1. URL change verification
-        if "thank" in self.driver.current_url.lower() or "success" in self.driver.current_url.lower():
-            logger.info("  [OK] Verified via URL (Success page detected).")
+        # Give the page a bit of time to transition/redirect
+        time.sleep(7)
+        
+        # 1. URL change verification (Common Collabera thank-you page)
+        current_url = self.driver.current_url.lower()
+        if any(term in current_url for term in ["thank", "success", "confirmed", "submitted"]):
+            logger.info(f"  [OK] Verified via URL: {current_url}")
             return True
 
-        # 2. Page text verification
+        # 2. Presence of a success message / modal / text indicator
+        success_indicators = [
+            "thank you",
+            "application submitted",
+            "successfully applied",
+            "received your application",
+            "will get back to you",
+            "congratulations",
+            "job alert has been set",
+            "application status",
+            "confirmation",
+            "your application has been received",
+        ]
+        
         try:
-            success_indicators = [
-                "thank you",
-                "application submitted",
-                "successfully applied",
-                "received your application",
-                "will get back to you",
-            ]
+            # Check the full body content for any of the patterns
             page_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
             for indicator in success_indicators:
                 if indicator in page_text:
-                    logger.info(f"  [OK] Verified via page text ('{indicator}' found).")
+                    logger.info(f"  [OK] Verified via page text indicator: '{indicator}'")
                     return True
-        except:
-            pass
+        except: pass
 
-        # 3. Success modal verification (if applicable)
+        # 3. Check for specific success icons or messages hidden in the DOM
         try:
-            modal = WebDriverWait(self.driver, 5).until(
-                EC.visibility_of_element_located((By.CLASS_NAME, "modal-content"))
-            )
-            if "thank" in modal.text.lower():
-                logger.info("  [OK] Verified via success modal.")
+            if self.driver.find_elements(By.XPATH, "//*[contains(@class, 'success') or contains(@id, 'success')]"):
+                logger.info("  [OK] Verified via success class/ID hint.")
                 return True
-        except:
-            pass
+        except: pass
 
         return False
 

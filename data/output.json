@@ -1,17 +1,17 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260402-2358",
+    "run_id": "RUN-20260403-2121",
     "candidate_name": "Vasanthi Nettem",
     "status": "success",
     "execution_summary": {
-        "total_jobs_found": 0,
+        "total_jobs_found": 14,
         "total_applications_attempted": 0,
         "total_applications_successful": 0,
         "total_applications_failed": 0
     },
     "successful_applications": [],
     "failed_applications": [],
-    "started_at": "2026-04-02T23:58:37.110138+00:00",
-    "finished_at": "2026-04-02T23:58:47.786128+00:00"
+    "started_at": "2026-04-03T21:21:48.194496+00:00",
+    "finished_at": "2026-04-03T21:28:16.332742+00:00"
 }

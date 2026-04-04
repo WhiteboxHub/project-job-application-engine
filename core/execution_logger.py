@@ -22,6 +22,12 @@ class ExecutionTracker:
     def add_jobs_found(self, count):
         self.total_jobs_found += count
 
+    def add_applications_attempted(self, count):
+        """Manually increment the attempted counter if needed"""
+        # This isn't strictly necessary as attempted = success + failure, 
+        # but the user wants to track it explicitly for some reports.
+        logger.debug(f"[TRACKER] Manually added {count} attempts")
+
     def record_success(self, job_site, job_id, job_title, job_url):
         self.successful_applications.append({
             "job_site": job_site,
