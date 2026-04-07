@@ -1,9 +1,9 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260406-1919",
+    "run_id": "RUN-20260407-0204",
     "candidate_id": null,
-    "candidate_name": "Ramani Moganti",
+    "candidate_name": "Ghazal Sultan",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -20,13 +20,42 @@
     "status": "success",
     "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 0,
-        "total_applications_attempted": 0,
-        "total_applications_successful": 0,
+        "total_jobs_found": 4,
+        "total_applications_attempted": 4,
+        "total_applications_successful": 4,
         "total_applications_failed": 0
     },
-    "successful_applications": [],
+    "successful_applications": [
+        {
+            "job_site": "AE Talents Group",
+            "job_id": "199",
+            "job_title": "Java AI Engineer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=199",
+            "applied_at": "2026-04-07T02:08:51.035699+00:00"
+        },
+        {
+            "job_site": "AE Talents Group",
+            "job_id": "172",
+            "job_title": "AI Engineer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=172",
+            "applied_at": "2026-04-07T02:09:35.383864+00:00"
+        },
+        {
+            "job_site": "AE Talents Group",
+            "job_id": "195",
+            "job_title": "Python Integration Developer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=195",
+            "applied_at": "2026-04-07T02:10:18.475708+00:00"
+        },
+        {
+            "job_site": "AE Talents Group",
+            "job_id": "167",
+            "job_title": "Python backend Developer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=167",
+            "applied_at": "2026-04-07T02:11:00.693595+00:00"
+        }
+    ],
     "failed_applications": [],
-    "started_at": "2026-04-06T19:19:43.021705+00:00",
-    "finished_at": "2026-04-06T19:20:10.983421+00:00"
+    "started_at": "2026-04-07T02:04:55.371751+00:00",
+    "finished_at": "2026-04-07T02:11:00.713543+00:00"
 }

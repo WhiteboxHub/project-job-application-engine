@@ -579,205 +579,210 @@ class KForceStrategy(BaseStrategy):
             logger.info("  [YES] Found dropdown option, clicking...")
             self.human.human_click(apply_link)
 
-            # Wait for application form to load
+            # 1. Page Initialization
             first_field_sel = self.get_sel("application", "form_fields", "first_name")
             WebDriverWait(self.driver, 25).until(
                 EC.presence_of_element_located(self._by(first_field_sel))
             )
             logger.info("KForce: Application form loaded")
+            time.sleep(2)  # Buffer delay to stabilize React
 
-            # 4. Fill personal details
-            # KForce uses React-controlled inputs. Plain send_keys / clear() don't
-            # trigger React's state — we must set the native value via JS and then
-            # dispatch an 'input' event so React re-syncs.
-            def _fill_react_field(sel, value):
-                """Set value on a React-controlled input field."""
-                if not sel or not value:
-                    logger.warning(f"  [SKIP] Missing selector or value for field")
-                    return
-                try:
-                    el = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located(self._by(sel))
-                    )
-                    self.driver.execute_script(
-                        """
-                        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                            window.HTMLInputElement.prototype, 'value').set;
-                        nativeInputValueSetter.call(arguments[0], arguments[1]);
-                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
-                        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
-                        """,
-                        el, str(value)
-                    )
-                    time.sleep(random.uniform(0.4, 0.8))
-                    logger.info(f"    [YES] Filled via JS React-compatible method")
-                except Exception as e:
-                    logger.warning(f"  [WARNING] JS fill failed, trying send_keys: {e}")
-                    try:
-                        el = self.driver.find_element(*self._by(sel))
-                        el.clear()
-                        el.send_keys(str(value))
-                        time.sleep(0.4)
-                    except Exception as e2:
-                        logger.error(f"  [ERROR] send_keys fallback also failed: {e2}")
+            # 2. Cookie Banner Handling
+            try:
+                cookie_selectors = [
+                    "button#onetrust-accept-btn-handler",
+                    "button[class*='cookie'][class*='accept']",
+                    "//*[contains(text(), 'Accept') or contains(text(), 'Agree') or contains(text(), 'Allow')]"
+                ]
+                for sel in cookie_selectors:
+                    by_type = By.XPATH if sel.startswith("//") else By.CSS_SELECTOR
+                    btn = self.driver.find_elements(by_type, sel)
+                    if btn and btn[0].is_displayed():
+                        logger.info("KForce [Step 2]: Clicking Cookie Banner Accept...")
+                        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn[0])
+                        time.sleep(0.5)
+                        btn[0].click()
+                        time.sleep(1)
+                        break
+            except Exception as e:
+                logger.debug(f"Cookie banner handling skipped: {e}")
 
+            # 3. Text Fields (First, Last, Email)
             fields_map = {
                 "first_name": applicant.get("first_name"),
                 "last_name":  applicant.get("last_name"),
                 "email":      applicant.get("email"),
-                "email_verify": applicant.get("email"),
-                "phone":      applicant.get("phone"),
+                "email_verify": applicant.get("email")
             }
 
             for field, value in fields_map.items():
-                logger.info(f"KForce [Step 4]: Filling '{field}' = '{value}'")
+                logger.info(f"KForce [Step 3]: Filling '{field}' = '{value}'")
                 selector = self.get_sel("application", "form_fields", field)
-                _fill_react_field(selector, value)
-
-
-            # 5. Handle State dropdown — slow, explicit, scroll first
-            state_val = applicant.get("state")
-            state_selector = self.get_sel("application", "form_fields", "state")
-            zip_val = applicant.get("zip_code")
-            zip_selector = self.get_sel("application", "form_fields", "zip_code")
-            
-            logger.info("=" * 50)
-            logger.info(f"[DEBUG] State Value Resolves To: '{state_val}'")
-            logger.info(f"[DEBUG] State Selector: '{state_selector}'")
-            logger.info(f"[DEBUG] Zip Value Resolves To: '{zip_val}'")
-            logger.info(f"[DEBUG] Zip Selector: '{zip_selector}'")
-            logger.info("=" * 50)
-
-            logger.info(f"KForce [Step 5]: Filling state = '{state_val}'")
-            if state_val and state_selector:
+                if not selector or not value:
+                    continue
                 try:
-                    state_dropdown = WebDriverWait(self.driver, 15).until(
-                        EC.element_to_be_clickable(self._by(state_selector))
+                    el = WebDriverWait(self.driver, 10).until(
+                        EC.element_to_be_clickable(self._by(selector))
                     )
-                    # Scroll to element so it's visible
-                    self.driver.execute_script(
-                        "arguments[0].scrollIntoView({block:'center'});", state_dropdown
-                    )
-                    time.sleep(1)
-
-                    from selenium.webdriver.support.ui import Select
-                    select = Select(state_dropdown)
-
-                    selected = False
-                    # Strategy 1: visible text exact match
-                    try:
-                        select.select_by_visible_text(state_val)
-                        selected = True
-                        logger.info(f"  [YES] State selected by text: {state_val}")
-                    except Exception:
-                        pass
-
-                    # Strategy 2: value attribute
-                    if not selected:
-                        try:
-                            select.select_by_value(state_val)
-                            selected = True
-                            logger.info(f"  [YES] State selected by value: {state_val}")
-                        except Exception:
-                            pass
-
-                    # Strategy 3: JS partial text match + fire change event
-                    if not selected:
+                    self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                    time.sleep(0.3)
+                    el.click()
+                    time.sleep(0.3)
+                    
+                    from selenium.webdriver.common.keys import Keys
+                    el.send_keys(Keys.CONTROL + "a")
+                    el.send_keys(Keys.BACKSPACE)
+                    time.sleep(0.3)
+                    
+                    el.send_keys(str(value))
+                    time.sleep(0.5)
+                    # Verify
+                    if el.get_attribute("value") != str(value):
+                        logger.warning(f"  [WARNING] send_keys failed for {field}, dispatching React event fallback")
                         self.driver.execute_script(
                             """
-                            var sel = arguments[0];
-                            var target = arguments[1].toLowerCase().trim();
-                            for (var i = 0; i < sel.options.length; i++) {
-                                if (sel.options[i].text.toLowerCase().trim().indexOf(target) !== -1) {
-                                    sel.selectedIndex = i;
-                                    sel.dispatchEvent(new Event('change', {bubbles: true}));
-                                    sel.dispatchEvent(new Event('input',  {bubbles: true}));
-                                    break;
-                                }
+                            var niv = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                            if(niv) {
+                                niv.call(arguments[0], arguments[1]);
+                                arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                                arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
                             }
-                            """,
-                            state_dropdown, state_val
+                            """, el, str(value)
                         )
-                        logger.info(f"  [YES] State set via JS text-match: {state_val}")
+                except Exception as e:
+                    logger.error(f"  [ERROR] Failed to fill {field}: {e}")
 
-                    time.sleep(1.5)  # Wait for React re-render after dropdown change
-                except Exception as se:
-                    logger.warning(f"  [WARNING] State selection failed: {se}")
-            else:
-                logger.warning("  [WARNING] Skipping state: missing value or selector")
-
-            # 5b. Handle Country dropdown
+            # 4. Country Dropdown
             country_val = applicant.get("country", "United States")
             country_selector = self.get_sel("application", "form_fields", "country", required=False)
             if country_val and country_selector:
+                logger.info(f"KForce [Step 4]: Filling Country = '{country_val}'")
                 try:
-                    from selenium.webdriver.support.ui import Select
                     country_dropdown = WebDriverWait(self.driver, 10).until(
                         EC.element_to_be_clickable(self._by(country_selector))
                     )
-                    self.driver.execute_script(
-                        "arguments[0].scrollIntoView({block:'center'});", country_dropdown
-                    )
+                    self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", country_dropdown)
                     time.sleep(0.5)
-                    select = Select(country_dropdown)
+                    from selenium.webdriver.support.ui import Select
                     try:
+                        select = Select(country_dropdown)
                         select.select_by_visible_text(country_val)
                     except Exception:
-                        try:
-                            select.select_by_value(country_val)
-                        except Exception:
-                            self.driver.execute_script(
-                                """
-                                var sel = arguments[0];
-                                var target = arguments[1].toLowerCase();
-                                for (var i = 0; i < sel.options.length; i++) {
-                                    if (sel.options[i].text.toLowerCase().indexOf(target) !== -1) {
-                                        sel.selectedIndex = i;
-                                        sel.dispatchEvent(new Event('change', {bubbles: true}));
-                                        break;
-                                    }
-                                }
-                                """,
-                                country_dropdown, country_val
-                            )
+                        country_dropdown.click()
+                        time.sleep(0.5)
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        from selenium.webdriver.common.keys import Keys
+                        ac = ActionChains(self.driver)
+                        ac.send_keys(country_val).pause(0.5).send_keys(Keys.RETURN).perform()
                     logger.info(f"  [YES] Country set: {country_val}")
                     time.sleep(0.5)
                 except Exception as ce:
                     logger.warning(f"  [WARNING] Could not set country: {ce}")
 
-            # 5c. Fill zip LAST — after all dropdowns so React re-renders don't clear it
+            # 5. Phone Number (Masked Input)
+            raw_phone = str(applicant.get("phone", ""))
+            import re
+            phone_digits = re.sub(r'\D', '', raw_phone)
+            phone_selector = self.get_sel("application", "form_fields", "phone", required=False)
+            if phone_selector and phone_digits:
+                logger.info(f"KForce [Step 5]: Filling Phone Number")
+                for attempt in range(2):
+                    try:
+                        el = WebDriverWait(self.driver, 10).until(
+                            EC.element_to_be_clickable(self._by(phone_selector))
+                        )
+                        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                        time.sleep(0.5)
+                        el.click()
+                        time.sleep(0.3)
+                        # Clear field comprehensively
+                        from selenium.webdriver.common.keys import Keys
+                        el.send_keys(Keys.CONTROL + "a")
+                        el.send_keys(Keys.BACKSPACE)
+                        time.sleep(0.5)
+                        
+                        if attempt == 0:
+                            # Primary: slow typing
+                            for digit in phone_digits:
+                                el.send_keys(digit)
+                                time.sleep(random.uniform(0.1, 0.3))
+                        else:
+                            # Fallback: formatted inject
+                            formatted_phone = ""
+                            if len(phone_digits) >= 10:
+                                formatted_phone = f"({phone_digits[:3]}) {phone_digits[3:6]}-{phone_digits[6:10]}"
+                            else:
+                                formatted_phone = phone_digits
+                            logger.info(f"  [INFO] Attempting fallback format: {formatted_phone}")
+                            el.send_keys(formatted_phone)
+                        
+                        time.sleep(0.8)
+                        current_val = el.get_attribute("value")
+                        if current_val and len(re.sub(r'\D', '', current_val)) >= 10:
+                            logger.info(f"  [YES] Phone typed successfully: {current_val}")
+                            break
+                        else:
+                            logger.warning(f"  [WARNING] Phone typed incorrectly: '{current_val}', retrying...")
+                    except Exception as e:
+                        logger.error(f"  [ERROR] Phone fill failed: {e}")
+
+            # 6. State Dropdown (React Select)
+            state_val = applicant.get("state")
+            state_selector = self.get_sel("application", "form_fields", "state")
+            if state_val and state_selector:
+                logger.info(f"KForce [Step 6]: Filling State = '{state_val}'")
+                for attempt in range(2):
+                    try:
+                        state_dropdown = WebDriverWait(self.driver, 10).until(
+                            EC.element_to_be_clickable(self._by(state_selector))
+                        )
+                        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", state_dropdown)
+                        time.sleep(0.5)
+                        
+                        from selenium.webdriver.support.ui import Select
+                        try:
+                            # Primary DOM selection if it's actually a native select disguised
+                            select = Select(state_dropdown)
+                            select.select_by_visible_text(state_val)
+                            logger.info(f"  [YES] State selected using native Select: {state_val}")
+                            break
+                        except Exception:
+                            # Fallback React-Select ActionChains
+                            state_dropdown.click()
+                            time.sleep(1)
+                            from selenium.webdriver.common.action_chains import ActionChains
+                            from selenium.webdriver.common.keys import Keys
+                            ac = ActionChains(self.driver)
+                            ac.send_keys(state_val).pause(0.5).send_keys(Keys.RETURN).perform()
+                            time.sleep(1.5)
+                            logger.info(f"  [YES] State selected via React-Select ActionChains: {state_val}")
+                            break
+                    except Exception as e:
+                        logger.warning(f"  [WARNING] State selection attempt {attempt+1} failed: {e}")
+            else:
+                logger.warning("  [WARNING] Skipping state: missing value or selector")
+
+            # 7. Zip Code
             zip_val = applicant.get("zip_code")
             zip_selector = self.get_sel("application", "form_fields", "zip_code")
-            logger.info(f"KForce [Step 5c]: Filling zip_code = '{zip_val}'")
             if zip_val and zip_selector:
+                logger.info(f"KForce [Step 7]: Filling Zip Code = '{zip_val}'")
                 try:
                     zip_el = WebDriverWait(self.driver, 10).until(
                         EC.element_to_be_clickable(self._by(zip_selector))
                     )
-                    self.driver.execute_script(
-                        "arguments[0].scrollIntoView({block:'center'});", zip_el
-                    )
+                    self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", zip_el)
                     time.sleep(0.5)
-                    # Click to focus, then clear and type
                     zip_el.click()
                     time.sleep(0.3)
-                    zip_el.clear()
-                    time.sleep(0.2)
-                    zip_el.send_keys(str(zip_val))
+                    
+                    from selenium.webdriver.common.keys import Keys
+                    zip_el.send_keys(Keys.CONTROL + "a")
+                    zip_el.send_keys(Keys.BACKSPACE)
                     time.sleep(0.3)
-                    # Also fire via JS native setter for React
-                    self.driver.execute_script(
-                        """
-                        var niv = Object.getOwnPropertyDescriptor(
-                            window.HTMLInputElement.prototype, 'value').set;
-                        niv.call(arguments[0], arguments[1]);
-                        arguments[0].dispatchEvent(new Event('input',  {bubbles:true}));
-                        arguments[0].dispatchEvent(new Event('change', {bubbles:true}));
-                        """,
-                        zip_el, str(zip_val)
-                    )
-                    logger.info(f"  [YES] Zip filled: {zip_val}")
+                    zip_el.send_keys(str(zip_val))
                     time.sleep(0.5)
+                    logger.info(f"  [YES] Zip filled: {zip_val}")
                 except Exception as ze:
                     logger.warning(f"  [WARNING] Zip fill failed: {ze}")
             else:
