@@ -1,9 +1,9 @@
 {
-    "workflow_id": 7,
+    "workflow_id": null,
     "schedule_id": null,
-    "run_id": "458891c4-3456-4955-a630-8069be7862a2",
-    "candidate_id": 662,
-    "candidate_name": "Sri Devi Chenna",
+    "run_id": "RUN-20260407-0204",
+    "candidate_id": null,
+    "candidate_name": "Ghazal Sultan",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -17,153 +17,45 @@
         "MLOps",
         "AI Engineer"
     ],
-    "status": "completed_with_errors",
+    "status": "success",
     "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 738,
-        "total_applications_attempted": 19,
-        "total_applications_successful": 17,
-        "total_applications_failed": 2
+        "total_jobs_found": 4,
+        "total_applications_attempted": 4,
+        "total_applications_successful": 4,
+        "total_applications_failed": 0
     },
     "successful_applications": [
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MTYyM1Qxfjk5",
-            "job_title": "Documentation / Training Coordinator",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTYyM1Qxfjk5/",
-            "applied_at": "2026-04-03T18:09:39.022408+00:00"
+            "job_site": "AE Talents Group",
+            "job_id": "199",
+            "job_title": "Java AI Engineer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=199",
+            "applied_at": "2026-04-07T02:08:51.035699+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MzA3OFQxfjk5",
-            "job_title": "Fabric & AI Consultant",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MzA3OFQxfjk5/",
-            "applied_at": "2026-04-03T18:10:16.793622+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MzA1MlAxfjk5",
-            "job_title": "Mid and Senior Data Scientists",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MzA1MlAxfjk5/",
-            "applied_at": "2026-04-03T18:10:53.613129+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MzA3MVQxfjk5",
-            "job_title": "Machine Learning Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MzA3MVQxfjk5/",
-            "applied_at": "2026-04-03T18:11:30.936196+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MTgxNlAxfjk5",
-            "job_title": "Lead Product Manager - Claims",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MTgxNlAxfjk5/",
-            "applied_at": "2026-04-03T18:12:08.670487+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3Mjg1N1Qxfjk5",
-            "job_title": "AI/ML Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3Mjg1N1Qxfjk5/",
-            "applied_at": "2026-04-03T18:12:47.210204+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MjkwOVAxfjk5",
-            "job_title": "Director Core IT - Enterprise Systems/Supply Chain",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjkwOVAxfjk5/",
-            "applied_at": "2026-04-03T18:13:26.403015+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2MzgzN1Axfjk5",
+            "job_site": "AE Talents Group",
+            "job_id": "172",
             "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2MzgzN1Axfjk5/",
-            "applied_at": "2026-04-03T18:14:03.995398+00:00"
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=172",
+            "applied_at": "2026-04-07T02:09:35.383864+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2Mzk2NFAxfjk5/",
-            "applied_at": "2026-04-03T18:14:43.736628+00:00"
+            "job_site": "AE Talents Group",
+            "job_id": "195",
+            "job_title": "Python Integration Developer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=195",
+            "applied_at": "2026-04-07T02:10:18.475708+00:00"
         },
         {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MjYzM1Qxfjk5",
-            "job_title": "AI Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MjYzM1Qxfjk5/",
-            "applied_at": "2026-04-03T18:15:20.916134+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MjY2MlQxfjk5",
-            "job_title": "AI Adoption Coordinator",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjY2MlQxfjk5/",
-            "applied_at": "2026-04-03T18:15:58.888463+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE0ODUyMVAxfjk5",
-            "job_title": "Liability Claims Manager - Remote",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE0ODUyMVAxfjk5/",
-            "applied_at": "2026-04-03T18:16:36.153515+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE2NzM4NFAxfjk5",
-            "job_title": "Senior Manager, Artificial Intelligence",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2NzM4NFAxfjk5/",
-            "applied_at": "2026-04-03T18:17:13.503775+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MjYzMFQxfjk5",
-            "job_title": "Product Owner - Paid Media",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjYzMFQxfjk5/",
-            "applied_at": "2026-04-03T18:17:50.843434+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE3MjU4N1Qxfjk5",
-            "job_title": "FS Python Cloud",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE3MjU4N1Qxfjk5/",
-            "applied_at": "2026-04-03T18:18:29.148219+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MDE1MlQxfjk5",
-            "job_title": "AI Solutions Architect",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MDE1MlQxfjk5/",
-            "applied_at": "2026-04-03T18:19:06.924492+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MjUzMFQxfjk5",
-            "job_title": "Principal Data Scientist",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjUzMFQxfjk5/",
-            "applied_at": "2026-04-03T18:19:47.177707+00:00"
+            "job_site": "AE Talents Group",
+            "job_id": "167",
+            "job_title": "Python backend Developer",
+            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=167",
+            "applied_at": "2026-04-07T02:11:00.693595+00:00"
         }
     ],
-    "failed_applications": [
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-47472",
-            "job_title": "Facility Maintenance Supervisor",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "error_reason": "Application logic returned False",
-            "failed_at": "2026-04-03T17:18:13.194247+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5FUUd-MjE3MjUzMVQxfjk5",
-            "job_title": "Cybersecurity Email Analyst",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjUzMVQxfjk5/",
-            "error_reason": "Message: \n",
-            "failed_at": "2026-04-03T18:20:17.296560+00:00"
-        }
-    ],
-    "started_at": "2026-04-03T16:32:07.958397+00:00",
-    "finished_at": "2026-04-03T18:20:17.308715+00:00"
+    "failed_applications": [],
+    "started_at": "2026-04-07T02:04:55.371751+00:00",
+    "finished_at": "2026-04-07T02:11:00.713543+00:00"
 }
