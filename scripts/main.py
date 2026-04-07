@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 
@@ -8,7 +9,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import settings
 from core.backend_client import backend_client
 from core.logger import logger
-from core.resume_downloader import resume_downloader
 from engine.runner import EngineRunner
 
 
@@ -63,11 +63,33 @@ def main():
         if candidate_id:
             backend_client.update_run_parameters(candidate_id, run_parameters)
 
+        # 3b. Create a "running" execution log row for workflow log grid (if metadata exists)
+        backend_client.create_workflow_log(run_parameters)
+
         # 4. Execute Engine using the pristine, fully-built JSON payload
+        #    (runner finally block writes data/output.json, sends email, and PATCHes
+        #     automation_workflow_log with the same report — see backend_client / hiring-cafe pattern)
         runner = EngineRunner()
         runner.run(site_filter=args.site, candidate_data=run_parameters)
 
     except Exception as e:
+        # Mark workflow log failed when run_id is available; reuse output.json if the
+        # runner already wrote it (avoid wiping execution_metadata with an empty report).
+        try:
+            if "run_parameters" in locals():
+                report_payload = {}
+                outp = os.path.join("data", "output.json")
+                if os.path.isfile(outp):
+                    try:
+                        with open(outp, encoding="utf-8") as f:
+                            report_payload = json.load(f)
+                    except Exception:
+                        pass
+                backend_client.update_workflow_log(
+                    run_parameters, report_payload, error=str(e)
+                )
+        except Exception:
+            pass
         logger.critical(f"Fatal error: {e}")
         import traceback
 

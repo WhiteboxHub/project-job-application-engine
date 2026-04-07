@@ -5,7 +5,7 @@ import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 
 from core.captcha_handler import CaptchaHandler
 from core.human_behavior import HumanBehavior
@@ -32,7 +32,7 @@ class LanceSoftStrategy(BaseStrategy):
         self, driver, job_site, selectors, db_session=None, candidate_data=None
     ):
         super().__init__(driver, job_site, selectors, db_session, candidate_data)
-        self.use_single_phase = True
+        self.use_single_phase = False
         self.db_session = db_session
         self.job_site = job_site
         self.config_data = self._load_config()
@@ -249,10 +249,13 @@ class LanceSoftStrategy(BaseStrategy):
 
         all_jobs = []
 
-        # Perform each search
-        for config in search_configurations:
+        # Perform optimized SINGLE search using the primary keyword. 
+        # Since _extract_job_listings now checks every job against ALL keywords,
+        # we do not need to perform additional expensive web searches!
+        if search_configurations:
+            config = search_configurations[0]
             logger.info(f"\n{'=' * 60}")
-            logger.info(f"[SEARCH] Search: {config['keyword']} in {config['location']}")
+            logger.info(f"[SEARCH] Optimized Single Search: {config['keyword']} in {config['location']}")
             logger.info(f"{'=' * 60}")
 
             # Collect all jobs from all pages for this search
@@ -260,10 +263,6 @@ class LanceSoftStrategy(BaseStrategy):
                 config["keyword"], config["location"], config.get("distance", "50")
             )
             all_jobs.extend(jobs)
-
-            # Small delay between searches
-            if len(search_configurations) > 1:
-                time.sleep(random.uniform(2, 4))
 
         logger.info(f"\n{'=' * 60}")
         logger.info(f" [OK] Job Collection Complete")
@@ -497,6 +496,18 @@ class LanceSoftStrategy(BaseStrategy):
             time.sleep(3)  # Wait for search results to load
             logger.info("  [YES] Search results loaded")
 
+            # --- Sort by Newest to Oldest ---
+            try:
+                logger.info("  Sorting results by 'Newest to Oldest'...")
+                sort_select = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="root"]/div/div/div[2]/div[3]/div[2]/div/div/div/select'))
+                )
+                Select(sort_select).select_by_visible_text("Newest to Oldest")
+                time.sleep(3) # Wait for page to reload
+                logger.info("  [YES] Sorted results 'Newest to Oldest'")
+            except Exception as e:
+                logger.warning(f"  [WARNING] Could not sort job results: {e}")
+
         except Exception as e:
             logger.error(f"  [ERROR] Failed to perform search: {e}")
             import traceback
@@ -515,12 +526,16 @@ class LanceSoftStrategy(BaseStrategy):
             logger.info(f"   Collecting from page {page_num}...")
 
             # Extract jobs from current page (no applying yet)
-            jobs_on_page = self._extract_job_listings(container_selector)
+            jobs_on_page, stop_pagination = self._extract_job_listings(container_selector, keyword)
             all_jobs.extend(jobs_on_page)
-            logger.info(f"    Found {len(jobs_on_page)} jobs on page {page_num}")
+            logger.info(f"    Found {len(jobs_on_page)} matching jobs on page {page_num}")
             
             from core.execution_logger import execution_tracker
             execution_tracker.add_jobs_found(len(jobs_on_page))
+            
+            if stop_pagination:
+                logger.info("    [INFO] Reached jobs older than 20 days. Stopping pagination.")
+                break
 
             # Try to find and click Next Page button
             try:
@@ -1031,15 +1046,19 @@ class LanceSoftStrategy(BaseStrategy):
         )
         return total_applied
 
-    def _extract_job_listings(self, container_selector):
+    def _extract_job_listings(self, container_selector, keyword=None):
         """
         Extract job listings from current page WITHOUT applying
-        Used in Phase 1 of two-phase approach
+        Used in Phase 1 of two-phase approach. Filters jobs older than 7 days
+        and checks if job title contains the keyword.
 
         Returns:
+            Tuple (jobs_on_page, stop_pagination)
             List of job data dicts: [{'job_title': '...', 'external_id': '...', 'job_url': '...'}, ...]
+            stop_pagination bool: True if we encountered jobs older than 7 days
         """
         jobs_on_page = []
+        stop_pagination = False
         selectors = self.selectors_config  # Use centralized selectors
 
         try:
@@ -1054,18 +1073,81 @@ class LanceSoftStrategy(BaseStrategy):
                 By.CSS_SELECTOR, container_selector
             )
 
+            from datetime import datetime
+            import re
+            
+            # Match against ALL configured keywords robustly
+            all_keywords = []
+            
+            # Extract from 'search' dictionary
+            search_config = self.config_data.get("search")
+            if isinstance(search_config, dict):
+                all_keywords.extend(search_config.get("keywords", []))
+            
+            # Extract from 'search_configurations' list
+            search_configs = self.config_data.get("search_configurations")
+            if isinstance(search_configs, list):
+                for sc in search_configs:
+                    if isinstance(sc, dict) and sc.get("keyword"):
+                        all_keywords.append(sc.get("keyword"))
+
+            if not all_keywords and keyword:
+                 all_keywords = [keyword]
+                 
+            all_keywords_lower = [str(k).lower() for k in all_keywords if k]
+            
             for job_elem in job_elements:
                 try:
-                    # Get job title
-                    title_elem = job_elem.find_element(
-                        By.CSS_SELECTOR, selectors["job_title"]
-                    )
-                    title = title_elem.text.strip()
+                    # Parse the text to check for dates (usually MM/DD/YYYY)
+                    job_text = job_elem.text
+                    # Get job title first for logging context
+                    try:
+                        title_elem = job_elem.find_element(
+                            By.CSS_SELECTOR, selectors["job_title"]
+                        )
+                        title = title_elem.text.strip()
+                    except:
+                        title = "Unknown Title"
+                    
+                    logger.debug(f"      [DEBUG] Evaluating job: {title}")
+
+                    # Try to find a date in the format MM/DD/YYYY
+                    date_match = re.search(r"(\d{2}/\d{2}/\d{4})", job_text)
+                    if date_match:
+                        job_date_str = date_match.group(1)
+                        try:
+                            job_date = datetime.strptime(job_date_str, "%m/%d/%Y")
+                            days_old = (datetime.now() - job_date).days
+                            logger.info(f"      [DEBUG] Extracted date: {job_date_str} -> {days_old} days old")
+                            if days_old > 20:
+                                logger.info(f"      [DEBUG] Job is older than 20 days ({days_old}). Stopping pagination.")
+                                stop_pagination = True
+                                continue # Skip this job
+                        except ValueError:
+                            logger.error(f"      [ERROR] Could not parse date string: {job_date_str}")
+                            pass # If date parsing fails, ignore age check
+                    else:
+                        logger.info(f"      [DEBUG] No date matched in job text")
+                            
+                    if stop_pagination:
+                        continue # If we already hit a job > 20 days old, we can skip the rest on this page (if sorted)
+
+                    # Check if any keyword matches the title
+                    matches_any = False
+                    matched_kw = ""
+                    for k in all_keywords_lower:
+                        if k in title.lower():
+                            matches_any = True
+                            matched_kw = k
+                            break
+
+                    if not matches_any:
+                        logger.info(f"      [DEBUG] Title '{title}' does not match any of the keywords")
+                        continue
+                    
+                    logger.info(f"      [DEBUG] Title '{title}' MATCHES keyword '{matched_kw}'. Adding to jobs list.")
 
                     # Extract ID (Regex or Selector)
-                    job_text = job_elem.text
-                    import re
-
                     id_match = re.search(r"(\d{2}-\d{4,10})", job_text)
                     if id_match:
                         job_id = id_match.group(1)
@@ -1091,7 +1173,7 @@ class LanceSoftStrategy(BaseStrategy):
         except Exception as e:
             logger.debug(f"No job listings found or error: {e}")
 
-        return jobs_on_page
+        return jobs_on_page, stop_pagination
 
     def _save_job_to_db(self, job_data):
         try:
@@ -1300,11 +1382,27 @@ class LanceSoftStrategy(BaseStrategy):
         logger.info(f"=" * 60)
 
         try:
-            # Step 1: Navigate to search results page fresh (prevents stale elements)
-            logger.info("Step 1: Navigating to job page...")
-            logger.info(f"  Loading search results page: {job_url}")
-            self.driver.get(job_url)
+            # Step 1: Navigate to portal base URL fresh (prevents stale elements)
+            logger.info("Step 1: Navigating to portal page to search for job ID...")
+            logger.info(f"  Loading portal: {self.portal_url}")
+            self.driver.get(self.portal_url)
             time.sleep(3)
+            
+            # Step 1.5: Search using job_id
+            logger.info(f"  Searching for job ID: {job_id}")
+            search_input_xpath = '//*[@id="root"]/div/div/div[2]/div[1]/div/div[2]/form/div/input'
+            try:
+                search_input = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, search_input_xpath))
+                )
+                search_input.clear()
+                self.human.fill_text_field(search_input, str(job_id))
+                search_input.send_keys("\n")
+                time.sleep(3)  # Wait for search results to load
+                logger.info(f"  [YES] Search results for job ID {job_id} loaded")
+            except Exception as search_err:
+                logger.error(f"  [ERROR] Failed to search for job ID {job_id}: {search_err}")
+                return False
 
             # Step 2: Locate job in the current page
             logger.info("Step 2: Locating job in list...")

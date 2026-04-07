@@ -1,130 +1,173 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260406-1904",
-    "candidate_name": "Preeti Gupta",
-    "status": "success",
+    "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
+    "candidate_name": "Vasanthi Nettem",
+    "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 16,
-        "total_applications_attempted": 16,
-        "total_applications_successful": 16,
-        "total_applications_failed": 0
+        "total_jobs_found": 33,
+        "total_applications_attempted": 12,
+        "total_applications_successful": 0,
+        "total_applications_failed": 12
     },
-    "successful_applications": [
+    "metrics_summary": {
+        "duration_seconds": 342.03,
+        "duration_readable": "0:05:42.033625",
+        "total_seen": 33,
+        "total_attempted": 12,
+        "total_successful": 0,
+        "total_failed": 12,
+        "total_skipped": 21,
+        "success_rate_percent": 0.0
+    },
+    "breakdown": {
+        "successful_by_site": {},
+        "failed_by_site": {
+            "LanceSoft": 4,
+            "KForce": 8
+        },
+        "failure_reasons": {
+            "Application logic returned False": 8,
+            "Message: \n": 4
+        },
+        "retries_by_step": {}
+    },
+    "successful_applications": [],
+    "failed_applications": [
         {
-            "job_site": "Collabera",
-            "job_id": "367614",
-            "job_title": "Computer/IT Services\nPython/AI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\npython\nRAG\nLLM\nLLMA\nartificial intelligence\nai/ml\nmachine learning\ndjango\nflask\nfastapi\npandas\nscripting\npython developer\nopenshift\nsql\nci/cd\nunix\napi",
-            "job_url": "https://collabera.com/job-description/?post=367614",
-            "applied_at": "2026-04-06T19:11:19.109012+00:00"
+            "job_site": "LanceSoft",
+            "job_id": "26-39917",
+            "job_title": "Sr. Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:40:44.880052+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367884",
-            "job_title": "Banking\nAI Engineer with Python\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nPython\nLLMs",
-            "job_url": "https://collabera.com/job-description/?post=367884",
-            "applied_at": "2026-04-06T19:12:13.852389+00:00"
+            "job_site": "LanceSoft",
+            "job_id": "26-37948",
+            "job_title": "Dealer/Diagnostic Support - Supply Chain Data Analyst - Associate",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:01.951264+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "368342",
-            "job_title": "Banking\nAI Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 65.00 - 70.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAI\nGenAI\nLLM\nGenerativeAI\nPython\nJava\n.Net\nReact\nAngular\nAI concepts\nRAG",
-            "job_url": "https://collabera.com/job-description/?post=368342",
-            "applied_at": "2026-04-06T19:13:05.493559+00:00"
+            "job_site": "LanceSoft",
+            "job_id": "26-32879",
+            "job_title": "Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:19.097813+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "368428",
-            "job_title": "Computer Software\nData Scientist\nContract: Houston, Texas, US\nSalary Range: 80.00 - 90.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nDatabricks\nSQL\nAzure",
-            "job_url": "https://collabera.com/job-description/?post=368428",
-            "applied_at": "2026-04-06T19:13:55.369717+00:00"
+            "job_site": "LanceSoft",
+            "job_id": "26-32279",
+            "job_title": "Medicaid Subject Matter Expert (SME)",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:35.223813+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "368354",
-            "job_title": "Computer Software\nEngineering Manager\nContract: Hermitage, Tennessee, US\nSalary Range: 80.00 - 85.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAngular/React\nNodeJS\nPython\nC#\n.NET Core\nSQL/NoSQL\nAzure\nAI/ML",
-            "job_url": "https://collabera.com/job-description/?post=368354",
-            "applied_at": "2026-04-06T19:14:47.867187+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:43:32.826426+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367629",
-            "job_title": "Banking\nPython Developer\nContract: Charlotte, North Carolina, US\nSalary Range: 65.00 - 70.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nNosql\nMongodb\nPowershell",
-            "job_url": "https://collabera.com/job-description/?post=367629",
-            "applied_at": "2026-04-06T19:15:42.458982+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:43:32.842330+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367163",
-            "job_title": "Banking\nPython Developer\nContract: Jerseycity, New Jersey, US\nSalary Range: 60.00 - 68.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nFastAPI\npostgresql",
-            "job_url": "https://collabera.com/job-description/?post=367163",
-            "applied_at": "2026-04-06T19:16:33.878544+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:00.271312+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "368400",
-            "job_title": "Banking\nPython Developer\nContract: Charlotte, North Carolina, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nCap Markets",
-            "job_url": "https://collabera.com/job-description/?post=368400",
-            "applied_at": "2026-04-06T19:17:26.843550+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:00.288469+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367024",
-            "job_title": "Banking\nData Engineer\nContract: Chicago, Illinois, US\nSalary Range: 60.00 - 65.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nHadoop\nPython\nSpark",
-            "job_url": "https://collabera.com/job-description/?post=367024",
-            "applied_at": "2026-04-06T19:18:20.258567+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:26.495475+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367237",
-            "job_title": "Banking\nData Engineer\nContract: Charlotte, North Carolina, US\nSalary Range: 65.00 - 68.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nHadoop\nSpark\nPython",
-            "job_url": "https://collabera.com/job-description/?post=367237",
-            "applied_at": "2026-04-06T19:19:11.866766+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:26.506893+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "367630",
-            "job_title": "Banking\nTines SOAR Engineer\nContract: Chicago, Illinois, US\nSalary Range: 70.00 - 75.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nEngineer/Developer/Analyst/Consultant\nTines\nSOAR\nPython",
-            "job_url": "https://collabera.com/job-description/?post=367630",
-            "applied_at": "2026-04-06T19:20:05.086275+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:53.219097+00:00"
         },
         {
-            "job_site": "Collabera",
-            "job_id": "368047",
-            "job_title": "Banking\nAnsible Automation Engineer\nContract: Chandler, Arizona, US\nSalary Range: 68.00 - 73.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nAnsible\nAnsible Automation Platform (AAP)\nEngineer\nLinux\nPython",
-            "job_url": "https://collabera.com/job-description/?post=368047",
-            "applied_at": "2026-04-06T19:21:00.192174+00:00"
-        },
-        {
-            "job_site": "Collabera",
-            "job_id": "368052",
-            "job_title": "Computer/IT Services\nAnsible/Automation Engineer\nContract: Chandler, Arizona, US\nSalary Range: 65.00 - 73.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nansible\nautomation\nci/cd\nplaybooks\ninfrastructure\niaas\npaas\nautomation engineer\npython",
-            "job_url": "https://collabera.com/job-description/?post=368052",
-            "applied_at": "2026-04-06T19:21:53.372610+00:00"
-        },
-        {
-            "job_site": "Collabera",
-            "job_id": "368361",
-            "job_title": "Accounting and Auditing Services\nData Analyst\nContract to Hire: Boston, Massachusetts, US\nSalary Range: 40.00 - 45.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nJapanese\nSQL\nPython\nPower BI\nAlteryx\nAudit\nAccounting\nSAP\nERP",
-            "job_url": "https://collabera.com/job-description/?post=368361",
-            "applied_at": "2026-04-06T19:22:47.354126+00:00"
-        },
-        {
-            "job_site": "Collabera",
-            "job_id": "368363",
-            "job_title": "Biotechnology/Pharmaceuticals\nScientist - Computational Pathology\nContract: South San Francisco, California, US\nSalary Range: 55.00 - 60.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nPython\nR\nSpatial Transcriptomics\nImage Analysis\nCell Segmentation\nDigital Pathology\nData Pipelines",
-            "job_url": "https://collabera.com/job-description/?post=368363",
-            "applied_at": "2026-04-06T19:23:32.393481+00:00"
-        },
-        {
-            "job_site": "Collabera",
-            "job_id": "368454",
-            "job_title": "Computer Software\nSoftware Dev Engineer IV\nContract: Seattle, Washington, US\nSalary Range: 60.00 - 70.00 | Per Hour\nRequirement\nWe are looking for candidates with the following skills\nProficiency in Java- TypeScript and Python\nSalesforce Apex development experience with demonstrated expertise in building custom Salesforce UI components and integrations\nExperience with with AWS services and infrastructure",
-            "job_url": "https://collabera.com/job-description/?post=368454",
-            "applied_at": "2026-04-06T19:24:23.367234+00:00"
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:53.231724+00:00"
         }
     ],
-    "failed_applications": [],
-    "started_at": "2026-04-06T19:04:19.144224+00:00",
-    "finished_at": "2026-04-06T19:24:30.688145+00:00"
+    "parameters_used": {
+        "workflow_id": null,
+        "schedule_id": null,
+        "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
+        "candidate_id": 557,
+        "search": {
+            "distance": "0",
+            "keywords": [
+                "Data Scientist",
+                "Machine Learning",
+                "AI",
+                "PYTHON",
+                "Generative AI",
+                "LLM",
+                "MLOps",
+                "AI Engineer"
+            ],
+            "location": "United States"
+        },
+        "applicant": {
+            "first_name": "Vasanthi",
+            "last_name": "Nettem",
+            "email": "nvasanthi011@gmail.com",
+            "phone": "2028534787",
+            "workstatus": "GREEN_CARD",
+            "linkedin": "nvasanthi011@gmail.com",
+            "address": {
+                "city": "San Ramon",
+                "state": "California",
+                "street": "12023 hickory knoll ln Frisco Tx",
+                "zip_code": null,
+                "country": "United States"
+            }
+        },
+        "resume_url": "https://drive.google.com/drive/folders/1Wib_JlhPDC81IbaXtlLvC-_r54mPUzTG?usp=sharing",
+        "resume_path": "C:\\Users\\Innovapath\\Desktop\\job_engine\\project-job-application-engine\\resume\\downloads\\candidate_resume_downloaded.pdf"
+    },
+    "started_at": "2026-03-24T00:39:15.369684+00:00",
+    "finished_at": "2026-03-24T00:44:57.403309+00:00"
 }

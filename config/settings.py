@@ -12,10 +12,22 @@ class Settings(BaseSettings):
     DUCKDB_PATH: str = str(_PROJECT_ROOT / "data" / "job_engine.duckdb")
     MOTHERDUCK_TOKEN: Optional[str] = None
 
-    # Backend API
-    BACKEND_URL: str = "http://localhost:8001"
+    # Backend API (include /api — routers are mounted under /api)
+    BACKEND_URL: str = "http://localhost:8001/api"
     TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
     INTERNAL_SECRET_KEY: Optional[str] = None
+    # Auth for protected routes (e.g. /api/automation-workflow-log). Use one of:
+    # - API_ACCESS_TOKEN (JWT), or
+    # - AUTH_URL + AUTH_USERNAME + AUTH_PASSWORD (login form, same as hiring-cafe-engine), or
+    # - SCHEDULER_INTERNAL_SECRET as X-Internal-Secret (must match server env)
+    AUTH_URL: Optional[str] = None
+    AUTH_USERNAME: Optional[str] = None
+    AUTH_PASSWORD: Optional[str] = None
+    API_ACCESS_TOKEN: Optional[str] = None
+    SCHEDULER_INTERNAL_SECRET: Optional[str] = None
+    # When trigger-run payload omits workflow/schedule IDs, fill from env (Avatar workflow id = 7)
+    DEFAULT_AUTOMATION_WORKFLOW_ID: Optional[int] = None
+    DEFAULT_AUTOMATION_SCHEDULE_ID: Optional[int] = None
 
     # Browser
     CHROME_USER_DATA_DIR: str = "./chrome_profile"
@@ -37,6 +49,9 @@ class Settings(BaseSettings):
     KEEP_BROWSER_OPEN: bool = False
     # How long to wait after clicking submit for navigation (seconds)
     SUBMIT_POST_CLICK_WAIT: int = 15
+
+    # After each run, append the full output.json payload to this file (UTF-8). Empty = disabled.
+    EXECUTION_LOG_FILE: str = str(_PROJECT_ROOT / "data" / "execution.log")
 
     # Multi-platform support (backward compatible)
     PLATFORM_FILTER: Optional[str] = (

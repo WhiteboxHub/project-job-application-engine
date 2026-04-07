@@ -1,6 +1,8 @@
 import os
 import traceback
+import uuid
 
+from config.settings import settings
 from core.logger import logger
 from core.resume_downloader import resume_downloader
 
@@ -10,6 +12,39 @@ class RunParametersBuilder:
     @staticmethod
     def build(candidate_data: dict) -> dict:
         logger.info("Building run_parameters cleanly entirely from database payload...")
+
+        # Nested payload from scheduler UI sometimes stores everything under run_parameters
+        nested = candidate_data.get("run_parameters")
+        if not isinstance(nested, dict):
+            nested = {}
+
+        # Preserve workflow metadata so downstream services can write execution logs.
+        workflow_id = (
+            candidate_data.get("workflow_id")
+            or nested.get("workflow_id")
+            or candidate_data.get("automation_workflow_id")
+            or candidate_data.get("workflow", {}).get("id")
+            or nested.get("workflow", {}).get("id")
+        )
+        schedule_id = (
+            candidate_data.get("schedule_id")
+            or nested.get("schedule_id")
+            or candidate_data.get("automation_workflow_schedule_id")
+            or candidate_data.get("workflow_schedule_id")
+            or candidate_data.get("schedule", {}).get("id")
+            or nested.get("schedule", {}).get("id")
+        )
+        run_id = (
+            candidate_data.get("run_id")
+            or nested.get("run_id")
+            or f"RUN-{uuid.uuid4()}"
+        )
+
+        # Avatar may leave workflow_id/schedule_id null on the row — use .env defaults
+        if workflow_id is None and settings.DEFAULT_AUTOMATION_WORKFLOW_ID is not None:
+            workflow_id = settings.DEFAULT_AUTOMATION_WORKFLOW_ID
+        if schedule_id is None and settings.DEFAULT_AUTOMATION_SCHEDULE_ID is not None:
+            schedule_id = settings.DEFAULT_AUTOMATION_SCHEDULE_ID
 
         # 1. Base Structure Defaults
         db_email = candidate_data.get("email", "")
@@ -86,19 +121,21 @@ class RunParametersBuilder:
         api_keywords = candidate_data.get("keywords", [])
         if not api_keywords:
             api_keywords = [
-                "AI Data Scientist",
-                "MLOps Engineer",
-                "Data Scientist (AI)",
-                "AI Engineer",
-                "Machine Learning Engineer",
-                "Generative AI Engineer",
-                "LLM Engineer",
+                "Data Scientist",
+                "Machine Learning",
                 "AI",
-                "PYTHON"
+                "PYTHON",
+                "Generative AI",
+                "LLM",
+                "MLOps",
+                "AI Engineer"
             ]
 
         # 4. Construct the clean, minimal JSON
         run_parameters = {
+            "workflow_id": workflow_id,
+            "schedule_id": schedule_id,
+            "run_id": run_id,
             "candidate_id": candidate_data.get("candidate_id"),
             "search": {
                 "distance": "0",

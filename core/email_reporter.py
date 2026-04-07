@@ -33,7 +33,7 @@ class EmailReporter:
         <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🤖 Engine Execution Report</h2>
+                    <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">🤖 Job Application Engine Report</h2>
                     
                     <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                         <tr>
@@ -77,7 +77,7 @@ class EmailReporter:
         # Determine total success from new schema
         success_count = data.get('execution_summary', {}).get('total_applications_successful', 0)
         
-        msg['Subject'] = f"Engine Run Complete: {display_name} - {success_count} Applied"
+        msg['Subject'] = f"Job Application Engine - Run Complete: {display_name} - {success_count} Applied"
         msg['From'] = settings.SENDER_EMAIL or settings.SMTP_USERNAME
         msg['To'] = settings.REPORT_RECEIVER_EMAIL
         

@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
+from collections import defaultdict
 from core.logger import logger
 
 class ExecutionTracker:
@@ -54,12 +55,26 @@ class ExecutionTracker:
         finished_at = datetime.now(timezone.utc)
         total_success = len(self.successful_applications)
         total_failed = len(self.failed_applications)
+        total_attempted = total_success + total_failed
+        duration_seconds = (finished_at - self.started_at).total_seconds()
         
         status = "success"
         if total_failed > 0:
             status = "completed_with_errors"
         if total_success == 0 and total_failed > 0:
             status = "failed"
+
+        # Build detailed metrics-style breakdowns for dashboard/report use
+        success_by_site = defaultdict(int)
+        failure_by_site = defaultdict(int)
+        failure_reasons = defaultdict(int)
+
+        for entry in self.successful_applications:
+            success_by_site[entry.get("job_site", "unknown")] += 1
+
+        for entry in self.failed_applications:
+            failure_by_site[entry.get("job_site", "unknown")] += 1
+            failure_reasons[entry.get("error_reason", "unknown_error")] += 1
             
         applicant_data = self.parameters_used.get("applicant", {})
         candidate_name = f"{applicant_data.get('first_name', '')} {applicant_data.get('last_name', '')}".strip()
@@ -74,22 +89,42 @@ class ExecutionTracker:
             "status": status,
             "execution_summary": {
                 "total_jobs_found": self.total_jobs_found,
-                "total_applications_attempted": total_success + total_failed,
+                "total_applications_attempted": total_attempted,
                 "total_applications_successful": total_success,
                 "total_applications_failed": total_failed,
             },
+            "metrics_summary": {
+                "duration_seconds": round(duration_seconds, 2),
+                "duration_readable": str(finished_at - self.started_at),
+                "total_seen": self.total_jobs_found,
+                "total_attempted": total_attempted,
+                "total_successful": total_success,
+                "total_failed": total_failed,
+                "total_skipped": max(self.total_jobs_found - total_attempted, 0),
+                "success_rate_percent": round((total_success / total_attempted) * 100, 2)
+                if total_attempted
+                else 0.0,
+            },
+            "breakdown": {
+                "successful_by_site": dict(success_by_site),
+                "failed_by_site": dict(failure_by_site),
+                "failure_reasons": dict(failure_reasons),
+                "retries_by_step": {},
+            },
             "successful_applications": self.successful_applications,
             "failed_applications": self.failed_applications,
+            "parameters_used": self.parameters_used,
             "started_at": self.started_at.isoformat(),
             "finished_at": finished_at.isoformat()
         }
 
         # Save to file beautifully indented
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=4)
-        
-        return output_path
+
+        logger.info(f"Saved run report to {output_path}")
+        return report
 
 # Singleton instance exported for use everywhere
 execution_tracker = ExecutionTracker()
