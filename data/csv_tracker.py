@@ -1,14 +1,19 @@
 """
-DBTracker — DuckDB-backed job tracker.
+DBTracker — DuckDB-backed job tracker with per-candidate support.
 
-Replaces the old CSV-based CSVTracker. Stores all discovered/applied/failed
-job data in the `job_listings` table instead of per-site CSV files.
+The unique key is (job_site_id, job_url, candidate_email).
+This means the same job posting is tracked independently per candidate,
+so Candidate B is never blocked by Candidate A's applied status.
 
-Public API is identical to the old CSVTracker so no callers need to change:
-  - add_discovered_jobs(site_name, jobs)  -> int
-  - update_job_status(site_name, job_url, status, attempts_inc, last_error)  -> bool
-  - get_jobs(site_name, status)  -> list[dict]
-  - get_job_status(site_name, job_url)  -> dict | None
+All public methods accept an optional `candidate_email` parameter.
+When omitted, it falls back to the sentinel '__anon__' so old callers
+that don't pass a candidate email continue to work unchanged.
+
+Public API:
+  - add_discovered_jobs(site_name, jobs, candidate_email=None)  -> int
+  - update_job_status(site_name, job_url, status, ..., candidate_email=None) -> bool
+  - get_jobs(site_name, status, candidate_email=None)  -> list[dict]
+  - get_job_status(site_name, job_url, candidate_email=None)  -> dict | None
   - ensure_file(site_name)  -> no-op (kept for API compat)
 """
 
@@ -16,21 +21,22 @@ from datetime import datetime
 
 from core.logger import logger
 
+_ANON = "__anon__"   # Sentinel used when no candidate e-mail is supplied
+
 
 class DBTracker:
     """
     DuckDB-backed job tracker.
-    Uses the job_listings table keyed on (job_site_id, job_url).
+    Table: job_listings, keyed on (job_site_id, job_url, candidate_email).
     """
 
     # ---------------------------------------------------------------------------
-    # Helpers
+    # Internal helpers
     # ---------------------------------------------------------------------------
 
     def _conn(self):
         """Return the shared DuckDB connection."""
         from data.db_connection import db
-
         return db.get_connection()
 
     def _site_id(self, site_name: str) -> int | None:
@@ -51,6 +57,26 @@ class DBTracker:
         """Convert a raw DuckDB row tuple to a dict using the column list."""
         return dict(zip(columns, row))
 
+    def _email(self, candidate_email: str | None) -> str:
+        """Normalise candidate e-mail — fall back to sentinel if not provided."""
+        return (candidate_email or "").strip().lower() or _ANON
+
+    def _ensure_candidate_column(self):
+        """
+        Idempotently add the candidate_email column to job_listings.
+        Safe to call on every run — DuckDB raises if the column already
+        exists, which we silently catch.
+        """
+        conn = self._conn()
+        try:
+            conn.execute(
+                "ALTER TABLE job_listings "
+                "ADD COLUMN candidate_email VARCHAR(255) DEFAULT '__anon__'"
+            )
+            logger.info("[DBTracker] Added candidate_email column to job_listings")
+        except Exception:
+            pass  # Column already exists — this is expected after first run
+
     # ---------------------------------------------------------------------------
     # Public API
     # ---------------------------------------------------------------------------
@@ -59,27 +85,36 @@ class DBTracker:
         """No-op — kept for API compatibility with old CSV tracker."""
         pass
 
-    def add_discovered_jobs(self, site_name: str, jobs: list) -> int:
+    def add_discovered_jobs(
+        self,
+        site_name: str,
+        jobs: list,
+        candidate_email: str | None = None,
+    ) -> int:
         """
-        Insert jobs that haven't been seen before.
+        Insert jobs not yet seen for this (site, candidate) pair.
         Returns the number of new rows added.
         """
         from hashlib import md5
+
+        self._ensure_candidate_column()
 
         site_id = self._site_id(site_name)
         if site_id is None:
             logger.warning(f"[DBTracker] Unknown site '{site_name}' — cannot add jobs")
             return 0
 
+        email = self._email(candidate_email)
         conn = self._conn()
         now = datetime.utcnow()
 
-        # Pre-fetch existing URLs to correctly count new insertions
-        # (INSERT OR IGNORE is silent for duplicates — doesn't raise an exception)
+        # Pre-fetch existing (url, candidate) pairs so we can count net-new rows
         existing_urls = {
             row[0]
             for row in conn.execute(
-                "SELECT job_url FROM job_listings WHERE job_site_id = ?", [site_id]
+                "SELECT job_url FROM job_listings "
+                "WHERE job_site_id = ? AND candidate_email = ?",
+                [site_id, email],
             ).fetchall()
         }
         added = 0
@@ -95,12 +130,13 @@ class DBTracker:
             try:
                 conn.execute(
                     """
-                    INSERT OR IGNORE INTO job_listings
+                    INSERT INTO job_listings
                         (job_site_id, external_job_id, job_title, job_url,
                          location, job_type, salary, description, requirements,
-                         posted_date, company, industry,
+                         posted_date, company, industry, candidate_email,
                          status, attempts, last_error, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'discovered', 0, '', ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                            'discovered', 0, '', ?, ?)
                     """,
                     [
                         site_id,
@@ -115,17 +151,19 @@ class DBTracker:
                         job.get("posted_date", ""),
                         job.get("company", ""),
                         job.get("industry", ""),
+                        email,
                         now,
                         now,
                     ],
                 )
-                existing_urls.add(url)  # prevent re-adding same URL twice in one batch
+                existing_urls.add(url)   # guard against duplicates in the same batch
                 added += 1
             except Exception as e:
                 logger.warning(f"[DBTracker] Failed to insert job '{url}': {e}")
 
         logger.debug(
-            f"[DBTracker] add_discovered_jobs: {added} new row(s) for '{site_name}'"
+            f"[DBTracker] add_discovered_jobs: {added} new row(s) "
+            f"for '{site_name}' / '{email}'"
         )
         return added
 
@@ -136,11 +174,14 @@ class DBTracker:
         status: str,
         attempts_inc: int = 0,
         last_error: str | None = None,
+        candidate_email: str | None = None,
     ) -> bool:
         """
-        Update the status (and optionally error) of a job by URL.
-        Returns True if a row was found and updated.
+        Update the status of a (job_url, candidate) pair.
+        Returns True if a matching row was found and updated.
         """
+        self._ensure_candidate_column()
+
         site_id = self._site_id(site_name)
         if site_id is None:
             logger.warning(
@@ -148,6 +189,7 @@ class DBTracker:
             )
             return False
 
+        email = self._email(candidate_email)
         # Normalize URL on the Python side — avoids REGEXP_REPLACE in SQL
         # which conflicts with DuckDB's ? parameter placeholder syntax
         norm_url = self._normalize_url(job_url)
@@ -159,14 +201,17 @@ class DBTracker:
             """
             SELECT id, attempts FROM job_listings
             WHERE job_site_id = ?
+              AND candidate_email = ?
               AND (job_url = ? OR job_url = ?)
             LIMIT 1
             """,
-            [site_id, job_url, norm_url],
+            [site_id, email, job_url, norm_url],
         ).fetchone()
 
         if not row:
-            logger.debug(f"[DBTracker] update_job_status: no row found for '{job_url}'")
+            logger.debug(
+                f"[DBTracker] update_job_status: no row for '{job_url}' / '{email}'"
+            )
             return False
 
         listing_id, current_attempts = row
@@ -183,77 +228,72 @@ class DBTracker:
         )
         return True
 
-    def get_jobs(self, site_name: str, status: str | None = None) -> list:
+    def get_jobs(
+        self,
+        site_name: str,
+        status: str | None = None,
+        candidate_email: str | None = None,
+    ) -> list:
         """
-        Return all job rows for a site as a list of dicts.
+        Return all job rows for a (site, candidate) pair as a list of dicts.
         Optionally filter by status ('discovered', 'applied', 'failed').
         """
+        self._ensure_candidate_column()
+
         site_id = self._site_id(site_name)
         if site_id is None:
             return []
 
+        email = self._email(candidate_email)
         conn = self._conn()
         cols = [
-            "external_job_id",
-            "job_title",
-            "job_url",
-            "location",
-            "job_type",
-            "salary",
-            "description",
-            "requirements",
-            "posted_date",
-            "company",
-            "industry",
-            "status",
-            "attempts",
-            "last_error",
-            "created_at",
-            "updated_at",
+            "external_job_id", "job_title", "job_url", "location", "job_type",
+            "salary", "description", "requirements", "posted_date", "company",
+            "industry", "candidate_email", "status", "attempts", "last_error",
+            "created_at", "updated_at",
         ]
         col_sql = ", ".join(cols)
 
         if status:
             rows = conn.execute(
-                f"SELECT {col_sql} FROM job_listings WHERE job_site_id = ? AND status = ?",
-                [site_id, status],
+                f"SELECT {col_sql} FROM job_listings "
+                f"WHERE job_site_id = ? AND candidate_email = ? AND status = ?",
+                [site_id, email, status],
             ).fetchall()
         else:
             rows = conn.execute(
-                f"SELECT {col_sql} FROM job_listings WHERE job_site_id = ?",
-                [site_id],
+                f"SELECT {col_sql} FROM job_listings "
+                f"WHERE job_site_id = ? AND candidate_email = ?",
+                [site_id, email],
             ).fetchall()
 
         return [self._row_to_dict(r, cols) for r in rows]
 
-    def get_job_status(self, site_name: str, job_url: str) -> dict | None:
+    def get_job_status(
+        self,
+        site_name: str,
+        job_url: str,
+        candidate_email: str | None = None,
+    ) -> dict | None:
         """
-        Return the full row dict for a specific job URL, or None if not found.
+        Return the full row dict for a specific (job_url, candidate) pair,
+        or None if not found.
         """
+        self._ensure_candidate_column()
+
         site_id = self._site_id(site_name)
         if site_id is None:
             return None
 
+        email = self._email(candidate_email)
         # Normalize on Python side to avoid REGEXP_REPLACE SQL conflicts
         norm_url = self._normalize_url(job_url)
         conn = self._conn()
         cols = [
-            "external_job_id",
-            "job_title",
-            "job_url",
-            "location",
-            "job_type",
-            "salary",
-            "description",
-            "requirements",
-            "posted_date",
-            "company",
-            "industry",
-            "status",
-            "attempts",
-            "last_error",
-            "created_at",
-            "updated_at",
+            "external_job_id", "job_title", "job_url", "location", "job_type",
+            "salary", "description", "requirements", "posted_date", "company",
+            "industry", "candidate_email", "status", "attempts", "last_error",
+            "created_at", "updated_at",
         ]
         col_sql = ", ".join(cols)
 
@@ -261,10 +301,11 @@ class DBTracker:
             f"""
             SELECT {col_sql} FROM job_listings
             WHERE job_site_id = ?
+              AND candidate_email = ?
               AND (job_url = ? OR job_url = ?)
             LIMIT 1
             """,
-            [site_id, job_url, norm_url],
+            [site_id, email, job_url, norm_url],
         ).fetchone()
 
         return self._row_to_dict(row, cols) if row else None

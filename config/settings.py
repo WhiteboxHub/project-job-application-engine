@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     HEADLESS: bool = False
 
     # Resume
-    RESUME_FILE_PATH: Optional[str] = "resume/candidate_resume.pdf"
+    RESUME_FILE_PATH: Optional[str] = "resume/downloads/candidate_resume_downloaded.pdf"
     RESUME_PATH: Optional[str] = None  # Backwards compatibility
     DOWNLOADED_RESUME_DIR: str = "resume/downloads/"
 

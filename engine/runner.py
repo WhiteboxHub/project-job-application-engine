@@ -245,16 +245,24 @@ class EngineRunner:
             execution_tracker.add_jobs_found(len(jobs))
 
             if jobs:
-                # Save discovered jobs to tracker
+                # Resolve candidate email for per-candidate tracking
+                candidate_email = (
+                    candidate_data.get("email")
+                    or candidate_data.get("applicant", {}).get("email", "")
+                )
+
+                # Save discovered jobs scoped to this candidate
                 try:
                     new_count = csv_tracker.add_discovered_jobs(
-                        site.company_name.lower(), jobs
+                        site.company_name.lower(), jobs,
+                        candidate_email=candidate_email
                     )
                     logger.info(
-                        f"Added {new_count} new job(s) to tracker for {site.company_name}"
+                        f"Added {new_count} new job(s) to tracker for "
+                        f"{site.company_name} / {candidate_email or '(anon)'}"
                     )
                 except Exception as e:
-                    logger.warning(f"Failed to save discovered jobs to CSV: {e}")
+                    logger.warning(f"Failed to save discovered jobs to tracker: {e}")
 
                 logger.info("\n[APPLY] Starting application process...")
                 applied_count = 0
@@ -274,15 +282,22 @@ class EngineRunner:
                         break
 
                     try:
-                        # Pre-check: skip already applied
+                        # Pre-check: skip if THIS CANDIDATE already applied
                         job_url = job.get("job_url", "")
                         job_title = job.get("job_title", "Unknown")
                         status_info = csv_tracker.get_job_status(
-                            site.company_name.lower(), job_url
+                            site.company_name.lower(), job_url,
+                            candidate_email=candidate_email
                         )
                         if status_info and status_info.get("status") == "applied":
-                            logger.info(f"Skipping already applied job: {job_title}")
+                            logger.info(
+                                f"[SKIP] Already applied ({candidate_email or 'anon'}): {job_title}"
+                            )
                             continue
+
+                        # Stamp the candidate email onto the job dict so
+                        # strategy.apply() can forward it to the tracker
+                        job["_candidate_email"] = candidate_email
 
                         logger.info(f"\nApplying to: {job_title}")
                         success = strategy.apply(job)
