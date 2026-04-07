@@ -128,16 +128,13 @@ class BrowserService:
         # Essential stability flags to prevent "DevToolsActivePort file doesn't exist" crashes in Task Scheduler
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-<<<<<<< HEAD
         options.add_argument("--disable-gpu")
         options.add_argument("--remote-debugging-port=0")  # Let OS pick free port
-=======
         
         # Prevent Chrome on Windows from freezing page loads when running in background
         options.add_argument("--disable-background-timer-throttling")
         options.add_argument("--disable-backgrounding-occluded-windows")
         options.add_argument("--disable-renderer-backgrounding")
->>>>>>> 24ab8d27e45ab74e9887e6c0d08ccf088a3b05d0
 
         if settings.HEADLESS:
             options.add_argument("--headless=new")
