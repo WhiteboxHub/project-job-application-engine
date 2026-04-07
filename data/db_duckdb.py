@@ -53,11 +53,37 @@ class DuckDBManager:
             CREATE TABLE IF NOT EXISTS applied_jobs (
                 job_id    VARCHAR NOT NULL,
                 site      VARCHAR NOT NULL,
+                candidate_id VARCHAR NOT NULL DEFAULT 'default',
                 job_title VARCHAR,
                 applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (job_id, site)
+                PRIMARY KEY (job_id, site, candidate_id)
             )
         """)
+
+        # Migration: Add candidate_id if missing from an older schema
+        try:
+            cols = self.conn.execute("PRAGMA table_info('applied_jobs')").fetchall()
+            col_names = [c[1] for c in cols]
+            if col_names and "candidate_id" not in col_names:
+                logger.info("Migrating applied_jobs table to include candidate_id...")
+                self.conn.execute("ALTER TABLE applied_jobs RENAME TO applied_jobs_old")
+                self.conn.execute("""
+                    CREATE TABLE applied_jobs (
+                        job_id    VARCHAR NOT NULL,
+                        site      VARCHAR NOT NULL,
+                        candidate_id VARCHAR NOT NULL DEFAULT 'unknown',
+                        job_title VARCHAR,
+                        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (job_id, site, candidate_id)
+                    )
+                """)
+                self.conn.execute("""
+                    INSERT INTO applied_jobs (job_id, site, job_title, applied_at)
+                    SELECT job_id, site, job_title, applied_at FROM applied_jobs_old
+                """)
+                self.conn.execute("DROP TABLE applied_jobs_old")
+        except Exception as e:
+            logger.warning(f"DuckDB Migration failed (non-critical): {e}")
 
         # Audit log — one row per scheduler run per site
         self.conn.execute("""
@@ -83,25 +109,28 @@ class DuckDBManager:
     # Dedup helpers
     # -------------------------------------------------------------------------
 
-    def is_already_applied(self, job_id: str, site: str) -> bool:
-        """Return True if we already applied to this job on this site"""
+    def is_already_applied(self, job_id: str, site: str, candidate_id: str = "default") -> bool:
+        """Return True if this specific candidate already applied to this job on this site"""
+        # Ensure candidate_id is a string and handle None
+        cid = str(candidate_id) if candidate_id else "default"
         result = self.conn.execute(
-            "SELECT 1 FROM applied_jobs WHERE job_id = ? AND site = ?",
-            [str(job_id), site],
+            "SELECT 1 FROM applied_jobs WHERE job_id = ? AND site = ? AND candidate_id = ?",
+            [str(job_id), site, cid],
         ).fetchone()
         return result is not None
 
-    def mark_applied(self, job_id: str, site: str, job_title: str = ""):
+    def mark_applied(self, job_id: str, site: str, job_title: str = "", candidate_id: str = "default"):
         """Record a successful application for dedup"""
         try:
+            cid = str(candidate_id) if candidate_id else "default"
             self.conn.execute(
                 """
-                INSERT OR IGNORE INTO applied_jobs (job_id, site, job_title, applied_at)
-                VALUES (?, ?, ?, ?)
+                INSERT OR IGNORE INTO applied_jobs (job_id, site, candidate_id, job_title, applied_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                [str(job_id), site, job_title, datetime.now()],
+                [str(job_id), site, cid, job_title, datetime.now()],
             )
-            logger.debug(f"Marked as applied: {job_id} @ {site}")
+            logger.debug(f"Marked as applied: {job_id} @ {site} for candidate {cid}")
         except Exception as e:
             logger.error(f"Failed to mark job as applied: {e}")
 
@@ -180,11 +209,11 @@ class _LazyDuckDBManager:
             self._mgr = DuckDBManager()
         return self._mgr
 
-    def is_already_applied(self, job_id: str, site: str) -> bool:
-        return self._get().is_already_applied(job_id, site)
+    def is_already_applied(self, job_id: str, site: str, candidate_id: str = "default") -> bool:
+        return self._get().is_already_applied(job_id, site, candidate_id)
 
-    def mark_applied(self, job_id: str, site: str, job_title: str = ""):
-        return self._get().mark_applied(job_id, site, job_title)
+    def mark_applied(self, job_id: str, site: str, job_title: str = "", candidate_id: str = "default"):
+        return self._get().mark_applied(job_id, site, job_title, candidate_id)
 
     def log_scheduler_run(
         self,

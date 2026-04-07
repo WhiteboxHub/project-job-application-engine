@@ -363,6 +363,8 @@ class CollaberaStrategy(BaseStrategy):
             logger.error("Collabera: No configuration data available")
             return 0
 
+        candidate_id = self.config_data.get("candidate_id", "default")
+
         # Support both 'keywords' list and legacy 'keyword' string
         search_config = self.config_data.get("search", {})
         keywords = search_config.get("keywords", [])
@@ -429,7 +431,7 @@ class CollaberaStrategy(BaseStrategy):
             logger.debug(f"[{i}/{len(all_listings)}] Checking job_id: {job_id}")
             
             # Allow re-attempt if we're in a live run and previous was dry-run, or if previously failed
-            if db_duckdb.is_already_applied(job_id, "Collabera"):
+            if db_duckdb.is_already_applied(job_id, "Collabera", candidate_id=candidate_id):
                 if guards.is_dry_run():
                     logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied (Dry Run): {listing.get('job_title')}")
                     continue
@@ -1083,6 +1085,7 @@ class CollaberaStrategy(BaseStrategy):
         
         # Also mark in Collabera-specific table for legacy compatibility
         if status == "success":
-             db_duckdb.mark_applied(job_id, "Collabera", job_title)
+             candidate_id = self.config_data.get("candidate_id", "default")
+             db_duckdb.mark_applied(job_id, "Collabera", job_title, candidate_id=candidate_id)
              
         logger.debug(f"Collabera: Recorded {status} application for {job_id}")

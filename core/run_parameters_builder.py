@@ -99,6 +99,7 @@ class RunParametersBuilder:
 
         # 4. Construct the clean, minimal JSON
         run_parameters = {
+            "candidate_id": candidate_data.get("candidate_id"),
             "search": {
                 "distance": "0",
                 "keywords": api_keywords,
