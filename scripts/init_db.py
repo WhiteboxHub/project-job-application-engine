@@ -318,11 +318,21 @@ def init_db():
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
-            7, 'AE Talents Group', 'aetalentsgroup.com', 8, 'Staffing vendor',
+            9, 'AE Talents Group', 'aetalentsgroup.com', 8, 'Staffing vendor',
             'https://aetalentsgroup.com/careers.php',
             'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
             true
         )
+    """)
+
+    # Ensure it's updated even if it exists at ID 9
+    conn.execute("""
+        UPDATE job_sites
+           SET company_name        = 'AE Talents Group',
+               domain              = 'aetalentsgroup.com',
+               ats_platform_id     = 8,
+               is_active           = true
+         WHERE id = 9
     """)
 
     # -----------------------------------------------------------------------
@@ -600,19 +610,19 @@ def init_db():
     }
 
     conn.execute(
-        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (17, 7, 'listing', ?)",
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (19, 9, 'listing', ?)",
         [_json.dumps(aetalents_listing_selectors)],
     )
     conn.execute(
-        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (18, 7, 'application', ?)",
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (20, 9, 'application', ?)",
         [_json.dumps(aetalents_application_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 17",
+        "UPDATE site_selectors SET config_json = ? WHERE id = 19",
         [_json.dumps(aetalents_listing_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 18",
+        "UPDATE site_selectors SET config_json = ? WHERE id = 20",
         [_json.dumps(aetalents_application_selectors)],
     )
     logger.info("site_selectors seeded for AE Talents Group [OK]")

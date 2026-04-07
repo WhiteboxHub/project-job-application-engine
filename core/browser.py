@@ -78,7 +78,23 @@ class BrowserService:
         logger.warning("Could not detect Chrome version from registry; uc will auto-detect.")
         return None
 
+    def _cleanup_orphans(self):
+        """Clean up orphaned chromedriver processes on Windows."""
+        if os.name == "nt":
+            try:
+                # Use taskkill to cleanly remove orphaned drivers
+                subprocess.run(
+                    'taskkill /F /IM chromedriver.exe /T',
+                    shell=True,
+                    capture_output=True,
+                    check=False
+                )
+                logger.info("Cleaned up orphaned chromedriver processes.")
+            except Exception as e:
+                logger.debug(f"Process cleanup warning: {e}")
+
     def start_browser(self):
+        self._cleanup_orphans()
         self._acquire_lock()
 
         # Detect installed Chrome version once so both drivers use the same version
@@ -112,6 +128,8 @@ class BrowserService:
         # Essential stability flags to prevent "DevToolsActivePort file doesn't exist" crashes in Task Scheduler
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--remote-debugging-port=0")  # Let OS pick free port
 
         if settings.HEADLESS:
             options.add_argument("--headless=new")
@@ -124,7 +142,7 @@ class BrowserService:
         # If undetected_chromedriver is available, prefer it
         if uc:
             try:
-<<<<<<< HEAD
+
                 # use_subprocess=True is required on Windows to prevent 'chrome not reachable'.
                 # version_main is set to the detected Chrome major version to avoid ChromeDriver
                 # version mismatches (e.g. uc ships driver 147 but Chrome is 146).
@@ -134,23 +152,19 @@ class BrowserService:
                     version_main=chrome_version,  # None = let uc auto-detect (safe fallback)
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
+
+                # Immediate check: Is the session actually alive?
+                _ = self.driver.current_url
                 logger.info(
                     f"Browser started successfully (undetected-chromedriver, version={chrome_version})."
-=======
-                # version_main=146 pins ChromeDriver to match Chrome 146.0.x
-                # Change this if you update Chrome to a newer major version
-                self.driver = uc.Chrome(
-                    options=options, use_subprocess=True, version_main=146
-                )
-                time.sleep(5)  # Give the window handle time to stabilize
-                logger.info(
-                    "Browser started successfully (undetected-chromedriver v146)."
->>>>>>> 3f314ca3d9809e6a903bc14e2efd88b06adbd4c9
                 )
             except Exception as e:
                 logger.warning(
-                    f"uc.Chrome failed to start: {e}. Attempting fallback using webdriver-manager."
+                    f"uc.Chrome failed or produced a zombie session: {e}. Attempting fallback using webdriver-manager."
                 )
+                if self.driver:
+                    self.stop_browser()
+                    self.driver = None
 
         # Fallback: use webdriver-manager to install a matching chromedriver and start selenium Chrome
         if not self.driver:
@@ -189,7 +203,7 @@ class BrowserService:
                 _ = self.driver.current_url
                 logger.info("Browser health check passed.")
             except Exception as e:
-                logger.error(f"Browser health check failed: {e}")
+                logger.error(f"Browser health check failed during final validation: {e}")
                 self.stop_browser()
                 raise RuntimeError(
                     "Started browser but session is unresponsive (zombie)."

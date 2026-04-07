@@ -10,7 +10,7 @@ from core.human_behavior import HumanBehavior
 from core.logger import logger
 from core.safe_actions import SafeActions
 from data.csv_tracker import tracker as csv_tracker
-from data.db_duckdb import db_duckdb
+from data.db_connection import db
 from models.config_models import JobListing
 from strategies.base import BaseStrategy
 
@@ -41,7 +41,7 @@ class WiproStrategy(BaseStrategy):
         self.human = HumanBehavior(driver)
         self.captcha_handler = CaptchaHandler(driver, timeout=120)
         self.safe_actions = SafeActions(driver)
-        self._duckdb = db_duckdb
+        self._duckdb = db
 
         # Wipro careers portal base URL
         self.portal_url = "https://careers.wipro.com/"

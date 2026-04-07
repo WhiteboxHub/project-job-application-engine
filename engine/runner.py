@@ -102,9 +102,13 @@ class EngineRunner:
                         ap.automation_level
                     FROM job_sites js
                     JOIN ats_platforms ap ON js.ats_platform_id = ap.id
-                    WHERE LOWER(js.company_name) LIKE LOWER(?)
+                    WHERE (
+                        LOWER(REPLACE(js.company_name, ' ', '')) LIKE LOWER(REPLACE(?, ' ', ''))
+                        OR LOWER(js.domain) LIKE LOWER(?)
+                    )
                 """
-                params.append(f"%{site_filter}%")
+                search_term = f"%{site_filter}%"
+                params.extend([search_term, search_term])
                 logger.info(f"[SEARCH] Filtering for site: {site_filter}")
             else:
                 sql = """
