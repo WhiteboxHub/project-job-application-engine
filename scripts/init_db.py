@@ -10,6 +10,7 @@ import os
 import sys
 
 import duckdb
+import json as _json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -218,6 +219,7 @@ def init_db():
         (6, "lever", "strategies.custom.LeverStrategy", "full", False),
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
         (8, "collabera_custom", "strategies.custom.CollaberaStrategy", "full", False),
+        (9, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -324,13 +326,34 @@ def init_db():
     """)
     conn.execute("UPDATE job_sites SET is_active = true WHERE id = 7")
 
+    # 9. AE Talents Group (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
+        VALUES (
+            9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
+            'https://aetalentsgroup.com/careers.php',
+            'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
+            true
+        )
+    """)
+
+    # Ensure it's updated even if it exists at ID 9
+    conn.execute("""
+        UPDATE job_sites
+           SET company_name        = 'AE Talents Group',
+               domain              = 'aetalentsgroup.com',
+               ats_platform_id     = 9,
+               is_active           = true
+         WHERE id = 9
+    """)
+
     # -----------------------------------------------------------------------
     # Seed: site_selectors for LanceSoft (job_site_id = 2)
     #
     # type='listing'     → selectors used during job search/discovery
     # type='application' → selectors used during form filling / submission
     # -----------------------------------------------------------------------
-    import json as _json
 
     lancesoft_listing_selectors = {
         "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
@@ -580,39 +603,34 @@ def init_db():
         "search_keywords": [
             "AI Engineer",
             "Machine Learning Engineer",
-            "Data Scientist",
-            "MLOps Engineer",
-            "Generative AI Engineer",
-            "LLM Engineer",
-            "AI Data Scientist",
             "Python Developer",
-            "Data Engineer",
-            "Deep Learning Engineer",
-            "NLP Engineer",
-            "Computer Vision Engineer",
-            "Cloud Data Engineer",
-            "Business Intelligence Developer",
-            "AI Solutions Architect",
+            "Data Scientist",
         ],
-        "search_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[1]/input",
-        "location_input": "//*[@id='main']/div/section[1]/div[2]/div/form/div/div[2]/input",
-        "search_button": "//*[@id='main']/div/section[1]/div[2]/div/form/div/button",
-        "job_link": "//a[contains(@href, 'job-description')]",
+        "search_input": "input[placeholder*='Job Title'], input[placeholder*='Keywords']",
+        "location_input": "input[placeholder*='Location']",
+        "search_button": "button.blue-teal-sm-btn, button[type='submit']",
+        "job_container": "div.job-card, div[class*='job'], li[class*='job']",
+        "job_link": "a[href*='job-description'], a[href*='job']",
+        "job_title": "h2, h3, h5",
+        "next_page": "a[aria-label='Next'], button[aria-label='Next'], .pagination-next a",
     }
 
     collabera_application_selectors = {
-        "apply_button": "//*[@id='main']/div/section[2]/div/div/div[2]/div/div/h5",
+        "iframe_selector": "iframe",
         "form_fields": {
-            "fullName": "//*[@id='txtName']",
-            "email": "//*[@id='txtEmail']",
-            "phone": "//*[@id='txtPhone']",
+            "full_name": "input[placeholder*='Full Name'], input[name*='name']",
+            "email": "input[placeholder*='Email'], input[type='email']",
+            "phone": "input[placeholder*='Phone'], input[type='tel']",
             "resume_upload": "input[type='file']",
-            "label_1": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/label",
-            "checkbox_1_label": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/div[4]/label",
-            "checkbox_2_label": "//*[@id='frmJobs']/div[4]/div/div/div[2]/div[1]/div/div[5]/label",
-            "submit_btn": "//*[@id='Submit']",
-            "submit_fallback": "//button[contains(text(), 'Submit')]",
+            "terms_checkbox": "input[type='checkbox']",
+            "alert_checkbox": "input[type='checkbox']:nth-of-type(2)",
+            "submit_btn": "button.blue-teal-sm-btn, button[type='submit'], //button[contains(., 'Apply')]",
         },
+        "success_indicators": [
+            "application submitted",
+            "thank you for applying",
+            "successfully applied",
+        ],
     }
 
     conn.execute(
@@ -632,6 +650,48 @@ def init_db():
         [_json.dumps(collabera_application_selectors)],
     )
     logger.info("site_selectors seeded and updated for Collabera [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for AE Talents Group (job_site_id = 9)
+    # Key names MUST match what aetalents.py reads via self.selectors_config.get("key")
+    # -----------------------------------------------------------------------
+
+    aetalents_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
+        "search_input": "input[name='search']",
+        "location_input": "input[name='location']",
+        "search_button": "button[type='submit']",
+        "job_card_link": "a[href*='p=detail']",
+    }
+
+    aetalents_application_selectors = {
+        "apply_now_button": "a[href*='p=apply']",
+        "first_name": "input[name='first_name']",
+        "last_name": "input[name='last_name']",
+        "email": "input[name='email']",
+        "visa_status": "select[name='visa_status']",
+        "resume": "input[type='file'][name='resume']",
+        "submit_button": "button[type='submit']",
+        "success_message": "h1.reveal",
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (19, 9, 'listing', ?)",
+        [_json.dumps(aetalents_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (20, 9, 'application', ?)",
+        [_json.dumps(aetalents_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 19",
+        [_json.dumps(aetalents_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET config_json = ? WHERE id = 20",
+        [_json.dumps(aetalents_application_selectors)],
+    )
+    logger.info("site_selectors seeded for AE Talents Group [OK]")
 
     # Indexes
     conn.execute(

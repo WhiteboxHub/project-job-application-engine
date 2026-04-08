@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 
 from core.browser import browser_service
+from core.backend_client import backend_client
 from core.candidate_loader import CandidateLoader
 from core.logger import logger
 from core.execution_logger import execution_tracker
@@ -41,13 +42,22 @@ class _PlatformRow:
         self.automation_level = automation_level or "manual"
 
 
+def _log_status_from_report(report_status: str) -> str:
+    """Map output.json status to automation_workflow_logs.status enum."""
+    if report_status == "success":
+        return "success"
+    if report_status == "completed_with_errors":
+        return "partial_success"
+    return "failed"
+
+
 class EngineRunner:
     """Main orchestrator for the job application engine"""
 
     def __init__(self):
         self.browser = None
 
-    def run(self, site_filter=None, candidate_data=None):
+    def run(self, site_filter=None, candidate_data=None, workflow_log_id=None):
         """
         Main execution workflow:
         1. Initialize Browser
@@ -66,6 +76,13 @@ class EngineRunner:
         started_at = datetime.utcnow().isoformat()
 
         try:
+            if not candidate_data:
+                candidate_data = CandidateLoader.load()
+
+            execution_tracker.initialize(
+                run_parameters=candidate_data, workflow_log_id=workflow_log_id
+            )
+
             # 2. Get Active Sites from DuckDB
             conn = db.get_connection()
 
@@ -85,9 +102,13 @@ class EngineRunner:
                         ap.automation_level
                     FROM job_sites js
                     JOIN ats_platforms ap ON js.ats_platform_id = ap.id
-                    WHERE LOWER(js.company_name) LIKE LOWER(?)
+                    WHERE (
+                        LOWER(REPLACE(js.company_name, ' ', '')) LIKE LOWER(REPLACE(?, ' ', ''))
+                        OR LOWER(js.domain) LIKE LOWER(?)
+                    )
                 """
-                params.append(f"%{site_filter}%")
+                search_term = f"%{site_filter}%"
+                params.extend([search_term, search_term])
                 logger.info(f"[SEARCH] Filtering for site: {site_filter}")
             else:
                 sql = """
@@ -126,13 +147,7 @@ class EngineRunner:
                     f"   - {site.company_name} ({site.domain}) [{site.platform.automation_level}]"
                 )
 
-            # 3. Load candidate data (from JSON if not passed directly)
-            if not candidate_data:
-                candidate_data = CandidateLoader.load()
-                
-            execution_tracker.initialize(run_parameters=candidate_data)
-
-            # 4. Process each site
+            # 3. Process each site (candidate_data / tracker already initialized)
             for site in active_sites:
                 if not guards.can_apply():
                     logger.warning("Application limit reached. Stopping.")
@@ -160,29 +175,110 @@ class EngineRunner:
                 logger.info(f"Dry run mode: {stats['dry_run_mode']}")
                 logger.info("=" * 60)
 
-                # Generate output.json, email report, and push same payload to workflow log (wbl-backend)
+                # Generate output.json, sync execution_metadata to backend (same contract as
+                # hiring-cafe-engine: PUT /api/orchestrator/logs/{id}), then email — isolated
+                # so SMTP failures cannot mask a successful metadata sync.
                 try:
-                    report = execution_tracker.generate_report("data/output.json")
-                    from core.email_reporter import email_reporter
-                    from core.run_report_logging import append_output_json_to_execution_log
+                    output_path, _ = execution_tracker.generate_report("data/output.json")
+                    logger.info(f"Saved run report to {output_path}")
 
-                    append_output_json_to_execution_log(report, source_file="data/output.json")
-                    email_reporter.send_report("data/output.json")
+                    # Same JSON as output.json — load from disk so execution_metadata matches the file byte-for-byte intent.
+                    with open(output_path, encoding="utf-8") as f:
+                        report_payload = json.load(f)
+
+                    _es = report_payload.get("execution_summary") or {}
+                    logger.info(
+                        "[RUN_SUMMARY] runner_completed: "
+                        f"attempted={_es.get('total_applications_attempted', 0)}, "
+                        f"successful={_es.get('total_applications_successful', 0)}, "
+                        f"failed={_es.get('total_applications_failed', 0)}"
+                    )
+
+                    lid = execution_tracker.workflow_log_id
+                    if lid:
+                        summary = report_payload.get("execution_summary") or {}
+                        log_content = ""
+                        try:
+                            with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                                log_content = f.read()
+                        except Exception:
+                            pass
+
+                        ok = backend_client.update_workflow_log(
+                            lid,
+                            _log_status_from_report(report_payload.get("status", "failed")),
+                            records_processed=int(
+                                summary.get("total_applications_successful", 0)
+                            ),
+                            records_failed=int(summary.get("total_applications_failed", 0)),
+                            execution_metadata=report_payload,
+                            logfile=log_content,
+                        )
+                        if not ok:
+                            logger.error(
+                                f"[WORKFLOW_LOG] PUT failed for log id={lid}; check ERROR line above."
+                            )
+                        else:
+                            logger.info(
+                                f"[WORKFLOW_LOG] execution_metadata synced for log id={lid}"
+                            )
+
+                        # --- Sync schedule last_run / next_run to Workflows Scheduler UI ---
+                        schedule_id = execution_tracker.run_parameters.get("schedule_id") if hasattr(execution_tracker, "run_parameters") else None
+                        if not schedule_id:
+                            schedule_id = report_payload.get("schedule_id")
+                        if schedule_id:
+                            from datetime import timedelta
+                            now_utc = datetime.utcnow()
+                            # Next week at 9:30 AM local time
+                            now_local = datetime.now()
+                            next_week_local = now_local + timedelta(days=7)
+                            next_run_local = next_week_local.replace(hour=9, minute=30, second=0, microsecond=0)
+                            # Convert local 9:30 AM to UTC for the backend
+                            local_offset = now_local - now_utc
+                            next_run_utc = next_run_local - local_offset
+                            
+                            backend_client.update_schedule(
+                                int(schedule_id),
+                                last_run_at=now_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                                next_run_at=next_run_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                            )
+                        else:
+                            logger.warning("[SCHEDULE] No schedule_id found — skipping schedule sync.")
+                    else:
+                        logger.warning(
+                            "[WORKFLOW_LOG] No workflow_log_id on this run — automation_workflow_logs "
+                            "was not created at start (see main.py warnings) or create_log failed."
+                        )
 
                     try:
-                        from core.backend_client import backend_client
+                        from core.email_reporter import email_reporter
 
-                        backend_client.update_workflow_log(
-                            candidate_data or {}, report
+                        email_reporter.send_report(output_path)
+                    except Exception as email_err:
+                        logger.error(
+                            f"[EMAIL] Report email failed (run report and workflow log already saved): {email_err}"
                         )
-                    except Exception as log_err:
-                        logger.warning(
-                            f"Workflow log update failed (API may be offline): {log_err}"
-                        )
+
                 except Exception as out_err:
                     logger.error(
-                        f"Failed to generate output.json or send email report: {out_err}"
+                        f"Failed to generate output.json or sync workflow log: {out_err}"
                     )
+                    lid = execution_tracker.workflow_log_id
+                    if lid:
+                        log_content = ""
+                        try:
+                            with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                                log_content = f.read()
+                        except Exception:
+                            pass
+                            
+                        backend_client.update_workflow_log(
+                            lid,
+                            "failed",
+                            error_summary=str(out_err)[:255],
+                            logfile=log_content,
+                        )
 
             except Exception as re:
                 logger.debug(f"Could not print final report: {re}")
@@ -282,20 +378,42 @@ class EngineRunner:
                     try:
                         _ = self.browser.current_url
                     except Exception as se:
-                        logger.error(
-                            f"[FATAL] Browser session lost before applying: {se}"
+                        logger.warning(
+                            f"[SESSION] Browser session lost before applying: {se}"
                         )
-                        break
+                        # --- Recovery: restart browser and re-mount strategy ---
+                        logger.info("[SESSION] Attempting browser session recovery...")
+                        try:
+                            browser_service.stop_browser()
+                        except Exception:
+                            pass
+                        try:
+                            self.browser = browser_service.start_browser()
+                            selectors = self._load_selectors(conn, site)
+                            strategy = strategy_factory.get_strategy(
+                                site.platform.class_handler,
+                                self.browser,
+                                site,
+                                selectors,
+                                None,
+                                candidate_data,
+                            )
+                            if not strategy.login():
+                                logger.error("[SESSION] Re-login failed after recovery. Stopping site.")
+                                break
+                            logger.info("[SESSION] Browser session recovered. Resuming applications.")
+                        except Exception as re_err:
+                            logger.error(f"[SESSION] Recovery failed: {re_err}. Stopping site.")
+                            break
 
                     try:
-                        # Pre-check: skip already applied
+                        # Pre-check: skip already applied FOR THIS CANDIDATE
                         job_url = job.get("job_url", "")
                         job_title = job.get("job_title", "Unknown")
-                        status_info = csv_tracker.get_job_status(
-                            site.company_name.lower(), job_url
-                        )
-                        if status_info and status_info.get("status") == "applied":
-                            logger.info(f"Skipping already applied job: {job_title}")
+                        candidate_email = candidate_data.get("applicant", {}).get("email", "default_candidate@example.com")
+                        
+                        if csv_tracker.is_done_by_candidate(site.company_name.lower(), job_url, candidate_email):
+                            logger.info(f"Skipping already processed job (applied/failed) for {candidate_email}: {job_title}")
                             continue
 
                         logger.info(f"\nApplying to: {job_title}")
@@ -306,6 +424,8 @@ class EngineRunner:
                             # we count it. If the strategy itself handles the quota, even better.
                             guards.increment_counter()
                             applied_count += 1
+                            csv_tracker.mark_applied_for_candidate(site.company_name.lower(), job_url, candidate_email, "applied")
+
                             execution_tracker.record_success(
                                 site.company_name, 
                                 job.get("external_id", job.get("job_url", "")), 
@@ -322,6 +442,10 @@ class EngineRunner:
                                 "Application logic returned False"
                             )
                             logger.warning("Application failed")
+                            # Mark as failed so same job is skipped on next keyword iteration
+                            csv_tracker.mark_applied_for_candidate(
+                                site.company_name.lower(), job_url, candidate_email, "failed"
+                            )
                     except Exception as e:
                         logger.error(f"[ERROR] Error applying to job: {e}")
                         execution_tracker.record_error(

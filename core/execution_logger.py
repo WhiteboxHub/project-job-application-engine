@@ -11,14 +11,16 @@ class ExecutionTracker:
         self.successful_applications = []
         self.failed_applications = []
         self.total_jobs_found = 0
+        self.workflow_log_id = None
 
-    def initialize(self, run_parameters=None):
+    def initialize(self, run_parameters=None, workflow_log_id=None):
         """Reset the logger state for a new engine run"""
         self.started_at = datetime.now(timezone.utc)
         self.parameters_used = run_parameters or {}
         self.successful_applications = []
         self.failed_applications = []
         self.total_jobs_found = 0
+        self.workflow_log_id = workflow_log_id
 
     def add_jobs_found(self, count):
         self.total_jobs_found += count
@@ -81,12 +83,21 @@ class ExecutionTracker:
         if not candidate_name:
             candidate_name = "Unknown Candidate"
             
+        search_params = self.parameters_used.get("search")
+        if not isinstance(search_params, dict):
+            search_params = {}
+
+        run_id = self.parameters_used.get("run_id", f"RUN-{self.started_at.strftime('%Y%m%d-%H%M')}")
         report = {
             "workflow_id": self.parameters_used.get("workflow_id"),
             "schedule_id": self.parameters_used.get("schedule_id"),
-            "run_id": self.parameters_used.get("run_id", f"RUN-{self.started_at.strftime('%Y%m%d-%H%M')}"),
+            "run_id": run_id,
+            "candidate_id": self.parameters_used.get("candidate_id"),
             "candidate_name": candidate_name,
+            "keywords_searched": search_params.get("keywords", []),
             "status": status,
+            "workflow_key": "weekly_automation_application_engine",
+
             "execution_summary": {
                 "total_jobs_found": self.total_jobs_found,
                 "total_applications_attempted": total_attempted,
@@ -123,8 +134,7 @@ class ExecutionTracker:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=4)
 
-        logger.info(f"Saved run report to {output_path}")
-        return report
+        return output_path, report
 
 # Singleton instance exported for use everywhere
 execution_tracker = ExecutionTracker()

@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import settings
 from core.backend_client import backend_client
 from core.logger import logger
+from core.trigger_payload import ensure_workflow_log_ids, merge_orchestration_into_run_params
 from engine.runner import EngineRunner
 
 
@@ -39,57 +40,54 @@ def main():
         settings.HEADLESS = True
         logger.info("[MODE] HEADLESS Browser")
 
-    if args.max_apps:
+    if args.max_apps is not None:
         settings.MAX_APPLICATIONS_PER_RUN = args.max_apps
         logger.info(f"[LIMIT] {args.max_apps} applications per run")
 
+    workflow_log_id = None
     try:
-        # 1. Fetch pending automation parameters from the Production API
+        # 1. Fetch run_parameters strictly from the backend API
         candidate_data = backend_client.fetch_pending_candidates()
 
         if not candidate_data:
-            logger.info("[STOP] No pending weekly workflow candidate found. Exiting.")
+            logger.info("[STOP] No pending candidate found from backend API. Exiting.")
             sys.exit(0)
 
-        # 2. Transform the raw database row into structured run_parameters 
-        # (This automatically downloads the folder link resume and extracts names!)
+        # 2. Build structured run_parameters from the backend payload
         from core.run_parameters_builder import run_parameters_builder
         run_parameters = run_parameters_builder.build(candidate_data)
-        
-        logger.info("Successfully processed candidate into structured run_parameters JSON.")
+        applicant = run_parameters.get('applicant', {})
+        logger.info(f"Successfully built run_parameters for: "
+                    f"{applicant.get('first_name')} {applicant.get('last_name')}")
 
-        # 3. Save the built JSON back to the backend Database so it appears in the UI
+        # 3. Save built run_parameters back to backend DB UI
         candidate_id = candidate_data.get("candidate_id")
         if candidate_id:
             backend_client.update_run_parameters(candidate_id, run_parameters)
 
-        # 3b. Create a "running" execution log row for workflow log grid (if metadata exists)
-        backend_client.create_workflow_log(run_parameters)
-
-        # 4. Execute Engine using the pristine, fully-built JSON payload
-        #    (runner finally block writes data/output.json, sends email, and PATCHes
-        #     automation_workflow_log with the same report — see backend_client / hiring-cafe pattern)
+        # 4. Execute Engine with run_parameters
         runner = EngineRunner()
-        runner.run(site_filter=args.site, candidate_data=run_parameters)
+        runner.run(
+            site_filter=args.site,
+            candidate_data=run_parameters,
+            workflow_log_id=workflow_log_id,
+        )
 
     except Exception as e:
-        # Mark workflow log failed when run_id is available; reuse output.json if the
-        # runner already wrote it (avoid wiping execution_metadata with an empty report).
-        try:
-            if "run_parameters" in locals():
-                report_payload = {}
-                outp = os.path.join("data", "output.json")
-                if os.path.isfile(outp):
-                    try:
-                        with open(outp, encoding="utf-8") as f:
-                            report_payload = json.load(f)
-                    except Exception:
-                        pass
-                backend_client.update_workflow_log(
-                    run_parameters, report_payload, error=str(e)
-                )
-        except Exception:
-            pass
+        if workflow_log_id:
+            log_content = ""
+            try:
+                with open("logs/scheduler_run.log", "r", encoding="utf-8", errors="ignore") as f:
+                    log_content = f.read()
+            except Exception:
+                pass
+                
+            backend_client.update_workflow_log(
+                workflow_log_id,
+                "failed",
+                error_summary=str(e)[:255],
+                logfile=log_content,
+            )
         logger.critical(f"Fatal error: {e}")
         import traceback
 

@@ -12,10 +12,21 @@ class Settings(BaseSettings):
     DUCKDB_PATH: str = str(_PROJECT_ROOT / "data" / "job_engine.duckdb")
     MOTHERDUCK_TOKEN: Optional[str] = None
 
+    # Backend API
+    # BACKEND_URL: str = "http://localhost:8001"
+    BACKEND_URL: str = "https://api.whitebox-learning.com/api"
     # Backend API (include /api — routers are mounted under /api)
     BACKEND_URL: str = "http://localhost:8001/api"
     TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
+    # Must match automation_workflows.id for weekly_automation_application_engine (default 7)
+    WEEKLY_WORKFLOW_ID: int = 7
     INTERNAL_SECRET_KEY: Optional[str] = None
+    # Production login (same pattern as hiring-cafe-engine) for Bearer JWT
+    AUTH_URL: Optional[str] = None
+    AUTH_USERNAME: Optional[str] = None
+    AUTH_PASSWORD: Optional[str] = None
+    # If set, used as Bearer token and login is skipped
+    API_TOKEN: Optional[str] = None
     # Auth for protected routes (e.g. /api/automation-workflow-log). Use one of:
     # - API_ACCESS_TOKEN (JWT), or
     # - AUTH_URL + AUTH_USERNAME + AUTH_PASSWORD (login form, same as hiring-cafe-engine), or
@@ -62,7 +73,7 @@ class Settings(BaseSettings):
     CAPGEMINI_EMAIL: Optional[str] = None
     CAPGEMINI_PASSWORD: Optional[str] = None
 
-# Email Reporting Setup
+    # Email Reporting Setup
     SMTP_SERVER: Optional[str] = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USERNAME: Optional[str] = None
