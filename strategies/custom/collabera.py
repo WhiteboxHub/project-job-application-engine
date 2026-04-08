@@ -13,7 +13,7 @@ from core.logger import logger
 from core.safe_actions import SafeActions
 from core.execution_logger import execution_tracker
 from data.csv_tracker import tracker as csv_tracker
-from data.db_duckdb import db_duckdb
+from data.db_connection import db as db_duckdb
 from engine.guards import guards
 from models.config_models import JobListing
 from strategies.base import BaseStrategy
@@ -119,11 +119,90 @@ class CollaberaStrategy(BaseStrategy):
         self.driver.get(self.portal_url)
         time.sleep(5)
 
+    def _find_element_safe(self, selector, timeout=10):
+        """
+        Robustly find an element supporting CSS, XPath, Lists, and Dicts.
+        Based on research-driven best practices for dynamic forms.
+        """
+        if not selector:
+            return None
+
+        # Convert simple comma-separated string with mixed XPath into a list
+        if isinstance(selector, str) and "," in selector and ("//" in selector or "(" in selector):
+            # Split by comma but be careful not to split inside square brackets
+            import re
+            parts = re.split(r',\s*(?![^\[]*\])', selector)
+            selector = [p.strip() for p in parts if p.strip()]
+
+        selectors = selector if isinstance(selector, list) else [selector]
+        
+        for sel in selectors:
+            try:
+                by, locator = (None, None)
+                if isinstance(sel, dict):
+                    if "xpath" in sel:
+                        by, locator = (By.XPATH, sel["xpath"])
+                    elif "css" in sel:
+                        by, locator = (By.CSS_SELECTOR, sel["css"])
+                elif isinstance(sel, str):
+                    if sel.startswith("/") or sel.startswith("("):
+                        by, locator = (By.XPATH, sel)
+                    else:
+                        by, locator = (By.CSS_SELECTOR, sel)
+                
+                if by and locator:
+                    element = WebDriverWait(self.driver, timeout).until(
+                        EC.presence_of_element_located((by, locator))
+                    )
+                    return element
+            except Exception:
+                continue
+        return None
+
+    def _switch_to_iframe_recursive(self, depth=0, max_depth=3):
+        """
+        Traverse nested iframes to find the one containing application fields.
+        """
+        if depth > max_depth:
+            return False
+
+        iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+        logger.debug(f"Collabera: Scanning {len(iframes)} iframes at depth {depth}")
+
+        for i, iframe in enumerate(iframes):
+            try:
+                self.driver.switch_to.frame(iframe)
+                
+                # Check for common Collabera field indicators
+                indicators = ["txtName", "fullName", "txtEmail", "txtPhone", "input", "button"]
+                for ind in indicators:
+                    if self.driver.find_elements(By.NAME, ind) or \
+                       self.driver.find_elements(By.ID, ind) or \
+                       self.driver.find_elements(By.TAG_NAME, ind):
+                        logger.info(f"Collabera: [OK] Form detected in iframe at depth {depth}, index {i}")
+                        return True
+
+                # Not found here, go deeper
+                if self._switch_to_iframe_recursive(depth + 1, max_depth):
+                    return True
+
+                # Back up
+                self.driver.switch_to.parent_frame()
+            except Exception:
+                try:
+                    self.driver.switch_to.parent_frame()
+                except:
+                    self.driver.switch_to.default_content()
+                continue
+
+        return False
+
     def _by(self, selector):
-        """Auto-detect locator strategy (XPath vs CSS)."""
-        if selector and (selector.startswith("/") or selector.startswith("(")):
-            return (By.XPATH, selector)
-        return (By.CSS_SELECTOR, selector)
+        """Auto-detect locator strategy (XPath vs CSS). Handles lists by returning first element strategy."""
+        target = selector[0] if isinstance(selector, list) else selector
+        if target and (target.startswith("/") or target.startswith("(")):
+            return (By.XPATH, target)
+        return (By.CSS_SELECTOR, target)
 
     def _wait_for_field_value(self, sel, expected_value, timeout=8):
         """Wait until an input reflects the expected value."""
@@ -275,12 +354,14 @@ class CollaberaStrategy(BaseStrategy):
             return False
 
         value = "" if value is None else str(value).strip()
-        by, locator = self._by(sel)
-
+        
         try:
-            el = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((by, locator))
-            )
+            # Use the new safe finder
+            el = self._find_element_safe(sel)
+            if not el:
+                logger.warning(f"Collabera: Could not find element for react_fill with selector: {sel}")
+                return False
+
             self.driver.execute_script(
                 "arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});",
                 el,
@@ -305,7 +386,11 @@ class CollaberaStrategy(BaseStrategy):
                 el,
                 value,
             )
-            self._wait_for_field_value(sel, value)
+            # Re-verify value (wait-for-field-value uses selector, so we pass the original sel)
+            # Note: _wait_for_field_value might fail if sel is a list/dict, so we skip it for those
+            if isinstance(sel, str):
+                self._wait_for_field_value(sel, value)
+            
             logger.debug(f"Collabera: Filled field '{sel}' via react_fill")
             return True
         except Exception as e:
@@ -314,9 +399,9 @@ class CollaberaStrategy(BaseStrategy):
             )
 
         try:
-            el = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((by, locator))
-            )
+            el = self._find_element_safe(sel)
+            if not el: return False
+
             self.driver.execute_script(
                 "arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});",
                 el,
@@ -327,7 +412,10 @@ class CollaberaStrategy(BaseStrategy):
             if value:
                 el.send_keys(value)
             el.send_keys(Keys.TAB)
-            self._wait_for_field_value(sel, value)
+            
+            if isinstance(sel, str):
+                self._wait_for_field_value(sel, value)
+            
             logger.debug(f"Collabera: Filled field '{sel}' via keyboard fallback")
             return True
         except Exception as fallback_error:
@@ -648,53 +736,17 @@ class CollaberaStrategy(BaseStrategy):
                 return False
 
             # ALWAYS attempt to switch to iframe on Collabera (it's nearly always required)
-            try:
-                logger.info(f"  Attempting to switch to iframe context (selector: {iframe_sel})...")
-                
-                # Robust Switch logic combining the specific selector with a generic iframe fallback
-                if iframe_sel and iframe_sel != "iframe":
-                    by, locator = self._by(iframe_sel)
-                    try:
-                        WebDriverWait(self.driver, 15).until(
-                            EC.frame_to_be_available_and_switch_to_it((by, locator))
-                        )
-                        logger.info(f"  [OK] Successfully switched to specified iframe: {iframe_sel}")
-                    except Exception as specific_e:
-                        logger.warning(f"  [!] Failed to switch to specific iframe ({specific_e}). Attempting generic iframe switch...")
-                        WebDriverWait(self.driver, 10).until(
-                            EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, "iframe"))
-                        )
-                        logger.info("  [OK] Switched to first available iframe (generic fallback).")
-                else:
-                    # Pure generic switch if no selector was provided
-                    logger.info("  No specific iframe selector provided. Searching for any iframe...")
-                    WebDriverWait(self.driver, 15).until(
-                        EC.frame_to_be_available_and_switch_to_it((By.TAG_NAME, "iframe"))
-                    )
-                    logger.info("  [OK] Switched to first available iframe (pure generic).")
+            logger.info("  Scanning for application form (recursive iframe search)...")
+            if not self._switch_to_iframe_recursive():
+                logger.warning("  [!] Could not find form via recursive iframe search. Continuing on main page...")
 
-            except Exception as e:
-                logger.warning(f"  [WARNING] All iframe switch attempts failed: {e}")
-                logger.debug("    Form might be on the main page. Continuing anyway...")
-
-            # Wait for any primary field to load inside iframe (or main page)
-            logger.info("  Waiting for form fields to render...")
-            first_field_key = "txtName" if "txtName" in form_fields else "fullName"
-            first_field_sel = form_fields.get(first_field_key)
-            if first_field_sel:
-                try:
-                    WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located(self._by(first_field_sel))
-                    )
-                    logger.info(f"  [OK] Form field '{first_field_key}' detected.")
-                except:
-                    logger.warning(f"  [!] Timeout waiting for field '{first_field_key}'. Continuing anyway...")
+            # Wait for form to settle
+            time.sleep(2)
 
             # Step 4: Fill Form Fields (Hardened Selectors)
             logger.info("Collabera [Step 4]: Filling form fields...")
             
             # Use explicit mappings based on verified Collabera field names (txtName, txtEmail, txtPhone)
-            # These keys typically exist in the 'form_fields' dictionary in DuckDB
             field_mappings = [
                 ("fullName", candidate_profile.get("full_name")),
                 ("email",    candidate_profile.get("email")),
@@ -702,30 +754,14 @@ class CollaberaStrategy(BaseStrategy):
             ]
 
             for field_key, value in field_mappings:
-                selector = form_fields.get(field_key)
                 if not value: continue
-
-                filled = False
-                if selector:
-                    logger.info(f"  Filling {field_key} via DB selector...")
-                    if self.react_fill(selector, value):
-                        filled = True
-
-                # Fallback to ChatGPT-style By.NAME selectors if DB selector fails or is missing
-                if not filled:
-                    logger.info(f"  [FALLBACK] Attempting By.NAME discovery for {field_key}...")
-                    for name_attr in [field_key, f"txt{field_key.capitalize()}", field_key.lower(), f"txt{field_key}"]:
-                        try:
-                            # Use basic ID or Name search
-                            sel = f"[name='{name_attr}'], [id='{name_attr}']"
-                            if self.react_fill(sel, value):
-                                logger.info(f"    [OK] Found and filled {field_key} via {name_attr}")
-                                filled = True
-                                break
-                        except: pass
+                selector = form_fields.get(field_key)
                 
-                if not filled:
-                    logger.warning(f"  [!] Could not fill {field_key} after all attempts.")
+                logger.info(f"  Attempting to fill {field_key}...")
+                if self.react_fill(selector, value):
+                    logger.info(f"    [OK] Filled {field_key}.")
+                else:
+                    logger.warning(f"    [!] Could not fill {field_key} after all discovery attempts.")
                 
                 time.sleep(random.uniform(0.6, 1.2))
 
@@ -788,23 +824,12 @@ class CollaberaStrategy(BaseStrategy):
 
             # Step 7: Submit
             logger.info("Collabera [Step 7]: Submitting application...")
-            submit_btn_sel = form_fields.get("submit_btn") or "#Submit"
+            submit_sel = form_fields.get("submit_btn") or ["button.blue-teal-sm-btn", "#Submit", "//button[contains(., 'Apply')]"]
             
             try:
-                # FIX: Handle "invalid selector" by checking if it's an illegal CSS selector
-                try:
-                    submit_btn = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located(self._by(submit_btn_sel))
-                    )
-                except Exception as locator_error:
-                    if "invalid selector" in str(locator_error).lower():
-                        logger.warning(f"  [!] Invalid CSS Selector '{submit_btn_sel}'. Falling back to #Submit or Text-based XPath.")
-                        fallback_sel = "#Submit"
-                        submit_btn = WebDriverWait(self.driver, 10).until(
-                            EC.presence_of_element_located(self._by(fallback_sel))
-                        )
-                    else:
-                        raise locator_error
+                submit_btn = self._find_element_safe(submit_sel)
+                if not submit_btn:
+                    raise RuntimeError(f"Could not find submit button with selectors: {submit_sel}")
 
                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
                 time.sleep(1)

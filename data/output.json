@@ -1,9 +1,9 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260407-2133",
-    "candidate_id": null,
-    "candidate_name": "Sujata Akkala",
+    "run_id": "RUN-c674c30c-de08-4dcf-9384-2578fedcfd30",
+    "candidate_id": 557,
+    "candidate_name": "Vasanthi Nettem",
     "keywords_searched": [
         "Generative AI",
         "GenAI",
@@ -17,119 +17,72 @@
         "MLOps",
         "AI Engineer"
     ],
-    "status": "completed_with_errors",
+    "status": "success",
     "workflow_key": "weekly_automation_application_engine",
     "execution_summary": {
-        "total_jobs_found": 1388,
-        "total_applications_attempted": 14,
-        "total_applications_successful": 11,
-        "total_applications_failed": 3
+        "total_jobs_found": 19,
+        "total_applications_attempted": 0,
+        "total_applications_successful": 0,
+        "total_applications_failed": 0
     },
-    "successful_applications": [
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-48586",
-            "job_title": "DOT Senior AWS AI Engineer 003",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "applied_at": "2026-04-07T21:41:34.921867+00:00"
+    "metrics_summary": {
+        "duration_seconds": 486.29,
+        "duration_readable": "0:08:06.293295",
+        "total_seen": 19,
+        "total_attempted": 0,
+        "total_successful": 0,
+        "total_failed": 0,
+        "total_skipped": 19,
+        "success_rate_percent": 0.0
+    },
+    "breakdown": {
+        "successful_by_site": {},
+        "failed_by_site": {},
+        "failure_reasons": {},
+        "retries_by_step": {}
+    },
+    "successful_applications": [],
+    "failed_applications": [],
+    "parameters_used": {
+        "workflow_id": null,
+        "schedule_id": null,
+        "run_id": "RUN-c674c30c-de08-4dcf-9384-2578fedcfd30",
+        "candidate_id": 557,
+        "search": {
+            "distance": "0",
+            "keywords": [
+                "Generative AI",
+                "GenAI",
+                "LLM",
+                "Large Language Model",
+                "Machine Learning",
+                "Artificial Intelligence",
+                "Data Scientist",
+                "AI",
+                "PYTHON",
+                "MLOps",
+                "AI Engineer"
+            ],
+            "location": "United States"
         },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-48586",
-            "job_title": "DOT Senior AWS AI Engineer 003",
-            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
-            "applied_at": "2026-04-07T21:41:34.962047+00:00"
+        "applicant": {
+            "first_name": "Vasanthi",
+            "last_name": "Nettem",
+            "email": "nvasanthi011@gmail.com",
+            "phone": "2028534787",
+            "workstatus": "GREEN_CARD",
+            "linkedin": "nvasanthi011@gmail.com",
+            "address": {
+                "city": "San Ramon",
+                "state": "California",
+                "street": "12023 hickory knoll ln Frisco Tx",
+                "zip_code": null,
+                "country": "United States"
+            }
         },
-        {
-            "job_site": "LanceSoft",
-            "job_id": "26-09849",
-            "job_title": "AI Solution Architect ::",
-            "job_url": "https://www2.jobdiva.com/portal/?a=9xjdnw687b7a7nvvdyut936kpjlgy0023blrozaecads0pdnwppcswnaaku8ji2g&compid=0#/",
-            "applied_at": "2026-04-07T21:57:22.051125+00:00"
-        },
-        {
-            "job_site": "Diverse Lynx",
-            "job_id": "26-09849",
-            "job_title": "AI Solution Architect ::",
-            "job_url": "https://www2.jobdiva.com/portal/?a=9xjdnw687b7a7nvvdyut936kpjlgy0023blrozaecads0pdnwppcswnaaku8ji2g&compid=0#/",
-            "applied_at": "2026-04-07T21:57:22.067596+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "199",
-            "job_title": "Java AI Engineer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=199",
-            "applied_at": "2026-04-07T22:01:12.251103+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "172",
-            "job_title": "AI Engineer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=172",
-            "applied_at": "2026-04-07T22:01:55.421721+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "195",
-            "job_title": "Python Integration Developer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=195",
-            "applied_at": "2026-04-07T22:02:40.522094+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "167",
-            "job_title": "Python backend Developer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=167",
-            "applied_at": "2026-04-07T22:03:24.255456+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "183",
-            "job_title": "Mainframe Developer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=183",
-            "applied_at": "2026-04-07T22:04:09.068894+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "171",
-            "job_title": "AI Automation Engineer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=171",
-            "applied_at": "2026-04-07T22:04:53.371025+00:00"
-        },
-        {
-            "job_site": "AE Talents Group",
-            "job_id": "169",
-            "job_title": "Python Developer",
-            "job_url": "https://aetalentsgroup.com/careers.php?p=detail&id=169",
-            "applied_at": "2026-04-07T22:05:36.080860+00:00"
-        }
-    ],
-    "failed_applications": [
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MzQwNlQxfjk5",
-            "job_title": "Senior AI Security Analyst",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MzQwNlQxfjk5/",
-            "error_reason": "Submission verification failed",
-            "failed_at": "2026-04-07T21:47:01.119754+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5XUUd-MjE3MzQ3NlQxfjk5",
-            "job_title": "AI Engineer (Trading Analytics & Data Engineering)",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MzQ3NlQxfjk5/",
-            "error_reason": "Submission verification failed",
-            "failed_at": "2026-04-07T21:47:36.879132+00:00"
-        },
-        {
-            "job_site": "KForce",
-            "job_id": "MTY5Nn5BUUd-MjE2NzkxOFQxfjk5",
-            "job_title": "Senior Machine Learning Engineer",
-            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5BUUd-MjE2NzkxOFQxfjk5/",
-            "error_reason": "Submission verification failed",
-            "failed_at": "2026-04-07T21:48:12.602138+00:00"
-        }
-    ],
-    "started_at": "2026-04-07T21:33:33.263124+00:00",
-    "finished_at": "2026-04-07T22:05:36.082847+00:00"
+        "resume_url": "https://drive.google.com/drive/folders/1Wib_JlhPDC81IbaXtlLvC-_r54mPUzTG?usp=sharing",
+        "resume_path": "C:\\Users\\KUMAR-MINI-PC2\\OneDrive\\Desktop\\projects\\project-job-application-engine\\resume\\downloads\\candidate_resume_downloaded.pdf"
+    },
+    "started_at": "2026-04-08T22:11:01.865330+00:00",
+    "finished_at": "2026-04-08T22:19:08.158625+00:00"
 }

@@ -162,12 +162,12 @@ class BrowserService:
             logger.info("Released profile lock.")
 
     @staticmethod
-    def _get_chrome_major_version() -> int | None:
+    def _get_installed_chrome_major_version_registry() -> int | None:
         """Read the installed Chrome major version from the Windows registry."""
         reg_keys = [
-            r'HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon',
-            r'HKEY_LOCAL_MACHINE\SOFTWARE\Google\Chrome\BLBeacon',
-            r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Google\Chrome\BLBeacon',
+            r"HKEY_CURRENT_USER\Software\Google\Chrome\BLBeacon",
+            r"HKEY_LOCAL_MACHINE\SOFTWARE\Google\Chrome\BLBeacon",
+            r"HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Google\Chrome\BLBeacon",
         ]
         for key in reg_keys:
             try:
@@ -175,7 +175,7 @@ class BrowserService:
                     f'reg query "{key}" /v version',
                     shell=True, stderr=subprocess.DEVNULL
                 ).decode(errors="ignore")
-                m = re.search(r'version\s+REG_SZ\s+(\d+)', out)
+                m = re.search(r"version\s+REG_SZ\s+(\d+)", out)
                 if m:
                     version = int(m.group(1))
                     logger.info(f"Detected installed Chrome major version: {version}")
@@ -191,7 +191,7 @@ class BrowserService:
             try:
                 # Use taskkill to cleanly remove orphaned drivers
                 subprocess.run(
-                    'taskkill /F /IM chromedriver.exe /T',
+                    "taskkill /F /IM chromedriver.exe /T",
                     shell=True,
                     capture_output=True,
                     check=False
@@ -205,7 +205,10 @@ class BrowserService:
         self._acquire_lock()
 
         # Detect installed Chrome version once so both drivers use the same version
-        chrome_version = self._get_chrome_major_version()
+        chrome_major_version = self._get_installed_chrome_major_version_registry()
+        
+        explicit_driver_path = os.environ.get("CHROMEDRIVER_PATH")
+        explicit_driver_exists = explicit_driver_path and os.path.exists(explicit_driver_path)
 
         # Try to import undetected_chromedriver here; if unavailable, we'll fall back to selenium webdriver
         if explicit_driver_path and not explicit_driver_exists:
@@ -277,14 +280,14 @@ class BrowserService:
                 self.driver = uc.Chrome(
                     options=options,
                     use_subprocess=True,
-                    version_main=chrome_version,  # None = let uc auto-detect (safe fallback)
+                    version_main=chrome_major_version,  # None = let uc auto-detect (safe fallback)
                 )
                 time.sleep(5)  # Give the window handle time to stabilize
 
                 # Immediate check: Is the session actually alive?
                 _ = self.driver.current_url
                 logger.info(
-                    f"Browser started successfully (undetected-chromedriver, version={chrome_version})."
+                    f"Browser started successfully (undetected-chromedriver, version={chrome_major_version})."
                 )
             except Exception as e:
                 logger.warning(
@@ -319,14 +322,11 @@ class BrowserService:
                     driver_path = ChromeDriverManager(**manager_kwargs).install()
 
                 # Pin to detected Chrome version so webdriver-manager fetches the right driver
-                driver_path = ChromeDriverManager(
-                    driver_version=f"{chrome_version}" if chrome_version else None
-                ).install()
                 service = ChromeService(driver_path)
                 self.driver = webdriver.Chrome(service=service, options=options)
                 time.sleep(2)
                 logger.info(
-                    f"Browser started successfully (webdriver-manager fallback, version={chrome_version})."
+                    f"Browser started successfully (webdriver-manager fallback, version={chrome_major_version})."
                 )
             except Exception as e2:
                 chrome_version = self._get_chrome_version(chrome_binary)
