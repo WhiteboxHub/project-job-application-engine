@@ -1,6 +1,7 @@
-import os
 import random
 import time
+import re
+from datetime import datetime, timedelta
 from urllib.parse import quote_plus
 
 from selenium.webdriver.common.by import By
@@ -796,16 +797,18 @@ class ExperisStrategy(BaseStrategy):
 
         max_retries = 3
         for attempt in range(max_retries):
-            if search_url not in self.driver.current_url:
-                logger.info(
-                    f"Experis: Navigating to base search page: {search_url} (Attempt {attempt+1}/{max_retries})"
-                )
-                self.driver.get(search_url)
-                self._handle_cookie_banner()
-                WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "body"))
-                )
-                time.sleep(3)
+            # Always navigate to about:blank to clear previous search state and pagination
+            self.driver.get("about:blank")
+            time.sleep(0.5)
+            logger.info(
+                f"Experis: Navigating to base search page: {search_url} (Attempt {attempt+1}/{max_retries})"
+            )
+            self.driver.get(search_url)
+            self._handle_cookie_banner()
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            time.sleep(3)
 
             # Check for 502 Bad Gateway
             body_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
@@ -880,18 +883,27 @@ class ExperisStrategy(BaseStrategy):
             if not element or not value:
                 return
             try:
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", element
+                )
+                time.sleep(0.5)
                 self.human.human_click(element)
                 time.sleep(0.5)
-                self.driver.execute_script("arguments[0].value = '';", element)
-                element.clear()
-                element.send_keys(value)
-                # Dispatch events for React
+                # React 16+ specific value setter hack
                 self.driver.execute_script(
                     """
-                    arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
-                    arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+                    var el = arguments[0];
+                    var val = arguments[1];
+                    var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                    if (nativeInputValueSetter) {
+                        nativeInputValueSetter.call(el, val);
+                    } else {
+                        el.value = val;
+                    }
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
                     """,
-                    element,
+                    element, value
                 )
                 time.sleep(1)
             except Exception as e:
@@ -977,9 +989,11 @@ class ExperisStrategy(BaseStrategy):
             time.sleep(2)
 
             page_num = 1
-            max_pages = 6  # Restored to production limit (was 10 during testing)
+            max_pages = 999  # Large limit, but smart exit will handle early stopping
+            consecutive_old_jobs = 0
+            stop_pagination = False
 
-            while page_num <= max_pages:
+            while page_num <= max_pages and not stop_pagination:
                 cards = self.driver.find_elements(
                     *self._by(self.get_site_sel("listing", "job_card"))
                 )
@@ -1008,64 +1022,63 @@ class ExperisStrategy(BaseStrategy):
                         if not job_title or not href or href in seen_urls:
                             continue
 
-                        # Strict Relevance Filter
+                        # 1. Extract Posted Date (CRITICAL: Check date before relevance to support Smart Stop)
+                        try:
+                            card_text = card.text
+                            date_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", card_text)
+                            if date_match:
+                                posted_date_str = date_match.group(1)
+                            else:
+                                posted_date_str = card.find_element(
+                                    By.CSS_SELECTOR,
+                                    self.get_site_sel("listing", "posted_date") or ".job-date, .posted-date"
+                                ).text.strip()
+                        except Exception:
+                            pass
+
+                        # 2. Date Filter Logic (7 Days) - Checking even if irrelevant to trigger Smart Stop
+                        if posted_date_str:
+                            try:
+                                job_date = datetime.strptime(posted_date_str, "%m/%d/%Y").date()
+                                today = datetime.now().date()
+                                age_days = (today - job_date).days
+
+                                if age_days > 7:
+                                    consecutive_old_jobs += 1
+                                    if consecutive_old_jobs >= 5:
+                                        logger.info(f"Experis: Found {consecutive_old_jobs} consecutive old jobs (including irrelevant ones). Stopping pagination.")
+                                        stop_pagination = True
+                                        break
+                                    # If relevance check below fails, we'll continue. 
+                                    # If it's old, we skip it regardless.
+                                    continue
+                                else:
+                                    consecutive_old_jobs = 0
+                            except Exception as de:
+                                logger.debug(f"Experis: Could not parse date '{posted_date_str}': {de}")
+
+                        # 3. Strict Relevance Filter
                         if not self._is_relevant_job(job_title, keyword):
                             logger.info(
                                 f"    [SKIP] Irrelevant job: '{job_title}' for keyword '{keyword}'"
                             )
                             continue
 
-                        seen_urls.add(href)
-                        new_jobs_on_page += 1
-
-                        location_text = ""
-                        job_type = ""
-                        industry = ""
-                        description = ""
-                        posted_date = ""
-
+                        # 4. Extract other details
                         try:
                             location_text = card.find_element(
-                                By.CSS_SELECTOR,
-                                self.get_site_sel("listing", "job_location"),
+                                By.CSS_SELECTOR, self.get_site_sel("listing", "job_location") or ".job-location, .location"
                             ).text.strip()
-                        except Exception:
-                            pass
-
+                        except Exception: pass
+                        
                         try:
                             job_type = card.find_element(
-                                By.CSS_SELECTOR,
-                                self.get_site_sel("listing", "job_type"),
+                                By.CSS_SELECTOR, self.get_site_sel("listing", "job_type") or ".job-type"
                             ).text.strip()
-                        except Exception:
-                            pass
-
-                        try:
-                            industry = card.find_element(
-                                By.CSS_SELECTOR,
-                                self.get_site_sel("listing", "job_industry"),
-                            ).text.strip()
-                        except Exception:
-                            pass
-
-                        try:
-                            description = card.find_element(
-                                By.CSS_SELECTOR,
-                                self.get_site_sel("listing", "job_description"),
-                            ).text.strip()
-                        except Exception:
-                            pass
-
-                        try:
-                            posted_date = card.find_element(
-                                By.CSS_SELECTOR,
-                                self.get_site_sel("listing", "posted_date"),
-                            ).text.strip()
-                        except Exception:
-                            pass
+                        except Exception: pass
 
                         external_id = href.rstrip("/").split("/")[-2]
-
+                        
                         jobs.append(
                             {
                                 "job_title": job_title,
@@ -1073,17 +1086,18 @@ class ExperisStrategy(BaseStrategy):
                                 "external_id": external_id,
                                 "location": location_text,
                                 "job_type": job_type,
-                                "industry": industry,
-                                "description": description,
-                                "posted_date": posted_date,
                                 "company": "Experis",
+                                "posted_date": posted_date_str
                             }
                         )
+
+                        seen_urls.add(href)
+                        new_jobs_on_page += 1
                     except Exception as exc:
                         logger.debug(f"Experis: Failed to parse a job card: {exc}")
                         continue
 
-                if new_jobs_on_page == 0:
+                if new_jobs_on_page == 0 and not stop_pagination:
                     logger.info(
                         f"Experis: No new relevant jobs found on page {page_num}, but continuing to check next page..."
                     )

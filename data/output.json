@@ -1,7 +1,7 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260406-2141",
+    "run_id": "RUN-20260408-2139",
     "candidate_name": "Vasanthi Nettem",
     "status": "success",
     "execution_summary": {
@@ -12,6 +12,6 @@
     },
     "successful_applications": [],
     "failed_applications": [],
-    "started_at": "2026-04-06T21:41:19.765679+00:00",
-    "finished_at": "2026-04-06T21:43:24.631179+00:00"
+    "started_at": "2026-04-08T21:39:10.873170+00:00",
+    "finished_at": "2026-04-08T21:42:04.189740+00:00"
 }

@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     MOTHERDUCK_TOKEN: Optional[str] = None
 
     # Backend API
-    BACKEND_URL: str = "http://localhost:8001"
-    TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
+    BACKEND_URL: str = "http://localhost:8000"
+    TRIGGER_ENDPOINT: str = "/api/weekly-workflow/trigger-run"
     INTERNAL_SECRET_KEY: Optional[str] = None
 
     # Browser

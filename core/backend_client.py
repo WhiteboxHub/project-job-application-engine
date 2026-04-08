@@ -65,7 +65,7 @@ class BackendClient:
             return False
 
         base = settings.BACKEND_URL.rstrip("/")
-        url = f"{base}/weekly-workflow/update-parameters/{candidate_id}"
+        url = f"{base}/api/weekly-workflow/update-parameters/{candidate_id}"
 
         headers = {"Content-Type": "application/json"}
         if settings.INTERNAL_SECRET_KEY:
