@@ -1,17 +1,173 @@
 {
     "workflow_id": null,
     "schedule_id": null,
-    "run_id": "RUN-20260408-2139",
+    "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
     "candidate_name": "Vasanthi Nettem",
-    "status": "success",
+    "status": "failed",
     "execution_summary": {
-        "total_jobs_found": 0,
-        "total_applications_attempted": 0,
+        "total_jobs_found": 33,
+        "total_applications_attempted": 12,
         "total_applications_successful": 0,
-        "total_applications_failed": 0
+        "total_applications_failed": 12
+    },
+    "metrics_summary": {
+        "duration_seconds": 342.03,
+        "duration_readable": "0:05:42.033625",
+        "total_seen": 33,
+        "total_attempted": 12,
+        "total_successful": 0,
+        "total_failed": 12,
+        "total_skipped": 21,
+        "success_rate_percent": 0.0
+    },
+    "breakdown": {
+        "successful_by_site": {},
+        "failed_by_site": {
+            "LanceSoft": 4,
+            "KForce": 8
+        },
+        "failure_reasons": {
+            "Application logic returned False": 8,
+            "Message: \n": 4
+        },
+        "retries_by_step": {}
     },
     "successful_applications": [],
-    "failed_applications": [],
-    "started_at": "2026-04-08T21:39:10.873170+00:00",
-    "finished_at": "2026-04-08T21:42:04.189740+00:00"
+    "failed_applications": [
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-39917",
+            "job_title": "Sr. Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:40:44.880052+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-37948",
+            "job_title": "Dealer/Diagnostic Support - Supply Chain Data Analyst - Associate",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:01.951264+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-32879",
+            "job_title": "Data Scientist",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:19.097813+00:00"
+        },
+        {
+            "job_site": "LanceSoft",
+            "job_id": "26-32279",
+            "job_title": "Medicaid Subject Matter Expert (SME)",
+            "job_url": "https://www2.jobdiva.com/portal/?a=3djdnw5yqdh8wl3frr5t6561tvvokq01affwpxt3lcutzo4f8yt1aeiy3msk02or&compid=0&SearchString=#/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:41:35.223813+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:43:32.826426+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2OTU3OFAxfjk5",
+            "job_title": "Fund Assistant Controller",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2OTU3OFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:43:32.842330+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:00.271312+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE2MzUyNFAxfjk5",
+            "job_title": "Investment Tax Accountant - Special Projects",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE2MzUyNFAxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:00.288469+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:26.495475+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5FUUd-MjE3MjA2MFQxfjk5",
+            "job_title": "Help Desk Support Specialist",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5FUUd-MjE3MjA2MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:26.506893+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Message: \n",
+            "failed_at": "2026-03-24T00:44:53.219097+00:00"
+        },
+        {
+            "job_site": "KForce",
+            "job_id": "MTY5Nn5XUUd-MjE3MTc4MFQxfjk5",
+            "job_title": "BMS Controls Engineer",
+            "job_url": "https://www.kforce.com/find-work/search-jobs/#/detail/MTY5Nn5XUUd-MjE3MTc4MFQxfjk5/",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-03-24T00:44:53.231724+00:00"
+        }
+    ],
+    "parameters_used": {
+        "workflow_id": null,
+        "schedule_id": null,
+        "run_id": "RUN-fadfa77b-9599-4ae7-a434-d7feb8d72c15",
+        "candidate_id": 557,
+        "search": {
+            "distance": "0",
+            "keywords": [
+                "Data Scientist",
+                "Machine Learning",
+                "AI",
+                "PYTHON",
+                "Generative AI",
+                "LLM",
+                "MLOps",
+                "AI Engineer"
+            ],
+            "location": "United States"
+        },
+        "applicant": {
+            "first_name": "Vasanthi",
+            "last_name": "Nettem",
+            "email": "nvasanthi011@gmail.com",
+            "phone": "2028534787",
+            "workstatus": "GREEN_CARD",
+            "linkedin": "nvasanthi011@gmail.com",
+            "address": {
+                "city": "San Ramon",
+                "state": "California",
+                "street": "12023 hickory knoll ln Frisco Tx",
+                "zip_code": null,
+                "country": "United States"
+            }
+        },
+        "resume_url": "https://drive.google.com/drive/folders/1Wib_JlhPDC81IbaXtlLvC-_r54mPUzTG?usp=sharing",
+        "resume_path": "C:\\Users\\Innovapath\\Desktop\\job_engine\\project-job-application-engine\\resume\\downloads\\candidate_resume_downloaded.pdf"
+    },
+    "started_at": "2026-03-24T00:39:15.369684+00:00",
+    "finished_at": "2026-03-24T00:44:57.403309+00:00"
 }
