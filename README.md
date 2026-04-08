@@ -1,6 +1,6 @@
 # 🤖 Job Application Engine
 
-A database-driven, multi-site job application automation engine built on the **Strategy Pattern**. Each job board has its own self-contained strategy module. Configuration, deduplication, and execution metadata live in the **MotherDuck Cloud** (or local DuckDB), while the candidate data and scheduling are directly orchestrated by the central **wbl-backend API**.
+A database-driven, multi-site job application automation engine built on the **Strategy Pattern**. Each job board has its own self-contained strategy module. Configuration, deduplication, and execution metadata live in **DuckDB**, while the candidate data and scheduling are directly orchestrated by the central **wbl-backend API**.
 
 ---
 
@@ -11,8 +11,8 @@ The engine operates on a seamless, zero-touch dynamic pipeline:
 1. **Trigger Phase:** The engine (`scripts/main.py`) hits the backend API (`/api/weekly-workflow/trigger-run`) to check for pending automated workflows scheduled for the current time.
 2. **Data Injection:** The backend constructs the candidate's profile, including keywords, experience, and the resume link, and returns it as a JSON payload (`run_parameters`).
 3. **Resume Download:** The `resume_downloader` parses the `resume_url` (Google Drive) and securely downloads the PDF into `resume/downloads/`. 
-4. **Execution:** The completely assembled payload is injected into memory, meaning the engine **NO LONGER** relies on local configuration files like `guest_form_data.json`.
-5. **Sequential Application:** The engine automatically queries the database for all active platforms mapped for full automation and executes them sequentially using the injected candidate data.
+4. **Strict Backend Execution:** The completely assembled payload is injected into memory. The engine **NO LONGER** relies on local configuration files like `guest_form_data.json`.
+5. **Sequential Application:** The engine automatically queries the database for all active platforms mapped for automation (e.g., LanceSoft, KForce, Insight Global) and executes them sequentially.
 
 ---
 
@@ -24,61 +24,56 @@ The system uses a **Local DuckDB database** (`data/job_engine.duckdb`) to track 
 | Table | Purpose |
 |---|---|
 | `ats_platforms` | Platform class handler (`strategies.custom.mysite`) and `automation_level` ('full', 'semi', etc.). |
-| `job_sites` | Target portal details (e.g., LanceSoft, Experis) and the boolean `is_active` flag. |
+| `job_sites` | Target portal details (e.g., LanceSoft, Wipro, Insight Global) and the boolean `is_active` flag. |
 | `site_selectors` | HTML/CSS selectors per website injected at runtime to resist UI changes. |
 
-> **IMPORTANT:** When `main.py` is run without site parameters, it will automatically query the database and execute ALL sites where `is_active = true` AND `automation_level = 'full'`.
+> **IMPORTANT:** When `main.py` is run without site parameters, it will automatically query the database and execute ALL sites where `is_active = true`.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Setup After Git Clone (New Machine)
 
-### 1. Install Dependencies
+When cloning this project to a new machine, **large runtime files and secrets are ignored by git**. You must follow these exact steps to rebuild the environment:
 
+### 1. Configure Environment (`.env`)
+Secrets are not pushed to GitHub. Copy the example file and fill in your credentials:
+```bash
+cp .env.example .env
+```
+
+### 2. Install Dependencies
+The Python virtual environment is not pushed to GitHub. You must recreate it:
 ```bash
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment (`.env`)
-
-Copy `.env.example` to `.env` and fill in your details:
-
-```env
-# Database
-DUCKDB_PATH=data/job_engine.duckdb
-
-# Backend Integration
-BACKEND_URL=https://api.whitebox-learning.com/api
-TRIGGER_ENDPOINT=/weekly-workflow/trigger-run
-INTERNAL_SECRET_KEY=your_secure_auth_key
-
-
-# Execution Specs
-HEADLESS=False
-KEEP_BROWSER_OPEN=False
-DOWNLOADED_RESUME_DIR=resume/downloads/
-```
-
 ### 3. Initialize the Database
-
-*Note: You only need to run this if you are ADDING a new company to the database or doing a local test! Otherwise, the data is already in MotherDuck.*
+The binary `.duckdb` runtime database files are ignored by git. Recreate the schema and seed all active companies:
 ```bash
+# 1. Creates the tables and adds base companies (LanceSoft, KForce, etc.)
 python scripts/init_db.py
+
+# 2. Add the Insight Global configuration
+python scripts/add_insight_global_db.py
 ```
 
-### 4. Running the Engine
+### 4. Ensure Chrome Version Matches
+The strategy currently uses an undetected Chrome driver explicitly pinned to your installed standard Chrome version (e.g., `v146`). If you update Chrome, update `version_main=147` in `core/browser.py`.
 
-**Run dynamically (via Backend API):**
+---
+
+## 🏃 Running the Engine
+
+**Run dynamically (via Backend API for all active sites):**
 ```bash
-# Fetches data from the backend API, downloads the resume, and runs ALL active sites sequentially
 python scripts/main.py
 ```
 
-**Testing a specific site:**
+**Testing a specific site (Dry run mode):**
 ```bash
-python scripts/main.py --site "Experis"
+python scripts/main.py --site "Insight Global" --dry-run
 ```
 
 ---
@@ -89,7 +84,7 @@ The engine is built to be deployed via **Windows Task Scheduler** for daily or w
 
 1. Configure a `Daily` trigger in Windows Task Scheduler.
 2. Set the Action to run a batch script (`run_engine.bat`) that activates the `venv` and calls `python scripts/main.py`.
-3. **How it syncs:** Every day, the script will ping the backend. If it's time to run a job (e.g., exactly one week since the last run), the backend will provide the payload and automatically update its `last_run` and `next_run` timestamps.
+3. **How it syncs:** Every day, the script will ping the backend. If it's time to run a job (e.g., exactly one week since the last run), the backend will provide the payload and automatically update its timestamps.
 4. If it is *not* time to run yet, the backend returns an empty response, and the script silently shuts down.
 
 ---
@@ -102,4 +97,4 @@ Because different ATS platforms operate differently, we use the Strategy Pattern
 2. **Implement Logic:** Implement `login()`, `find_jobs()`, and `apply()`.
 3. **Access Internal Data:** Use `self.candidate_data` generated during initialization to fill out forms dynamically.
 4. **Register Entrypoint:** Add your class to `strategies/custom/__init__.py`.
-5. **Add to Database:** Insert the company mapping into `ats_platforms` and `job_sites` via `scripts/init_db.py`. Ensure `is_active=True` and `automation_level='full'` to put it in the active automated pipeline!
+5. **Add to Database:** Insert the company mapping into `ats_platforms` and `job_sites` via `scripts/init_db.py` or a custom migration script like `scripts/add_insight_global_db.py`. Ensure `is_active=True`!

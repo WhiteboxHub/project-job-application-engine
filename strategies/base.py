@@ -69,9 +69,10 @@ class BaseStrategy(ABC):
         """
         resume_path = None
 
-        # 1. Try config_data (guest_form_data.json or scheduler payload)
-        if hasattr(self, "config_data") and self.config_data:
-            resume_path = self.config_data.get("resume_path")
+        # 1. Try candidate_data or config_data (guest_form_data.json or scheduler payload)
+        data = getattr(self, "candidate_data", None) or getattr(self, "config_data", None)
+        if data and isinstance(data, dict):
+            resume_path = data.get("resume_path")
 
         # 2. Try settings (environment variables)
         if not resume_path:

@@ -118,18 +118,20 @@ class RunParametersBuilder:
                 logger.error(f"Failed to download physical resume for upload: {e}")
 
         # 3. Extract keywords from Whitebox API or use new AI/GenAI defaults
-        api_keywords = candidate_data.get("keywords", [])
-        if not api_keywords:
-            api_keywords = [
-                "Data Scientist",
-                "Machine Learning",
-                "AI",
-                "PYTHON",
-                "Generative AI",
-                "LLM",
-                "MLOps",
-                "AI Engineer"
-            ]
+        # Force massive keyword list regardless of DB payload
+        api_keywords = [
+            "Generative AI",
+            "GenAI",
+            "LLM",
+            "Large Language Model",
+            "Machine Learning",
+            "Artificial Intelligence",
+            "Data Scientist",
+            "AI",
+            "PYTHON",
+            "MLOps",
+            "AI Engineer"
+        ]
 
         # 4. Construct the clean, minimal JSON
         run_parameters = {

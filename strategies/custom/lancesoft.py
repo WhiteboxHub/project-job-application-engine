@@ -249,13 +249,10 @@ class LanceSoftStrategy(BaseStrategy):
 
         all_jobs = []
 
-        # Perform optimized SINGLE search using the primary keyword. 
-        # Since _extract_job_listings now checks every job against ALL keywords,
-        # we do not need to perform additional expensive web searches!
-        if search_configurations:
-            config = search_configurations[0]
+        # Perform physical searches for ALL keywords
+        for config in search_configurations:
             logger.info(f"\n{'=' * 60}")
-            logger.info(f"[SEARCH] Optimized Single Search: {config['keyword']} in {config['location']}")
+            logger.info(f"[SEARCH] Physical Search: {config['keyword']} in {config['location']}")
             logger.info(f"{'=' * 60}")
 
             # Collect all jobs from all pages for this search
@@ -1595,7 +1592,7 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info("  [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"  Confirmation message not found: {e}")
-                time.sleep(2)
+                raise Exception("Failed to submit initial form: JobDiva confirmation message not found.")
 
             # Step 7: Click Next button on confirmation page to go to EEO form
             logger.info("Step 7: Clicking Next button on confirmation page...")
@@ -2450,7 +2447,7 @@ class LanceSoftStrategy(BaseStrategy):
                 logger.info("      [YES] Confirmation page loaded")
             except Exception as e:
                 logger.warning(f"      Confirmation message not found: {e}")
-                time.sleep(2)
+                raise Exception("Failed to submit initial form: JobDiva confirmation message not found.")
 
             # Step 8: Click Next button on confirmation page to go to EEO form
             logger.info("      Clicking Next button on confirmation page...")

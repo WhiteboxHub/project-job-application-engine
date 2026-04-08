@@ -217,7 +217,7 @@ def init_db():
         (5, "kforce_custom", "strategies.custom.KForceStrategy", "full", False),
         (6, "lever", "strategies.custom.LeverStrategy", "full", False),
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
-        (8, "experis_custom", "strategies.custom.ExperisStrategy", "full", False),
+        (8, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -304,23 +304,35 @@ def init_db():
     # 6. Capgemini  (company-custom portal, inactive until strategy is ready)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
-            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
             6, 'Capgemini', 'capgemini.com', 7, 'System integrator',
             'https://www.capgemini.com/careers/',
+            null,
             false
         )
     """)
 
-    # 7. Experis  (company-custom portal)
+    # 7. AE Talents Group (company-custom portal)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
-            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
-            7, 'Experis', 'experis.com', 8, 'Staffing vendor',
-            'https://www.experis.com/en/find-work',
-            false
+            9, 'AE Talents Group', 'aetalentsgroup.com', 8, 'Staffing vendor',
+            'https://aetalentsgroup.com/careers.php',
+            'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
+            true
         )
+    """)
+
+    # Ensure it's updated even if it exists at ID 9
+    conn.execute("""
+        UPDATE job_sites
+           SET company_name        = 'AE Talents Group',
+               domain              = 'aetalentsgroup.com',
+               ats_platform_id     = 8,
+               is_active           = true
+         WHERE id = 9
     """)
 
     # -----------------------------------------------------------------------
@@ -573,55 +585,47 @@ def init_db():
     logger.info("site_selectors seeded for Wipro [OK]")
 
     # -----------------------------------------------------------------------
-    # Seed: site_selectors for Experis (job_site_id = 7)
+    # Seed: site_selectors for AE Talents Group (job_site_id = 7)
+    # Key names MUST match what aetalents.py reads via self.selectors_config.get("key")
     # -----------------------------------------------------------------------
-    experis_listing_selectors = {
-        "search_page_url": "https://www.experis.com/en/search",
-        "search_input": "input[name='searchJobText']",
-        "location_input": "input[name='searchLocation']",
-        "search_button": "button.primary-button.orange-sd[type='submit']",
-        "results_ready": "div[id^='job_']",
-        "job_card": "div[id^='job_']",
-        "job_link": "div.job-position h2.title a",
-        "job_title": "div.job-position h2.title a",
-        "next_page_button": "li.page-item.next a.page-link",
+    import json as _json
+
+    aetalents_listing_selectors = {
+        "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
+        "search_input": "input[name='search']",
+        "location_input": "input[name='location']",
+        "search_button": "button[type='submit']",
+        "job_card_link": "a[href*='p=detail']",
     }
 
-    experis_application_selectors = {
-        "apply_button": "div.job-details-cta.cta button.primary-button",
-        "apply_page_ready": "input[name='firstname'], form input[name='firstname']",
-        "submit_button": "input.hs-button.primary.large[type='submit']",
-        "consent_checkbox": "input[name='consent_to_text_sms']",
-        "form_fields": {
-            "first_name": "input[name='firstname']",
-            "last_name": "input[name='lastname']",
-            "email": "input[name='email']",
-            "phone": "input[name='phone']",
-            "resume_upload": "input[name='resume'][type='file']",
-        },
-        "questionnaire_fields": {
-            "legal_eligibility_yes": "input[name='are_you_legally_eligible_to_work_in_the_u_s_'][value='Yes']",
-            "subcontractor_arrangement_no": "input[name='are_you_represented_by_a_company_that_would_seek_to_enter_into_a_subcontractor_supplier_arrangement'][value='No']",
-        },
+    aetalents_application_selectors = {
+        "apply_now_button": "a[href*='p=apply']",
+        "first_name": "input[name='first_name']",
+        "last_name": "input[name='last_name']",
+        "email": "input[name='email']",
+        "visa_status": "select[name='visa_status']",
+        "resume": "input[type='file'][name='resume']",
+        "submit_button": "button[type='submit']",
+        "success_message": "h1.reveal",
     }
 
     conn.execute(
-        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (13, 7, 'listing', ?)",
-        [_json.dumps(experis_listing_selectors)],
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (19, 9, 'listing', ?)",
+        [_json.dumps(aetalents_listing_selectors)],
     )
     conn.execute(
-        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (14, 7, 'application', ?)",
-        [_json.dumps(experis_application_selectors)],
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (20, 9, 'application', ?)",
+        [_json.dumps(aetalents_application_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 13",
-        [_json.dumps(experis_listing_selectors)],
+        "UPDATE site_selectors SET config_json = ? WHERE id = 19",
+        [_json.dumps(aetalents_listing_selectors)],
     )
     conn.execute(
-        "UPDATE site_selectors SET config_json = ? WHERE id = 14",
-        [_json.dumps(experis_application_selectors)],
+        "UPDATE site_selectors SET config_json = ? WHERE id = 20",
+        [_json.dumps(aetalents_application_selectors)],
     )
-    logger.info("site_selectors seeded for Experis [OK]")
+    logger.info("site_selectors seeded for AE Talents Group [OK]")
 
     # Indexes
     conn.execute(
