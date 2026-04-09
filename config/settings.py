@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
     # Must match automation_workflows.id for weekly_automation_application_engine (default 7)
     WEEKLY_WORKFLOW_ID: int = 7
+    DEFAULT_AUTOMATION_WORKFLOW_ID: int = 7
+    DEFAULT_AUTOMATION_SCHEDULE_ID: int = 1
     INTERNAL_SECRET_KEY: Optional[str] = None
     # Production login (same pattern as hiring-cafe-engine) for Bearer JWT
     AUTH_URL: Optional[str] = None
@@ -31,7 +33,7 @@ class Settings(BaseSettings):
     HEADLESS: bool = False
 
     # Resume
-    RESUME_FILE_PATH: Optional[str] = "resume/candidate_resume.pdf"
+    RESUME_FILE_PATH: Optional[str] = "resume/downloads/candidate_resume_downloaded.pdf"
     RESUME_PATH: Optional[str] = None  # Backwards compatibility
     DOWNLOADED_RESUME_DIR: str = "resume/downloads/"
 
@@ -46,6 +48,9 @@ class Settings(BaseSettings):
     KEEP_BROWSER_OPEN: bool = False
     # How long to wait after clicking submit for navigation (seconds)
     SUBMIT_POST_CLICK_WAIT: int = 15
+
+    # After each run, append the full output.json payload to this file (UTF-8). Empty = disabled.
+    EXECUTION_LOG_FILE: str = str(_PROJECT_ROOT / "data" / "execution.log")
 
     # Multi-platform support (backward compatible)
     PLATFORM_FILTER: Optional[str] = (

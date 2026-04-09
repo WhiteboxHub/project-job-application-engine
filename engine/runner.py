@@ -355,16 +355,24 @@ class EngineRunner:
             execution_tracker.add_jobs_found(len(jobs))
 
             if jobs:
-                # Save discovered jobs to tracker
+                # Resolve candidate email for per-candidate tracking
+                candidate_email = (
+                    candidate_data.get("email")
+                    or candidate_data.get("applicant", {}).get("email", "")
+                )
+
+                # Save discovered jobs scoped to this candidate
                 try:
                     new_count = csv_tracker.add_discovered_jobs(
-                        site.company_name.lower(), jobs
+                        site.company_name.lower(), jobs,
+                        candidate_email=candidate_email
                     )
                     logger.info(
-                        f"Added {new_count} new job(s) to tracker for {site.company_name}"
+                        f"Added {new_count} new job(s) to tracker for "
+                        f"{site.company_name} / {candidate_email or '(anon)'}"
                     )
                 except Exception as e:
-                    logger.warning(f"Failed to save discovered jobs to CSV: {e}")
+                    logger.warning(f"Failed to save discovered jobs to tracker: {e}")
 
                 logger.info("\n[APPLY] Starting application process...")
                 applied_count = 0
@@ -415,6 +423,10 @@ class EngineRunner:
                         if csv_tracker.is_done_by_candidate(site.company_name.lower(), job_url, candidate_email):
                             logger.info(f"Skipping already processed job (applied/failed) for {candidate_email}: {job_title}")
                             continue
+
+                        # Stamp the candidate email onto the job dict so
+                        # strategy.apply() can forward it to the tracker
+                        job["_candidate_email"] = candidate_email
 
                         logger.info(f"\nApplying to: {job_title}")
                         success = strategy.apply(job)
