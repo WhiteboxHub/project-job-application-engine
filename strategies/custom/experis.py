@@ -346,24 +346,31 @@ class ExperisStrategy(BaseStrategy):
         )
         return False
 
-    def _safe_click(self, selector, timeout=10):
-        """Click a visible element with human-like fallback behavior."""
-        try:
-            element = WebDriverWait(self.driver, timeout).until(
-                EC.element_to_be_clickable(self._by(selector))
-            )
-            self.driver.execute_script(
-                "arguments[0].scrollIntoView({block:'center'});", element
-            )
-            time.sleep(0.5)
+    def _safe_click(self, selectors, timeout=10):
+        """Click a visible element with human-like fallback behavior, supporting multiple selectors."""
+        if isinstance(selectors, str):
+            selectors = [selectors]
+
+        for selector in selectors:
             try:
-                self.human.human_click(element)
-            except Exception:
-                self.driver.execute_script("arguments[0].click();", element)
-            return True
-        except Exception as exc:
-            logger.warning(f"Experis: Failed to click '{selector}': {exc}")
-            return False
+                element = WebDriverWait(self.driver, timeout).until(
+                    EC.element_to_be_clickable(self._by(selector))
+                )
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", element
+                )
+                time.sleep(0.5)
+                try:
+                    self.human.human_click(element)
+                except Exception:
+                    self.driver.execute_script("arguments[0].click();", element)
+                return True
+            except Exception as exc:
+                logger.debug(f"Experis: Failed to click fallback '{selector}': {exc}")
+                continue
+
+        logger.warning(f"Experis: Failed to click any of the provided selectors: {selectors}")
+        return False
 
     def _handle_cookie_banner(self, timeout=7):
         """Check for and accept common cookie banners (OneTrust, etc.) with iframe support."""
@@ -1413,15 +1420,29 @@ class ExperisStrategy(BaseStrategy):
                 "phone": HS + "input[id^='phone-']",
                 # Resume selectors — tried in order (primary exact ID first, then fallbacks)
                 "resume": [
-                    # Primary: exact HubSpot form UUID (same across all Experis jobs)
+                    # User-provided primary XPath/ID
+                    "//*[@id='resume-6ce3eb03-21fc-41aa-b005-cee7147d5d44']",
                     "#resume-6ce3eb03-21fc-41aa-b005-cee7147d5d44",
                     # Fallback 1: CSS prefix-match (works if UUID changes)
                     HS + "input[id^='resume-']",
-                    # Fallback 2: positional XPath from fieldset[5] (as observed in the form)
+                    "input[id^='resume-']",
+                    # Fallback 2: Name-based (HubSpot standard)
+                    "input[name='resume']",
+                    "input[type='file'][name='resume']",
+                    # Fallback 3: positional XPath from fieldset[5] (as observed in the form)
                     "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/fieldset[5]//input[@type='file']",
+                    "//input[@type='file']",
                 ],
                 "consent": HS + "input[id^='consent_to_text_sms-']",
-                "submit": HS + "input.hs-button.primary.large[type='submit']",
+                "submit": [
+                    # User-provided primary XPath/ID
+                    "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/div/div[2]/input",
+                    "#hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44 > div > div.actions > input",
+                    # Global fallbacks
+                    HS + "input.hs-button.primary.large[type='submit']",
+                    "input.hs-button.primary.large[type='submit']",
+                    "input[type='submit']",
+                ],
             }
 
             logger.info(
@@ -1551,14 +1572,19 @@ class ExperisStrategy(BaseStrategy):
                 )
                 return True
             except Exception:
+                # If we can't confirm success page, it's safer to mark as 'failed' so it can be retried/inspected
                 logger.warning(
-                    "Experis: Could not confirm success page, but application was submitted."
+                    "Experis: Could not confirm success page. Marking as failed for safety."
                 )
                 csv_tracker.update_job_status(
-                    "experis", job["job_url"], "applied",
-                    attempts_inc=1, candidate_email=candidate_email,
+                    "experis",
+                    job["job_url"],
+                    "failed",
+                    attempts_inc=1,
+                    last_error="Could not confirm success page after submittal click",
+                    candidate_email=candidate_email,
                 )
-                return True
+                return False
 
         except Exception as exc:
             logger.error(f"Experis: Application failed for {job['job_title']}: {exc}")
