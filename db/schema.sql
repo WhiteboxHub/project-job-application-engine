@@ -310,6 +310,30 @@ INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, cate
 );
 
 
+-- =====================================================
+-- SEED DATA: Experis Configuration
+-- =====================================================
+
+-- Insert Experis Custom Platform
+INSERT OR IGNORE INTO ats_platforms (id, name, class_handler, is_headless_required) VALUES (
+    8,
+    'Experis Custom',
+    'strategies.custom.ExperisStrategy',
+    false
+);
+
+-- Insert Experis Job Site
+INSERT OR IGNORE INTO job_sites (id, ats_platform_id, company_name, domain, category, search_url_template, is_active) VALUES (
+    7,
+    8,
+    'Experis',
+    'experis.com',
+    'Staffing vendor',
+    'https://www.experis.com/en/find-work',
+    false
+);
+
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_job_sites_active ON job_sites(is_active);
 CREATE INDEX IF NOT EXISTS idx_job_listings_status ON job_listings(status);

@@ -220,6 +220,7 @@ def init_db():
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
         (8, "collabera_custom", "strategies.custom.CollaberaStrategy", "full", False),
         (9, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
+        (11, "experis_custom", "strategies.custom.ExperisStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -326,11 +327,24 @@ def init_db():
     """)
     conn.execute("UPDATE job_sites SET is_active = true WHERE id = 7")
 
+    # 8. Experis  (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            11, 'Experis', 'experis.com', 11, 'Staffing vendor',
+            'https://www.experis.com/en/find-work',
+            true
+        )
+    """)
+    conn.execute("UPDATE job_sites SET is_active = true WHERE id = 11")
+
     # 9. AE Talents Group (company-custom portal)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
+            9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
             9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
             'https://aetalentsgroup.com/careers.php',
             'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
@@ -343,6 +357,7 @@ def init_db():
         UPDATE job_sites
            SET company_name        = 'AE Talents Group',
                domain              = 'aetalentsgroup.com',
+               ats_platform_id     = 9,
                ats_platform_id     = 9,
                is_active           = true
          WHERE id = 9
@@ -650,6 +665,57 @@ def init_db():
         [_json.dumps(collabera_application_selectors)],
     )
     logger.info("site_selectors seeded and updated for Collabera [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for Experis (job_site_id = 11)
+    # -----------------------------------------------------------------------
+    experis_listing_selectors = {
+        "search_page_url": "https://www.experis.com/en/search",
+        "search_input": "input[name='searchJobText']",
+        "location_input": "input[name='searchLocation']",
+        "search_button": "button.primary-button.orange-sd[type='submit']",
+        "results_ready": "div[id^='job_']",
+        "job_card": "div[id^='job_']",
+        "job_link": "div.job-position h2.title a",
+        "job_title": "div.job-position h2.title a",
+        "next_page_button": "li.page-item.next a.page-link",
+    }
+
+    experis_application_selectors = {
+        "apply_button": "div.job-details-cta.cta button.primary-button",
+        "apply_page_ready": "input[name='firstname'], form input[name='firstname']",
+        "submit_button": "input.hs-button.primary.large[type='submit']",
+        "consent_checkbox": "input[name='consent_to_text_sms']",
+        "form_fields": {
+            "first_name": "input[name='firstname']",
+            "last_name": "input[name='lastname']",
+            "email": "input[name='email']",
+            "phone": "input[name='phone']",
+            "resume_upload": "input[name='resume'][type='file']",
+        },
+        "questionnaire_fields": {
+            "legal_eligibility_yes": "input[name='are_you_legally_eligible_to_work_in_the_u_s_'][value='Yes']",
+            "subcontractor_arrangement_no": "input[name='are_you_represented_by_a_company_that_would_seek_to_enter_into_a_subcontractor_supplier_arrangement'][value='No']",
+        },
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (21, 11, 'listing', ?)",
+        [_json.dumps(experis_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (22, 11, 'application', ?)",
+        [_json.dumps(experis_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 11, type = 'listing', config_json = ? WHERE id = 21",
+        [_json.dumps(experis_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 11, type = 'application', config_json = ? WHERE id = 22",
+        [_json.dumps(experis_application_selectors)],
+    )
+    logger.info("site_selectors seeded and updated for Experis [OK]")
 
     # -----------------------------------------------------------------------
     # Seed: site_selectors for AE Talents Group (job_site_id = 9)
