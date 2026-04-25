@@ -345,7 +345,6 @@ def init_db():
             (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
             9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
-            9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
             'https://aetalentsgroup.com/careers.php',
             'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
             true
@@ -357,7 +356,6 @@ def init_db():
         UPDATE job_sites
            SET company_name        = 'AE Talents Group',
                domain              = 'aetalentsgroup.com',
-               ats_platform_id     = 9,
                ats_platform_id     = 9,
                is_active           = true
          WHERE id = 9
