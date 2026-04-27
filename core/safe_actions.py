@@ -3,6 +3,7 @@ import time
 
 from selenium.common.exceptions import (
     ElementClickInterceptedException,
+    ElementNotInteractableException,
     NoSuchElementException,
     StaleElementReferenceException,
 )
@@ -39,41 +40,60 @@ class SafeActions:
 
     def safe_click(self, selector, by=By.CSS_SELECTOR, timeout=10, retries=3):
         """
-        Attempts to find and click an element with retries on Stale/Intercepted exceptions.
-        Tries JS click as a fallback when normal click is intercepted.
+        Attempts to find and click an element with retries.
+        Finds the first visible element matching the selector.
+        Tries JS click as a fallback when normal click is intercepted or not interactable (but visible).
         """
         attempt = 0
         while attempt < retries:
             try:
-                element = self.driver.find_element(by, selector)
+                elements = self.driver.find_elements(by, selector)
+                if not elements:
+                    logger.error(f"Element not found: {selector}")
+                    return False
+                
+                # Find the first visible element to avoid hidden forms
+                element = None
+                for el in elements:
+                    if el.is_displayed():
+                        element = el
+                        break
+                
+                # Fallback to the first element if none are technically 'displayed'
+                if not element:
+                    element = elements[0]
+
+                # Scroll the element into view
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", element)
                 self._micro_move(element)
                 self._random_sleep(0.5, 1.5)
+                
                 try:
                     element.click()
                     logger.debug(f"Clicked element: {selector}")
                     return True
-                except ElementClickInterceptedException as e:
-                    # Try JS click as fallback
-                    try:
-                        self.driver.execute_script("arguments[0].click();", element)
-                        logger.debug(f"Clicked element via JS fallback: {selector}")
-                        return True
-                    except Exception:
-                        logger.warning(
-                            f"JS click fallback failed for {selector}, will retry ({attempt + 1}/{retries})"
-                        )
-                        time.sleep(1)
-                        attempt += 1
-                        continue
+                except (ElementClickInterceptedException, ElementNotInteractableException) as e:
+                    # Only try JS click if the element is displayed, or if it was the only option
+                    if element.is_displayed() or len(elements) == 1:
+                        try:
+                            self.driver.execute_script("arguments[0].click();", element)
+                            logger.debug(f"Clicked element via JS fallback: {selector}")
+                            return True
+                        except Exception:
+                            pass
+                    
+                    logger.warning(
+                        f"Click fallback failed for {selector}, will retry ({attempt + 1}/{retries})"
+                    )
+                    time.sleep(1)
+                    attempt += 1
+                    continue
             except StaleElementReferenceException as e:
                 logger.warning(
                     f"Click failed (StaleElementReferenceException) on {selector}, retrying ({attempt + 1}/{retries})"
                 )
                 time.sleep(1)
                 attempt += 1
-            except NoSuchElementException:
-                logger.error(f"Element not found: {selector}")
-                return False
             except Exception as e:
                 logger.error(f"Unexpected error clicking {selector}: {e}")
                 return False

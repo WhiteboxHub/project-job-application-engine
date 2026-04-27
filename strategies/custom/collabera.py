@@ -518,8 +518,9 @@ class CollaberaStrategy(BaseStrategy):
             job_id = listing.get("external_id")
             logger.debug(f"[{i}/{len(all_listings)}] Checking job_id: {job_id}")
             
+            candidate_email = self.config_data.get("applicant", {}).get("email", "default")
             # Allow re-attempt if we're in a live run and previous was dry-run, or if previously failed
-            if db_duckdb.is_already_applied(job_id, "Collabera", candidate_id=candidate_id):
+            if csv_tracker.is_done_by_candidate("Collabera", listing.get("job_url", ""), candidate_email):
                 if guards.is_dry_run():
                     logger.info(f"[{i}/{len(all_listings)}] [SKIP] Already applied (Dry Run): {listing.get('job_title')}")
                     continue
@@ -1092,6 +1093,7 @@ class CollaberaStrategy(BaseStrategy):
         from core.execution_logger import execution_tracker
         
         job_id = listing.get("external_id") if isinstance(listing, dict) else getattr(listing, "external_id", "N/A")
+        candidate_email = self.config_data.get("applicant", {}).get("email", "default")
         
         # Log to execution tracker
         if status == "success":
@@ -1105,7 +1107,14 @@ class CollaberaStrategy(BaseStrategy):
             job_url,
             "applied" if status == "success" else "failed",
             attempts_inc=1,
-            last_error=error_msg
+            last_error=error_msg,
+            candidate_email=candidate_email
+        )
+        csv_tracker.mark_applied_for_candidate(
+            "Collabera",
+            job_url,
+            candidate_email,
+            "applied" if status == "success" else "failed"
         )
         
         # Also mark in Collabera-specific table for legacy compatibility

@@ -621,7 +621,7 @@ def init_db():
         ],
         "search_input": "input[placeholder*='Job Title'], input[placeholder*='Keywords']",
         "location_input": "input[placeholder*='Location']",
-        "search_button": "button.blue-teal-sm-btn, button[type='submit']",
+        "search_button": "button.blue-teal-sm-btn, form[action*='job-search'] button[type='submit'], .job-search-wrap button[type='submit']",
         "job_container": "div.job-card, div[class*='job'], li[class*='job']",
         "job_link": "a[href*='job-description'], a[href*='job']",
         "job_title": "h2, h3, h5",
