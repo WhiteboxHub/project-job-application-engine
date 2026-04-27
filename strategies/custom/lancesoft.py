@@ -928,6 +928,8 @@ class LanceSoftStrategy(BaseStrategy):
 
                     except Exception as e:
                         logger.error(f"    [ERROR] Error processing job {job_id}: {e}")
+                        # Record failure
+                        self._record_application(job_id, url, title, "failed", str(e))
                         # Try to recover state
                         try:
                             self.driver.back()

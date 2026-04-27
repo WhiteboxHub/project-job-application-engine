@@ -75,7 +75,7 @@ class DuckDBConnection:
             logger.error(f"DuckDB connection test failed: {e}")
             return False
 
-    def is_already_applied(self, job_id, site_name=None):
+    def is_already_applied(self, job_id, site_name=None, candidate_id=None, **kwargs):
         """Check if a job has already been applied based on external_id and status"""
         try:
             sql = "SELECT status FROM job_listings WHERE external_job_id = ?"
@@ -90,6 +90,9 @@ class DuckDBConnection:
                     sql += " AND job_site_id = ?"
                     params.append(site_row[0])
 
+            # Note: candidate_id support can be added here once the schema supports it
+            # For now, we accept the argument to prevent TypeErrors in strategies.
+            
             row = self.conn.execute(sql, params).fetchone()
             return row is not None and row[0] == "applied"
         except Exception as e:
@@ -130,8 +133,8 @@ class _LazyDB:
     def test_connection(self):
         return self._get().test_connection()
 
-    def is_already_applied(self, job_id, site_name=None):
-        return self._get().is_already_applied(job_id, site_name)
+    def is_already_applied(self, job_id, site_name=None, candidate_id=None, **kwargs):
+        return self._get().is_already_applied(job_id, site_name, candidate_id, **kwargs)
 
 
 # Lazy singleton — safe to import from worker/subprocess contexts

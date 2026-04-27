@@ -10,6 +10,7 @@ import os
 import sys
 
 import duckdb
+import json as _json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -217,7 +218,9 @@ def init_db():
         (5, "kforce_custom", "strategies.custom.KForceStrategy", "full", False),
         (6, "lever", "strategies.custom.LeverStrategy", "full", False),
         (7, "capgemini_custom", "strategies.custom.CapgeminiStrategy", "full", False),
-        (8, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
+        (8, "collabera_custom", "strategies.custom.CollaberaStrategy", "full", False),
+        (9, "aetalents_custom", "strategies.custom.AETalentsStrategy", "full", False),
+        (11, "experis_custom", "strategies.custom.ExperisStrategy", "full", False),
     ]
     for pid, name, handler, level, headless in platform_seeds:
         conn.execute(
@@ -304,21 +307,44 @@ def init_db():
     # 6. Capgemini  (company-custom portal, inactive until strategy is ready)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
-            (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
         VALUES (
             6, 'Capgemini', 'capgemini.com', 7, 'System integrator',
             'https://www.capgemini.com/careers/',
-            null,
             false
         )
     """)
 
-    # 7. AE Talents Group (company-custom portal)
+    # 7. Collabera (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            7, 'Collabera', 'collabera.com', 8, 'Staffing vendor',
+            'https://collabera.com/job-search/',
+            true
+        )
+    """)
+    conn.execute("UPDATE job_sites SET is_active = true WHERE id = 7")
+
+    # 8. Experis  (company-custom portal)
+    conn.execute("""
+        INSERT OR IGNORE INTO job_sites
+            (id, company_name, domain, ats_platform_id, category, search_url_template, is_active)
+        VALUES (
+            11, 'Experis', 'experis.com', 11, 'Staffing vendor',
+            'https://www.experis.com/en/find-work',
+            true
+        )
+    """)
+    conn.execute("UPDATE job_sites SET is_active = true WHERE id = 11")
+
+    # 9. AE Talents Group (company-custom portal)
     conn.execute("""
         INSERT OR IGNORE INTO job_sites
             (id, company_name, domain, ats_platform_id, category, search_url_template, apply_url_template, is_active)
         VALUES (
-            9, 'AE Talents Group', 'aetalentsgroup.com', 8, 'Staffing vendor',
+            9, 'AE Talents Group', 'aetalentsgroup.com', 9, 'Staffing vendor',
             'https://aetalentsgroup.com/careers.php',
             'https://aetalentsgroup.com/careers.php?p=apply&id={job_id}',
             true
@@ -330,7 +356,7 @@ def init_db():
         UPDATE job_sites
            SET company_name        = 'AE Talents Group',
                domain              = 'aetalentsgroup.com',
-               ats_platform_id     = 8,
+               ats_platform_id     = 9,
                is_active           = true
          WHERE id = 9
     """)
@@ -341,7 +367,6 @@ def init_db():
     # type='listing'     → selectors used during job search/discovery
     # type='application' → selectors used during form filling / submission
     # -----------------------------------------------------------------------
-    import json as _json
 
     lancesoft_listing_selectors = {
         "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],
@@ -585,10 +610,115 @@ def init_db():
     logger.info("site_selectors seeded for Wipro [OK]")
 
     # -----------------------------------------------------------------------
-    # Seed: site_selectors for AE Talents Group (job_site_id = 7)
+    # Seed: site_selectors for Collabera (job_site_id = 7)
+    # -----------------------------------------------------------------------
+    collabera_listing_selectors = {
+        "search_keywords": [
+            "AI Engineer",
+            "Machine Learning Engineer",
+            "Python Developer",
+            "Data Scientist",
+        ],
+        "search_input": "input[placeholder*='Job Title'], input[placeholder*='Keywords']",
+        "location_input": "input[placeholder*='Location']",
+        "search_button": "button.blue-teal-sm-btn, form[action*='job-search'] button[type='submit'], .job-search-wrap button[type='submit']",
+        "job_container": "div.job-card, div[class*='job'], li[class*='job']",
+        "job_link": "a[href*='job-description'], a[href*='job']",
+        "job_title": "h2, h3, h5",
+        "next_page": "a[aria-label='Next'], button[aria-label='Next'], .pagination-next a",
+    }
+
+    collabera_application_selectors = {
+        "iframe_selector": "iframe",
+        "form_fields": {
+            "full_name": "input[placeholder*='Full Name'], input[name*='name']",
+            "email": "input[placeholder*='Email'], input[type='email']",
+            "phone": "input[placeholder*='Phone'], input[type='tel']",
+            "resume_upload": "input[type='file']",
+            "terms_checkbox": "input[type='checkbox']",
+            "alert_checkbox": "input[type='checkbox']:nth-of-type(2)",
+            "submit_btn": "button.blue-teal-sm-btn, button[type='submit'], //button[contains(., 'Apply')]",
+        },
+        "success_indicators": [
+            "application submitted",
+            "thank you for applying",
+            "successfully applied",
+        ],
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (17, 7, 'listing', ?)",
+        [_json.dumps(collabera_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (18, 7, 'application', ?)",
+        [_json.dumps(collabera_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 7, type = 'listing', config_json = ? WHERE id = 17",
+        [_json.dumps(collabera_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 7, type = 'application', config_json = ? WHERE id = 18",
+        [_json.dumps(collabera_application_selectors)],
+    )
+    logger.info("site_selectors seeded and updated for Collabera [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for Experis (job_site_id = 11)
+    # -----------------------------------------------------------------------
+    experis_listing_selectors = {
+        "search_page_url": "https://www.experis.com/en/search",
+        "search_input": "input[name='searchJobText']",
+        "location_input": "input[name='searchLocation']",
+        "search_button": "button.primary-button.orange-sd[type='submit']",
+        "results_ready": "div[id^='job_']",
+        "job_card": "div[id^='job_']",
+        "job_link": "div.job-position h2.title a",
+        "job_title": "div.job-position h2.title a",
+        "next_page_button": "li.page-item.next a.page-link",
+    }
+
+    experis_application_selectors = {
+        "apply_button": "div.job-details-cta.cta button.primary-button",
+        "apply_page_ready": "input[name='firstname'], form input[name='firstname']",
+        "submit_button": "input.hs-button.primary.large[type='submit']",
+        "consent_checkbox": "input[name='consent_to_text_sms']",
+        "form_fields": {
+            "first_name": "input[name='firstname']",
+            "last_name": "input[name='lastname']",
+            "email": "input[name='email']",
+            "phone": "input[name='phone']",
+            "resume_upload": "input[name='resume'][type='file']",
+        },
+        "questionnaire_fields": {
+            "legal_eligibility_yes": "input[name='are_you_legally_eligible_to_work_in_the_u_s_'][value='Yes']",
+            "subcontractor_arrangement_no": "input[name='are_you_represented_by_a_company_that_would_seek_to_enter_into_a_subcontractor_supplier_arrangement'][value='No']",
+        },
+    }
+
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (21, 11, 'listing', ?)",
+        [_json.dumps(experis_listing_selectors)],
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO site_selectors (id, job_site_id, type, config_json) VALUES (22, 11, 'application', ?)",
+        [_json.dumps(experis_application_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 11, type = 'listing', config_json = ? WHERE id = 21",
+        [_json.dumps(experis_listing_selectors)],
+    )
+    conn.execute(
+        "UPDATE site_selectors SET job_site_id = 11, type = 'application', config_json = ? WHERE id = 22",
+        [_json.dumps(experis_application_selectors)],
+    )
+    logger.info("site_selectors seeded and updated for Experis [OK]")
+
+    # -----------------------------------------------------------------------
+    # Seed: site_selectors for AE Talents Group (job_site_id = 9)
     # Key names MUST match what aetalents.py reads via self.selectors_config.get("key")
     # -----------------------------------------------------------------------
-    import json as _json
 
     aetalents_listing_selectors = {
         "search_keywords": ["AI Engineer", "Machine Learning Engineer", "Data Scientist"],

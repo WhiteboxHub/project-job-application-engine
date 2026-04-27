@@ -63,7 +63,7 @@ class BaseStrategy(ABC):
         """
         Resolves the absolute path to the resume file.
         Priority:
-        1. self.config_data['resume_path'] (candidate specific)
+        1. injected candidate/config data resume_path (candidate specific)
         2. settings.RESUME_FILE_PATH (system default)
         3. settings.RESUME_PATH (backwards compatible)
         """
@@ -73,6 +73,10 @@ class BaseStrategy(ABC):
         data = getattr(self, "candidate_data", None) or getattr(self, "config_data", None)
         if data and isinstance(data, dict):
             resume_path = data.get("resume_path")
+
+        # 1b. Try injected candidate data directly if config_data is not populated
+        if not resume_path and self.candidate_data:
+            resume_path = self.candidate_data.get("resume_path")
 
         # 2. Try settings (environment variables)
         if not resume_path:

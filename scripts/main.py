@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 
@@ -22,7 +23,7 @@ def main():
         "--headless", action="store_true", help="Run browser in headless mode"
     )
     parser.add_argument(
-        "--site", type=str, help="Run only a specific site (e.g., 'LanceSoft')"
+        "--site", type=str, help="Run only a specific site (e.g., 'LanceSoft', 'Experis')"
     )
     parser.add_argument(
         "--max-apps", type=int, help="Maximum number of applications to run"
