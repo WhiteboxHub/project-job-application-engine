@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import re
@@ -475,16 +476,39 @@ class ExperisStrategy(BaseStrategy):
             return False
 
     def _is_success_page(self):
-        """Check if the current page indicates a successful application."""
+        """
+        Check if the current page indicates a successful Experis application.
+        Primary: look for the exact success container (#form_contact-us) and the
+        confirmed success text from the Experis post-submit page.
+        Fallback: scan body text for known success phrases.
+        """
+        # Primary check — exact container + confirmed text
         try:
-            # Check for common HubSpot success strings in body text
+            self.driver.switch_to.default_content()
+            container = self.driver.find_elements(
+                By.CSS_SELECTOR, "#form_contact-us > div > div > div > div"
+            )
+            if container:
+                container_text = container[0].text.lower()
+                if (
+                    "thank you for your interest" in container_text
+                    or "application will be reviewed" in container_text
+                    or "thank you again for your application" in container_text
+                ):
+                    return True
+        except Exception:
+            pass
+
+        # Secondary check — full body text scan
+        try:
             body_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
             success_indicators = [
                 "thank you for your interest",
-                "application will be reviewed",
+                "application will be reviewed for consideration",
                 "application was successful",
                 "successfully submitted",
                 "thanks for submitting the form",
+                "thank you again for your application",
             ]
             return any(indicator in body_text for indicator in success_indicators)
         except Exception:
@@ -712,6 +736,38 @@ class ExperisStrategy(BaseStrategy):
         title_lower = job_title.lower()
         keyword_lower = search_keyword.lower()
 
+        # --- EXCLUSION FILTER ---
+        # If the job title contains ANY of these banned words/phrases,
+        # reject the job immediately before any other relevance checks.
+        BANNED_TITLE_TERMS = [
+            "technician",
+            "hardware",
+            "language specialist",
+            "mechanical",
+            "business",
+            "data annotator",
+            "mechanic",
+            "arabic",
+            "japanese",
+            "german",
+            "swedish",
+            "dutch",
+            "french",
+            "spanish",
+            "italian",
+            "portuguese",
+            "turkish",
+            "polish",
+            "bilingual",
+        ]
+        for banned in BANNED_TITLE_TERMS:
+            if banned in title_lower:
+                logger.info(
+                    f"    [EXCLUDED] Job title '{job_title}' contains banned term '{banned}' — skipping"
+                )
+                return False
+        # --- END EXCLUSION FILTER ---
+
         def _word_in(word, text):
             """True if `word` appears as a whole word in `text`."""
             return bool(re.search(r"\b" + re.escape(word) + r"\b", text))
@@ -848,6 +904,11 @@ class ExperisStrategy(BaseStrategy):
             [db_input]
             if db_input
             else [
+                # PRIMARY: Exact CSS selector confirmed from live Experis page
+                "#sr_job_false",
+                # PRIMARY: Exact XPath confirmed from live Experis page
+                "//*[@id='sr_job_false']",
+                # FALLBACK: attribute-based selectors
                 "input[name='searchJobText']",
                 "input[name='searchKeyword']",
                 "input[id*='keyword' i]",
@@ -858,6 +919,11 @@ class ExperisStrategy(BaseStrategy):
             [db_loc]
             if db_loc
             else [
+                # PRIMARY: Exact CSS selector confirmed from live Experis page
+                "#sr_location_false",
+                # PRIMARY: Exact XPath confirmed from live Experis page
+                "//*[@id='sr_location_false']",
+                # FALLBACK: attribute-based selectors
                 "input[name='searchLocation']",
                 "input[id*='location' i]",
                 "input[placeholder*='location' i]",
@@ -867,6 +933,11 @@ class ExperisStrategy(BaseStrategy):
             [db_button]
             if db_button
             else [
+                # PRIMARY: Exact CSS selector confirmed from live Experis page
+                "#search-job-false > div > form > div.col-lg-3 > button",
+                # PRIMARY: Exact XPath confirmed from live Experis page
+                "//*[@id='search-job-false']/div/form/div[3]/button",
+                # FALLBACK: class-based selectors
                 "button.primary-button.orange-sd[type='submit']",
                 "button[type='submit']",
                 "button[class*='search' i]",
@@ -917,66 +988,37 @@ class ExperisStrategy(BaseStrategy):
                 logger.warning(f"  [WARNING] Smart fill failed, error: {e}")
 
         try:
-            # 2. Try to find and fill keyword
-            input_el, used_sel = _find_first(INPUT_SELECTORS, timeout=5)
-            if input_el:
-                logger.info(
-                    f"Experis: FOUND search input via selector '{used_sel}'. Preparing to type '{keyword}'..."
-                )
-                _fill_react_field(input_el, keyword)
-                logger.info(f"  [VERIFY] Typed keyword '{keyword}' into {used_sel}")
-            else:
-                # URL Fallback
-                encoded_kw = quote_plus(keyword)
-                encoded_loc = quote_plus(location) if location else ""
-                fallback_url = (
-                    f"https://www.experis.com/en/search?searchKeyword={encoded_kw}"
-                )
-                if encoded_loc:
-                    fallback_url += f"&searchLocation={encoded_loc}"
+            # --- PRIMARY STRATEGY: Direct URL navigation (guaranteed to filter) ---
+            # React SPA clicks via JS/human_click are unreliable because the React
+            # synthetic event system may not fire on externally dispatched click events.
+            # Navigating directly to the URL with search parameters bypasses this entirely.
+            #
+            # Actual Experis URL format (confirmed from live browser):
+            # https://www.experis.com/en/search?searchKeyword=AI&latitude=38.7945952&longitude=-106.5348379&place=United+States
+            encoded_kw = quote_plus(keyword)
 
-                logger.warning(
-                    f"  [FALLBACK] Could NOT find search inputs (tried {INPUT_SELECTORS}) — falling back to DIRECT URL: {fallback_url}"
-                )
-                self.driver.get(fallback_url)
-                time.sleep(4)
-                input_el = None  # Prevent enter key action later
+            # Geocoordinates for "United States" — confirmed from live Experis search URL
+            US_LATITUDE = "38.7945952"
+            US_LONGITUDE = "-106.5348379"
+            US_PLACE = "United+States"
 
-            # Try to find and fill location
-            if location and input_el:
-                loc_el, loc_sel = _find_first(LOC_SELECTORS, timeout=5)
-                if loc_el:
-                    logger.info(f"Experis: Found location input via '{loc_sel}'")
-                    # Clear location which might be auto-filled, then type
-                    loc_el.send_keys(Keys.CONTROL + "a")
-                    loc_el.send_keys(Keys.DELETE)
-                    _fill_react_field(loc_el, location)
-                    logger.info(f"  [YES] Entered location: {location}")
+            direct_search_url = (
+                f"https://www.experis.com/en/search"
+                f"?searchKeyword={encoded_kw}"
+                f"&latitude={US_LATITUDE}"
+                f"&longitude={US_LONGITUDE}"
+                f"&place={US_PLACE}"
+            )
 
-            # Try to click search
-            if input_el:
-                btn_el, _ = _find_first(BUTTON_SELECTORS, timeout=3)
-                if btn_el:
-                    try:
-                        self.driver.execute_script(
-                            "arguments[0].scrollIntoView({block:'center'});", btn_el
-                        )
-                        time.sleep(0.5)
-                        self.human.human_click(btn_el)
-                        logger.info("  [YES] Clicked search button")
-                        time.sleep(4)
-                    except Exception as be:
-                        logger.debug(f"Experis: Button click failed: {be}")
-                else:
-                    logger.info(
-                        "  [INFO] No search button found, pressing ENTER instead"
-                    )
-                    try:
-                        input_el.send_keys(Keys.RETURN)
-                        logger.info("  [YES] Pressed ENTER to search")
-                        time.sleep(4)
-                    except Exception as ee:
-                        logger.warning(f"  [WARNING] Enter key failed: {ee}")
+            logger.info(
+                f"Experis: Navigating directly to filtered search URL: {direct_search_url}"
+            )
+            self.driver.get(direct_search_url)
+            self._handle_cookie_banner()
+            time.sleep(4)
+
+            # Signal to downstream code that search was performed
+            input_el = True
 
             # Wait for results to stabilize
             try:
@@ -996,8 +1038,7 @@ class ExperisStrategy(BaseStrategy):
             time.sleep(2)
 
             page_num = 1
-            max_pages = 999  # Large limit, but smart exit will handle early stopping
-            consecutive_old_jobs = 0
+            max_pages = 999  # Pagination runs to the very end; date filter handles exclusions
             stop_pagination = False
 
             while page_num <= max_pages and not stop_pagination:
@@ -1029,7 +1070,8 @@ class ExperisStrategy(BaseStrategy):
                         if not job_title or not href or href in seen_urls:
                             continue
 
-                        # 1. Extract Posted Date (CRITICAL: Check date before relevance to support Smart Stop)
+                        # 1. Extract Posted Date
+                        posted_date_str = None  # Initialize to prevent NameError if extraction fails
                         try:
                             card_text = card.text
                             date_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", card_text)
@@ -1043,7 +1085,8 @@ class ExperisStrategy(BaseStrategy):
                         except Exception:
                             pass
 
-                        # 2. Date Filter Logic (7 Days) - Checking even if irrelevant to trigger Smart Stop
+                        # 2. Date Filter (7 Days) — skip old jobs but NEVER stop pagination.
+                        # Because results may be unsorted, we must check every page to the end.
                         if posted_date_str:
                             try:
                                 job_date = datetime.strptime(posted_date_str, "%m/%d/%Y").date()
@@ -1051,16 +1094,10 @@ class ExperisStrategy(BaseStrategy):
                                 age_days = (today - job_date).days
 
                                 if age_days > 7:
-                                    consecutive_old_jobs += 1
-                                    if consecutive_old_jobs >= 5:
-                                        logger.info(f"Experis: Found {consecutive_old_jobs} consecutive old jobs (including irrelevant ones). Stopping pagination.")
-                                        stop_pagination = True
-                                        break
-                                    # If relevance check below fails, we'll continue. 
-                                    # If it's old, we skip it regardless.
-                                    continue
-                                else:
-                                    consecutive_old_jobs = 0
+                                    logger.debug(
+                                        f"  [OLD] '{job_title}' posted {age_days} days ago — skipping (older than 7 days)"
+                                    )
+                                    continue  # Skip this job, but keep paginating
                             except Exception as de:
                                 logger.debug(f"Experis: Could not parse date '{posted_date_str}': {de}")
 
@@ -1072,12 +1109,14 @@ class ExperisStrategy(BaseStrategy):
                             continue
 
                         # 4. Extract other details
+                        location_text = ""  # Initialize to prevent NameError if element not found
+                        job_type = ""       # Initialize to prevent NameError if element not found
                         try:
                             location_text = card.find_element(
                                 By.CSS_SELECTOR, self.get_site_sel("listing", "job_location") or ".job-location, .location"
                             ).text.strip()
                         except Exception: pass
-                        
+
                         try:
                             job_type = card.find_element(
                                 By.CSS_SELECTOR, self.get_site_sel("listing", "job_type") or ".job-type"
@@ -1125,18 +1164,16 @@ class ExperisStrategy(BaseStrategy):
                         break
 
                     next_button = next_buttons[0]
-                    next_href = (next_button.get_attribute("href") or "").strip()
                     next_classes = next_button.get_attribute("class") or ""
 
-                    if (
-                        not next_href
-                        or "page=0" in next_href
-                        or "disabled" in next_classes.lower()
-                    ):
-                        logger.info("Experis: Next page is unavailable - stopping")
+                    if "disabled" in next_classes.lower():
+                        logger.info("Experis: Next page is unavailable (disabled) - stopping")
                         break
 
                     current_url = self.driver.current_url
+                    
+                    # Direct URL Pagination - bypassing Experis's broken href that drops params
+                    constructed_next_href = f"{direct_search_url}&page={page_num + 1}"
 
                     # --- Retry Loop for Navigation ---
                     # max_nav_retries is 3 to allow: click attempt → 502 recovery → final retry
@@ -1145,23 +1182,10 @@ class ExperisStrategy(BaseStrategy):
 
                     for nav_attempt in range(max_nav_retries):
                         try:
-                            # On first attempt try clicking the button; on subsequent retries
-                            # go directly to the captured next_href (avoids stale element issues)
-                            if nav_attempt == 0:
-                                self.driver.execute_script(
-                                    "arguments[0].scrollIntoView({block:'center'});",
-                                    next_button,
-                                )
-                                time.sleep(0.5)
-                                try:
-                                    self.human.human_click(next_button)
-                                except Exception:
-                                    self.driver.get(next_href)
-                            else:
-                                logger.info(
-                                    f"Experis: Direct URL retry for page {page_num + 1} (Attempt {nav_attempt+1}/{max_nav_retries}): {next_href}"
-                                )
-                                self.driver.get(next_href)
+                            logger.info(
+                                f"Experis: Navigating directly to next page: {constructed_next_href} (Attempt {nav_attempt+1}/{max_nav_retries})"
+                            )
+                            self.driver.get(constructed_next_href)
 
                             WebDriverWait(self.driver, 20).until(
                                 lambda d: d.current_url != current_url
@@ -1193,9 +1217,9 @@ class ExperisStrategy(BaseStrategy):
                                 self._handle_404_recovery()
                                 if nav_attempt < max_nav_retries - 1:
                                     logger.info(
-                                        f"Experis: Retrying navigation to {next_href}"
+                                        f"Experis: Retrying navigation to {constructed_next_href}"
                                     )
-                                    self.driver.get(next_href)
+                                    self.driver.get(constructed_next_href)
                                     continue
                                 else:
                                     break  # Out of nav retries
@@ -1418,27 +1442,32 @@ class ExperisStrategy(BaseStrategy):
                 "last_name": HS + "input[id^='lastname-']",
                 "email": HS + "input[id^='email-']",
                 "phone": HS + "input[id^='phone-']",
-                # Resume selectors — tried in order (primary exact ID first, then fallbacks)
+                # Resume selectors — tried in order (primary confirmed selectors first)
                 "resume": [
-                    # User-provided primary XPath/ID
-                    "//*[@id='resume-6ce3eb03-21fc-41aa-b005-cee7147d5d44']",
+                    # PRIMARY: Exact CSS selector confirmed by user
                     "#resume-6ce3eb03-21fc-41aa-b005-cee7147d5d44",
-                    # Fallback 1: CSS prefix-match (works if UUID changes)
+                    # PRIMARY: Exact XPath confirmed by user
+                    "//*[@id='resume-6ce3eb03-21fc-41aa-b005-cee7147d5d44']",
+                    # PRIMARY: Exact positional XPath from fieldset[5] confirmed by user
+                    "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/fieldset[5]//input[@type='file']",
+                    # FALLBACK: CSS confirmed fieldset container path
+                    "#hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44 > fieldset:nth-child(5) > div input[type='file']",
+                    # FALLBACK: CSS prefix-match (UUID-agnostic)
                     HS + "input[id^='resume-']",
                     "input[id^='resume-']",
-                    # Fallback 2: Name-based (HubSpot standard)
+                    # FALLBACK: Name-based (HubSpot standard)
                     "input[name='resume']",
                     "input[type='file'][name='resume']",
-                    # Fallback 3: positional XPath from fieldset[5] (as observed in the form)
-                    "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/fieldset[5]//input[@type='file']",
+                    # LAST RESORT: any file input on the page
                     "//input[@type='file']",
                 ],
                 "consent": HS + "input[id^='consent_to_text_sms-']",
                 "submit": [
-                    # User-provided primary XPath/ID
-                    "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/div/div[2]/input",
+                    # PRIMARY: Exact CSS selector confirmed by user
                     "#hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44 > div > div.actions > input",
-                    # Global fallbacks
+                    # PRIMARY: Exact XPath confirmed by user
+                    "//*[@id='hsForm_6ce3eb03-21fc-41aa-b005-cee7147d5d44']/div/div[2]/input",
+                    # FALLBACK: scoped submit button
                     HS + "input.hs-button.primary.large[type='submit']",
                     "input.hs-button.primary.large[type='submit']",
                     "input[type='submit']",

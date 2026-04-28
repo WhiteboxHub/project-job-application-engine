@@ -1,0 +1,552 @@
+{
+    "workflow_id": null,
+    "schedule_id": null,
+    "run_id": "RUN-1002e6f4-ed05-4808-bda2-385fb572bfd8",
+    "candidate_id": 557,
+    "candidate_name": "Vasanthi Nettem",
+    "keywords_searched": [
+        "Generative AI",
+        "GenAI",
+        "LLM",
+        "Large Language Model",
+        "Machine Learning",
+        "Artificial Intelligence",
+        "Data Scientist",
+        "AI",
+        "PYTHON",
+        "MLOps",
+        "AI Engineer"
+    ],
+    "status": "completed_with_errors",
+    "workflow_key": "weekly_automation_application_engine",
+    "execution_summary": {
+        "total_jobs_found": 96,
+        "total_applications_attempted": 65,
+        "total_applications_successful": 64,
+        "total_applications_failed": 1
+    },
+    "metrics_summary": {
+        "duration_seconds": 7392.04,
+        "duration_readable": "2:03:12.040523",
+        "total_seen": 96,
+        "total_attempted": 65,
+        "total_successful": 64,
+        "total_failed": 1,
+        "total_skipped": 31,
+        "success_rate_percent": 98.46
+    },
+    "breakdown": {
+        "successful_by_site": {
+            "Experis": 64
+        },
+        "failed_by_site": {
+            "Experis": 1
+        },
+        "failure_reasons": {
+            "Application logic returned False": 1
+        },
+        "retries_by_step": {}
+    },
+    "successful_applications": [
+        {
+            "job_site": "Experis",
+            "job_id": "387711",
+            "job_title": "179911 DevOps Engineer / GenAI Developer",
+            "job_url": "https://www.experis.com/en/job/387711/-179911-devops-engineer-genai-developer",
+            "applied_at": "2026-04-27T23:18:51.088857+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "391267",
+            "job_title": "GenAI Portfolio Manager",
+            "job_url": "https://www.experis.com/en/job/391267/genai-portfolio-manager",
+            "applied_at": "2026-04-27T23:19:04.143148+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "391845",
+            "job_title": "GenAI Developer (Wilmington OR Iselin, NJ)",
+            "job_url": "https://www.experis.com/en/job/391845/genai-developer-wilmington-or-iselin-nj-",
+            "applied_at": "2026-04-27T23:19:19.619311+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395727",
+            "job_title": "LLM Operations Engineer - Remote (EST)",
+            "job_url": "https://www.experis.com/en/job/395727/llm-operations-engineer-remote-est-",
+            "applied_at": "2026-04-27T23:19:32.682597+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394593",
+            "job_title": "Data Quality Analyst",
+            "job_url": "https://www.experis.com/en/job/394593/data-quality-analyst",
+            "applied_at": "2026-04-27T23:19:45.197315+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "374410",
+            "job_title": "Data Entry Support",
+            "job_url": "https://www.experis.com/en/job/374410/data-entry-support",
+            "applied_at": "2026-04-27T23:19:58.484049+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "364474",
+            "job_title": "Marketing Performance Data Analyst",
+            "job_url": "https://www.experis.com/en/job/364474/marketing-performance-data-analyst",
+            "applied_at": "2026-04-27T23:20:12.662475+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395666",
+            "job_title": "Data Analyst 2",
+            "job_url": "https://www.experis.com/en/job/395666/data-analyst-2",
+            "applied_at": "2026-04-27T23:20:25.619914+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "377840",
+            "job_title": "Data Scientist",
+            "job_url": "https://www.experis.com/en/job/377840/data-scientist",
+            "applied_at": "2026-04-27T23:20:39.152001+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395812",
+            "job_title": "Data Quality Analyst - Polish Language",
+            "job_url": "https://www.experis.com/en/job/395812/data-quality-analyst-polish-language",
+            "applied_at": "2026-04-27T23:20:58.073127+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "384392",
+            "job_title": "Sr. Data Scientist",
+            "job_url": "https://www.experis.com/en/job/384392/sr-data-scientist",
+            "applied_at": "2026-04-27T23:21:11.037389+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "383634",
+            "job_title": "Data Architect",
+            "job_url": "https://www.experis.com/en/job/383634/data-architect",
+            "applied_at": "2026-04-27T23:21:26.757947+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "387186",
+            "job_title": "Data Center Inventory & Asset Logistics Support L2",
+            "job_url": "https://www.experis.com/en/job/387186/data-center-inventory-asset-logistics-support-l2",
+            "applied_at": "2026-04-27T23:21:39.666635+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "354374",
+            "job_title": "Data Engineer (SQL & Autosys) - Banking/Financial Services",
+            "job_url": "https://www.experis.com/en/job/354374/data-engineer-sql-autosys-bankingfinancial-services-",
+            "applied_at": "2026-04-27T23:21:53.418905+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395811",
+            "job_title": "Data Quality Analyst - Polish Language",
+            "job_url": "https://www.experis.com/en/job/395811/data-quality-analyst-polish-language",
+            "applied_at": "2026-04-27T23:22:07.125976+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "393603",
+            "job_title": "IT Manager Data Science & AI",
+            "job_url": "https://www.experis.com/en/job/393603/it-manager-data-science-ai",
+            "applied_at": "2026-04-27T23:22:22.497173+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "393630",
+            "job_title": "IT Manager - Data Operations & Platforms",
+            "job_url": "https://www.experis.com/en/job/393630/it-manager-data-operations-platforms",
+            "applied_at": "2026-04-27T23:22:37.319031+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "342095",
+            "job_title": "Product Data Analyst",
+            "job_url": "https://www.experis.com/en/job/342095/product-data-analyst-",
+            "applied_at": "2026-04-27T23:22:50.495551+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "386036",
+            "job_title": "Supply chain and Data and Reporting Analyst",
+            "job_url": "https://www.experis.com/en/job/386036/supply-chain-and-data-and-reporting-analyst-",
+            "applied_at": "2026-04-27T23:23:03.594990+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "368494",
+            "job_title": "Data Warehouse Analyst III (PL/SQL Developers)",
+            "job_url": "https://www.experis.com/en/job/368494/data-warehouse-analyst-iii-plsql-developers-",
+            "applied_at": "2026-04-27T23:24:53.714348+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394372",
+            "job_title": "Data Reporting Analyst->CLT->DF",
+            "job_url": "https://www.experis.com/en/job/394372/data-reporting-analyst-clt-df",
+            "applied_at": "2026-04-27T23:25:06.466101+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "306289",
+            "job_title": "Data Center Technical Operations Engineer I",
+            "job_url": "https://www.experis.com/en/job/306289/data-center-technical-operations-engineer-i",
+            "applied_at": "2026-04-27T23:25:20.727219+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "311127",
+            "job_title": "Data Center Technical Operations Engineer I",
+            "job_url": "https://www.experis.com/en/job/311127/data-center-technical-operations-engineer-i",
+            "applied_at": "2026-04-27T23:25:33.310062+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "375540",
+            "job_title": "C4135D Data Scientist V",
+            "job_url": "https://www.experis.com/en/job/375540/c4135d-data-scientist-v",
+            "applied_at": "2026-04-27T23:25:47.567446+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "381631",
+            "job_title": "Data Center Inventory & Asset Lead",
+            "job_url": "https://www.experis.com/en/job/381631/data-center-inventory-asset-lead",
+            "applied_at": "2026-04-27T23:26:04.421090+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395478",
+            "job_title": "GxP Data Analyst",
+            "job_url": "https://www.experis.com/en/job/395478/gxp-data-analyst",
+            "applied_at": "2026-04-27T23:26:22.961329+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "386311",
+            "job_title": "Data Security Analyst (DLP Focus)",
+            "job_url": "https://www.experis.com/en/job/386311/data-security-analyst-dlp-focus-",
+            "applied_at": "2026-04-27T23:26:36.800834+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "392618",
+            "job_title": "Big Data Engineer (No C2C)",
+            "job_url": "https://www.experis.com/en/job/392618/big-data-engineer-no-c2c-",
+            "applied_at": "2026-04-27T23:26:51.026852+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "385240",
+            "job_title": "Data Governance & Information Architect",
+            "job_url": "https://www.experis.com/en/job/385240/data-governance-information-architect",
+            "applied_at": "2026-04-27T23:27:10.474292+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "364099",
+            "job_title": "Principal Data Engineer- Data Governance/Data Quality",
+            "job_url": "https://www.experis.com/en/job/364099/principal-data-engineer-data-governancedata-quality",
+            "applied_at": "2026-04-27T23:27:24.348263+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "377557",
+            "job_title": "Cloud Data Engineer",
+            "job_url": "https://www.experis.com/en/job/377557/cloud-data-engineer",
+            "applied_at": "2026-04-27T23:27:38.126025+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "387242",
+            "job_title": "Senior Data Engineer",
+            "job_url": "https://www.experis.com/en/job/387242/senior-data-engineer",
+            "applied_at": "2026-04-27T23:27:53.641532+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "382079",
+            "job_title": "IT Data Specialist",
+            "job_url": "https://www.experis.com/en/job/382079/it-data-specialist-",
+            "applied_at": "2026-04-27T23:28:07.082863+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "383724",
+            "job_title": "Sr. Data Engineer",
+            "job_url": "https://www.experis.com/en/job/383724/sr-data-engineer-",
+            "applied_at": "2026-04-27T23:28:21.716531+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394337",
+            "job_title": "Data Quality Analyst - Polish Language",
+            "job_url": "https://www.experis.com/en/job/394337/data-quality-analyst-polish-language",
+            "applied_at": "2026-04-27T23:28:35.213565+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "8811",
+            "job_title": "Data Collection Associate, Part Time",
+            "job_url": "https://www.experis.com/en/job/8811/data-collection-associate-part-time",
+            "applied_at": "2026-04-27T23:28:49.605638+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "386128",
+            "job_title": "Data Support Specialist",
+            "job_url": "https://www.experis.com/en/job/386128/data-support-specialist",
+            "applied_at": "2026-04-27T23:29:03.132031+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "387980",
+            "job_title": "Data Modeler",
+            "job_url": "https://www.experis.com/en/job/387980/data-modeler",
+            "applied_at": "2026-04-27T23:29:15.582237+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "391928",
+            "job_title": "UX Content Strategist \u2013 AI Systems",
+            "job_url": "https://www.experis.com/en/job/391928/ux-content-strategist-ai-systems-",
+            "applied_at": "2026-04-27T23:30:48.870826+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "386204",
+            "job_title": "Senior Software Engineer - Microsoft AI stack",
+            "job_url": "https://www.experis.com/en/job/386204/senior-software-engineer-microsoft-ai-stack",
+            "applied_at": "2026-04-27T23:31:04.441916+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "392693",
+            "job_title": "Senior Software Developer ( Python, node.js, AI )",
+            "job_url": "https://www.experis.com/en/job/392693/senior-software-developer-python-nodejs-ai-",
+            "applied_at": "2026-04-27T23:31:17.072420+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394434",
+            "job_title": "Oracle AI Lead",
+            "job_url": "https://www.experis.com/en/job/394434/oracle-ai-lead",
+            "applied_at": "2026-04-27T23:31:30.950959+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "393958",
+            "job_title": "Lead AI Agent Product Owner",
+            "job_url": "https://www.experis.com/en/job/393958/lead-ai-agent-product-owner-",
+            "applied_at": "2026-04-27T23:31:44.914982+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "389919",
+            "job_title": "AI-Driven Scrum Master / Intelligent Delivery Orchestrator",
+            "job_url": "https://www.experis.com/en/job/389919/-ai-driven-scrum-master-intelligent-delivery-orchestrator",
+            "applied_at": "2026-04-27T23:31:58.288483+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "384468",
+            "job_title": "AI Architect \u2013 Agentic Platforms",
+            "job_url": "https://www.experis.com/en/job/384468/ai-architect-agentic-platforms",
+            "applied_at": "2026-04-27T23:32:11.109305+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "384522",
+            "job_title": "Python Developer- APIs and AI Integration",
+            "job_url": "https://www.experis.com/en/job/384522/python-developer-apis-and-ai-integration",
+            "applied_at": "2026-04-27T23:32:25.688145+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "387820",
+            "job_title": "AI Engineer",
+            "job_url": "https://www.experis.com/en/job/387820/ai-engineer",
+            "applied_at": "2026-04-27T23:32:39.486026+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "388518",
+            "job_title": "Jr Full Stack Engineer w/AI (No C2C)",
+            "job_url": "https://www.experis.com/en/job/388518/jr-full-stack-engineer-wai-no-c2c-",
+            "applied_at": "2026-04-27T23:32:53.725850+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "393209",
+            "job_title": "AI Solution Architect",
+            "job_url": "https://www.experis.com/en/job/393209/ai-solution-architect",
+            "applied_at": "2026-04-27T23:33:09.268874+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395311",
+            "job_title": "AI Enablement Lead",
+            "job_url": "https://www.experis.com/en/job/395311/ai-enablement-lead",
+            "applied_at": "2026-04-27T23:33:23.064261+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "383110",
+            "job_title": "GEN AI Developer",
+            "job_url": "https://www.experis.com/en/job/383110/gen-ai-developer",
+            "applied_at": "2026-04-27T23:33:36.650596+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "390500",
+            "job_title": "Application Production Services - AI",
+            "job_url": "https://www.experis.com/en/job/390500/application-production-services-ai",
+            "applied_at": "2026-04-27T23:33:51.466239+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "367760",
+            "job_title": "Full Stack Developer for AI Applications",
+            "job_url": "https://www.experis.com/en/job/367760/full-stack-developer-for-ai-applications",
+            "applied_at": "2026-04-27T23:34:04.161644+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "381413",
+            "job_title": "Senior Backend Engineer - Python",
+            "job_url": "https://www.experis.com/en/job/381413/senior-backend-engineer-python",
+            "applied_at": "2026-04-27T23:34:18.921099+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395200",
+            "job_title": "Python/MongoDB Developer->Chandler",
+            "job_url": "https://www.experis.com/en/job/395200/pythonmongodb-developer-chandler",
+            "applied_at": "2026-04-27T23:34:39.354062+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395201",
+            "job_title": "Python/MongoDB Developer->Chandler",
+            "job_url": "https://www.experis.com/en/job/395201/pythonmongodb-developer-chandler",
+            "applied_at": "2026-04-27T23:34:53.585926+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395199",
+            "job_title": "MongoDB/Python Developer->Chandler",
+            "job_url": "https://www.experis.com/en/job/395199/mongodbpython-developer-chandler",
+            "applied_at": "2026-04-27T23:35:06.656145+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395202",
+            "job_title": "Python Developer->Chandler",
+            "job_url": "https://www.experis.com/en/job/395202/python-developer-chandler",
+            "applied_at": "2026-04-27T23:35:21.945773+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394897",
+            "job_title": "KCC - IT Programmer (Python)",
+            "job_url": "https://www.experis.com/en/job/394897/kcc-it-programmer-python-",
+            "applied_at": "2026-04-27T23:35:36.855110+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395507",
+            "job_title": "Senior Confluent Kafka Lead / Python Developer",
+            "job_url": "https://www.experis.com/en/job/395507/senior-confluent-kafka-lead-python-developer",
+            "applied_at": "2026-04-27T23:35:50.518914+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "395487",
+            "job_title": "L3 Engineer .Net/Python (NC, FL GA) x2",
+            "job_url": "https://www.experis.com/en/job/395487/l3-engineer-netpython-nc-fl-ga-x2",
+            "applied_at": "2026-04-27T23:36:09.884689+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394733",
+            "job_title": "Full Stack Python Developer",
+            "job_url": "https://www.experis.com/en/job/394733/full-stack-python-developer",
+            "applied_at": "2026-04-27T23:36:23.854424+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394786",
+            "job_title": "Senior Python Developer",
+            "job_url": "https://www.experis.com/en/job/394786/senior-python-developer",
+            "applied_at": "2026-04-27T23:36:37.086523+00:00"
+        },
+        {
+            "job_site": "Experis",
+            "job_id": "394785",
+            "job_title": "Senior Full Stack Developer (Python & Angular)",
+            "job_url": "https://www.experis.com/en/job/394785/senior-full-stack-developer-python-angular-",
+            "applied_at": "2026-04-27T23:36:50.593966+00:00"
+        }
+    ],
+    "failed_applications": [
+        {
+            "job_site": "Experis",
+            "job_id": "359425",
+            "job_title": "Data Engineer III",
+            "job_url": "https://www.experis.com/en/job/359425/-data-engineer-iii",
+            "error_reason": "Application logic returned False",
+            "failed_at": "2026-04-27T23:23:23.842449+00:00"
+        }
+    ],
+    "parameters_used": {
+        "workflow_id": null,
+        "schedule_id": null,
+        "run_id": "RUN-1002e6f4-ed05-4808-bda2-385fb572bfd8",
+        "candidate_id": 557,
+        "search": {
+            "distance": "0",
+            "keywords": [
+                "Generative AI",
+                "GenAI",
+                "LLM",
+                "Large Language Model",
+                "Machine Learning",
+                "Artificial Intelligence",
+                "Data Scientist",
+                "AI",
+                "PYTHON",
+                "MLOps",
+                "AI Engineer"
+            ],
+            "location": "United States"
+        },
+        "applicant": {
+            "first_name": "Vasanthi",
+            "last_name": "Nettem",
+            "email": "nvasanthi011@gmail.com",
+            "phone": "2028534787",
+            "workstatus": "GREEN_CARD",
+            "linkedin": "nvasanthi011@gmail.com",
+            "address": {
+                "city": "San Ramon",
+                "state": "California",
+                "street": "12023 hickory knoll ln Frisco Tx",
+                "zip_code": null,
+                "country": "United States"
+            }
+        },
+        "resume_url": "https://drive.google.com/drive/folders/1Wib_JlhPDC81IbaXtlLvC-_r54mPUzTG?usp=sharing",
+        "resume_path": "/Users/hrinnova-path.com/Desktop/git/project-job-application-engine/resume/downloads/candidate_resume_downloaded.pdf"
+    },
+    "started_at": "2026-04-27T21:33:38.767744+00:00",
+    "finished_at": "2026-04-27T23:36:50.808267+00:00"
+}

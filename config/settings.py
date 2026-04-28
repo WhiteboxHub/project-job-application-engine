@@ -13,10 +13,10 @@ class Settings(BaseSettings):
     MOTHERDUCK_TOKEN: Optional[str] = None
 
     # Backend API
-    # BACKEND_URL: str = "http://localhost:8001"
+    # BACKEND_URL: str = "http://localhost:8000"
     BACKEND_URL: str = "https://api.whitebox-learning.com/api"
     # Backend API (include /api — routers are mounted under /api)
-    BACKEND_URL: str = "http://localhost:8001/api"
+    BACKEND_URL: str = "http://localhost:8000/api"
     TRIGGER_ENDPOINT: str = "/weekly-workflow/trigger-run"
     # Must match automation_workflows.id for weekly_automation_application_engine (default 7)
     WEEKLY_WORKFLOW_ID: int = 7
